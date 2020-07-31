@@ -5,7 +5,7 @@ suppressPackageStartupMessages({
     library(shiny)
     library(shinyWidgets)
     library(htmltools)
-    library(shinydashboard)
+    library(shinythemes)
     library(DT)
     library(tidyverse)
     library(limma) # differential gene expression using linear modeling
@@ -14,7 +14,9 @@ suppressPackageStartupMessages({
     library(plotly)
     library(shinycssloaders)
     library(magrittr)
+    library(ggthemes)
     source("Server/calc_DEG_tbl.R")
+    source("Server/theme_Publication.R")
 })
 
 ## ---- Background ----
@@ -28,7 +30,8 @@ load(file = "./vDEGList")
 # Parse vDEGList into a tibble containing Log2CPM information
 Log2CPM<-v.DEGList.filtered.norm$E %>%
     as_tibble(rownames = "geneID")%>%
-    setNames(nm = c("geneID", as.character(v.DEGList.filtered.norm$targets$group))) %>%
+    setNames(nm = c("geneID", 
+                    as.character(v.DEGList.filtered.norm$targets$group))) %>%
     pivot_longer(cols = -geneID,
                  names_to = "life_stage", 
                  values_to = "log2CPM") %>%
@@ -51,8 +54,9 @@ lfc.thresh <- 0
 #
 
 ui <- fluidPage(
-    titlePanel("Strongyloides stercoralis RNAseq Browser"),
-    source('UI/SsRNAseqBrowser_dashboard-ui.R', local = T)$value
+    #titlePanel("Strongyloides stercoralis RNAseq Browser"),
+    #source('UI/SsRNAseqBrowser_dashboard-ui.R', local = T)$value
+    source('UI/SsRNAseqBrowser_navbar-ui.R', local = T)$value
     
 )
 
@@ -71,8 +75,8 @@ server <- function(input, output, session) {
                            results = NULL,
                            ebFit = NULL)
     
-    ## GW Expression Plot ----
-    parse_ids <- eventReactive(input$goGene,{
+    ## GW: Single Gene Expression Plot ----
+    parse_ids <- eventReactive(input$goGW,{
         if (isTruthy(input$idtext)){
             genelist <- input$idtext %>%
                 gsub(" ", "", ., fixed = TRUE) %>%
@@ -88,38 +92,106 @@ server <- function(input, output, session) {
                                  colClasses = "character", 
                                  strip.white = T) %>%
                 as_tibble() %>%
-                pivot_longer(cols = everything(), values_to = "geneID") %>%
+                pivot_longer(cols = everything(), 
+                             values_to = "geneID") %>%
                 dplyr::select(geneID)
         } 
         
         vals$genelist <- genelist
-        
-        # Select gene to look at expression levels
-        vals$gene_of_interest <- vals$genelist[[1,1]]
     })
     
-    ## Output: GW Expression Plot ----
+    ### GW: Generate Responsive Selection for Gene to Display ----
+    output$geneDisplaySelection_GW <- renderUI({
+        panel(
+            heading = tagList(h4(shiny::icon("fas fa-filter"),
+                                 "Step 1B: Select Gene to Display")),
+            status = "default",
+            selectInput("displayedGene",
+                        "Choose a Gene to Display", 
+                        c("All Genes", vals$genelist$geneID))
+        )
+    })
+    
+    ### GW: Plot Gene Expression by Life Stage ----
     output$CPM <- renderPlot({
         parse_ids()
         
-        gene_vals <- Log2CPM %>%
-            dplyr::filter(geneID == vals$gene_of_interest)
+        # Select gene to display
+        if (isTruthy(input$displayedGene)){
+            if (input$displayedGene == "All Genes"){
+                vals$gene_of_interest <- vals$genelist$geneID
+            } else vals$gene_of_interest <- input$displayedGene
+        } else {vals$gene_of_interest <- vals$genelist[[1,1]]}
         
-        p<- ggplot(gene_vals) + 
-            aes(x = life_stage, y = log2CPM, fill = life_stage) +
-            geom_boxplot(show.legend = F, alpha = 0.7) +
-            labs(y="log2 CPM expression", x = "Life Stage",
-                 title=paste("Log2 Counts per Million (CPM):", vals$gene_of_interest),
-                 subtitle="filtered, normalized, variance-stabilized") +
-            theme_bw() +
-            scale_fill_brewer(palette = "Dark2")
+        
+        if (length(vals$gene_of_interest) == 1) {
+            # Plot Log2CPM values for an individual gene
+            gene_vals <- Log2CPM %>%
+                dplyr::filter(geneID == vals$gene_of_interest)
+            
+            p<- ggplot(gene_vals) + 
+                aes(x = life_stage, y = log2CPM, fill = life_stage) +
+                geom_boxplot(show.legend = F, alpha = 0.7) +
+                labs(y="log2 CPM expression", x = "Life Stage",
+                     title=paste("Log2 Counts per Million (CPM):",
+                                 vals$gene_of_interest),
+                     subtitle="filtered, normalized, variance-stabilized") +
+                #coord_fixed()+
+                theme_Publication()
+            p 
+        } else {
+            # Make a heatmap for all the genes using the Log2CPM values
+            myheatcolors <- RdBu(75)
+            
+            diffGenes <- diffGenes.df %>%
+                dplyr::select(-geneID) %>%
+                as.matrix()
+            rownames(diffGenes) <- rownames(v.DEGList.filtered.norm$E)
+            colnames(diffGenes) <- as.character(v.DEGList.filtered.norm$targets$group)
+            clustColumns <- hclust(as.dist(1-cor(diffGenes, method="spearman")), method="complete")
+            subset.diffGenes<- diffGenes[vals$gene_of_interest,]
+            clustRows <- hclust(as.dist(1-cor(t(subset.diffGenes), 
+                                              method="pearson")), 
+                                method="complete") 
+            par(cex.main=1.5)
+            p<-heatmap.2(subset.diffGenes, 
+                         srtCol = 45, adjCol= c(1,1),
+                         Rowv= as.dendrogram(clustRows),
+                         Colv=as.dendrogram(clustColumns),
+                         lmat=rbind( c(0, 3, 4), c(2,1,0 ) ), 
+                         lwid=c(0.2, 5, 1 ) ,
+                         dendrogram = 'both',
+                         key.title = NA,
+                         main = paste0("Log2 Counts Per Million (CPM) Expression Across Life Stages"),
+                         col=rev(myheatcolors), 
+                         scale='row', 
+                         labRow=vals$gene_of_interest,
+                         density.info="none", 
+                         trace="none",
+                         cexRow=2, cexCol=2) 
+            p
+        }
+        
+        
+        
+        
+        # p<- ggplot(gene_vals) + 
+        #     aes(x = life_stage, y = log2CPM, fill = life_stage) +
+        #     geom_boxplot(show.legend = F, alpha = 0.7) +
+        #     labs(y="log2 CPM expression", x = "Life Stage",
+        #          title=paste("Log2 Counts per Million (CPM):",
+        #                      vals$gene_of_interest),
+        #          subtitle="filtered, normalized, variance-stabilized") +
+        #     #coord_fixed()+
+        #     theme_Publication() 
         p
     })
     
-    ## Life-stage comparison ----
-    parse_contrasts <- eventReactive(input$goGeneLS,{
-        if (isTruthy(input$multiContrasts)) {
-            comparison <- input$multiContrasts %>%
+    ## GW: Pairwise Comparisons Across Life Stage ----
+    ### Parse the inputs
+    parse_contrasts_GW <- eventReactive(input$goLifeStage_GW,{
+        if (isTruthy(input$multiContrasts_GW)) {
+            comparison <- input$multiContrasts_GW %>%
                 gsub(" ", "", ., fixed = TRUE) %>%
                 str_split(pattern = ",") %>%
                 unlist()
@@ -135,8 +207,11 @@ server <- function(input, output, session) {
                 gsub("(", "", ., fixed = TRUE) %>%
                 gsub(")", "", ., fixed = TRUE) %>%
                 str_split(pattern = "\\+", simplify = T)
-            vals$multipleCorrection <- T
-        } else if (length(input$selectTarget_GW) > 1 | length(input$selectContrast_GW) > 1) {
+            if (input$multipleContrastsYN_GW == T) {
+                vals$multipleCorrection <- T
+            } else vals$multipleCorrection <- F
+        } else if (length(input$selectTarget_GW) > 1 | 
+                   length(input$selectContrast_GW) > 1) {
             targetStage <- rbind(input$selectTarget_GW)
             contrastStage <- rbind(input$selectContrast_GW)
             comparison <- paste(paste0(input$selectTarget_GW, 
@@ -150,7 +225,9 @@ server <- function(input, output, session) {
         } else {
             targetStage <- rbind(input$selectTarget_GW)
             contrastStage <- rbind(input$selectContrast_GW)
-            comparison <- paste(input$selectTarget_GW, input$selectContrast_GW, sep = "-")
+            comparison <- paste(input$selectTarget_GW, 
+                                input$selectContrast_GW, 
+                                sep = "-")
             vals$multipleCorrection <- F
         }
         
@@ -160,78 +237,149 @@ server <- function(input, output, session) {
         
     })
     
-    output$contrastDisplaySelection <- renderUI({
-        comparison <- parse_contrasts()
-        selectInput("displayedComparison","Choose Comparison", comparison)
+    ### GW: Generate Responsive Selection for Life Stage to Display ----
+    output$contrastDisplaySelection_GW <- renderUI({
+        comparison <- parse_contrasts_GW()
+        panel(
+            heading = tagList(h4(shiny::icon("fas fa-filter"),
+                                 "Step 2B: Select Contrast to Display")),
+            status = "default",
+            selectInput("displayedComparison_GW",
+                        "Choose a Comparison to Display", 
+                        comparison)
+        )
     })
     
-    set_linear_model <- eventReactive(input$goGeneLS,{
-        contrast.matrix <- makeContrasts(contrasts = vals$comparison,
-                                         levels = v.DEGList.filtered.norm$design)
-        
-        ## Linear model fit -----
-        fits <- contrasts.fit(fit, contrast.matrix)
-        vals$ebFit <- limma::eBayes(fits)
-        # Adjust for multiple comparisons using method = global. 
-        
-        if (vals$multipleCorrection == T) {
-            vals$results <- decideTests(vals$ebFit, 
-                                        method="global", 
-                                        adjust.method="BH", 
-                                        p.value = adj.P.thresh) %>%
-                .[,] != 0
-        }
-        
+    ### GW: Set Contrast Matrix and Fit the Linear Model ----
+    set_linear_model_GW <- eventReactive(input$goLifeStage_GW,{
+        source('Server/limma_ranking.R', local = TRUE)$value
     })
     
-    pull_DEGs <- reactive({
+    ### GW: Extract the Differentially Expressed Genes ----
+    pull_DEGs_GW <- reactive({
         req(vals$genelist)
         
-        if (isTruthy(input$displayedComparison)){
-            vals$displayedComparison <- match(input$displayedComparison, vals$comparison)
+        if (isTruthy(input$displayedComparison_GW)){
+            vals$displayedComparison <- match(input$displayedComparison_GW, 
+                                              vals$comparison)
         } else {vals$displayedComparison <- 1}
         
-        myTopHits.df <- calc_DEG_tbl(vals$ebFit, vals$displayedComparison)
+        myTopHits.df <- calc_DEG_tbl(vals$ebFit, 
+                                     vals$displayedComparison)
         
-        # Filter dataset looking for the genes on the list ----
+        #### Filter dataset looking for the genes on the list
         highlight.df <- myTopHits.df %>%
             dplyr::filter(geneID %in% vals$genelist[[1]]) %>%
-            dplyr::select(geneID, logFC, BH.adj.P.Val:percent_homology)
+            dplyr::select(geneID, 
+                          logFC, 
+                          BH.adj.P.Val:percent_homology)
         vals$highlight.df <- highlight.df
         
-        ## Volcano Plots ----
+        #browser()
+        #### Volcano Plots
         vplot <- ggplot(myTopHits.df) +
             aes(y=-log10(BH.adj.P.Val), x=logFC) +
-            geom_point(size=2) +
+            geom_point(size=2,
+                       na.rm = T) +
             geom_point(data = highlight.df, 
                        aes(y=-log10(BH.adj.P.Val), 
                            x=logFC, 
                            color = geneID, 
-                           size = 3)) +
-            geom_hline(yintercept = -log10(adj.P.thresh), linetype="longdash", colour="grey", size=1) + 
-            geom_vline(xintercept = lfc.thresh, linetype="longdash", colour="#BE684D", size=1) +
-            geom_vline(xintercept = -lfc.thresh, linetype="longdash", colour="#2C467A", size=1) +
-            guides(size = FALSE) +
-            labs(title = paste0(vals$comparison[vals$displayedComparison]),
+                           size = 2),
+                       na.rm = T) +
+            geom_hline(yintercept = -log10(adj.P.thresh), 
+                       linetype="longdash", 
+                       colour="grey", 
+                       size=1) + 
+            geom_vline(xintercept = lfc.thresh, 
+                       linetype="longdash", 
+                       colour="#2C467A", 
+                       size=1) +
+            geom_vline(xintercept = -lfc.thresh, 
+                       linetype="longdash", 
+                       colour="#2C467A", 
+                       size=1) +
+            guides(size = FALSE,
+                   colour = guide_legend(override.aes = list(size = 6)))+
+            labs(title = paste0('Pairwise Comparison: ',
+                                gsub('-',
+                                     ' vs ',
+                                     vals$comparison[vals$displayedComparison])),
                  color = "GeneIDs") +
-            theme_bw()
+            #coord_fixed()+
+            theme_Publication()
+        
+        
         vplot
     })
     
-    ## Outputs: Gene-wise Mode ----
-    output$volcano <- renderPlot({
-        set_linear_model()
-        v <- pull_DEGs()
-        v
+    ## GW: Volcano Plot, Generate UI  ----
+    output$volcano_GW <- renderPlot({
+        set_linear_model_GW()
+        v_GW <- pull_DEGs_GW()
+        v_GW
     })
     
-    ## GW Data Table ----
+    output$hover_info <- renderUI({
+        req(vals$highlight.df)
+        #browser()
+        
+        pointer.df <- vals$highlight.df %>%
+            dplyr::mutate(log10.adj.P.Val = -log10(BH.adj.P.Val))
+        
+        hover <- input$plot_hover
+        point <- nearPoints(pointer.df, hover, 
+                            xvar = "logFC",
+                            yvar = "log10.adj.P.Val",
+                            threshold = 5, maxpoints = 1, addDist = TRUE)
+        if (nrow(point) == 0) return(NULL)
+        
+        
+        # calculate point position INSIDE the image as percent of total dimensions
+        # from left (horizontal) and from top (vertical)
+        left_pct <- (hover$x - hover$domain$left) / (hover$domain$right - hover$domain$left)
+        top_pct <- (hover$domain$top - hover$y) / (hover$domain$top - hover$domain$bottom)
+        
+        # calculate distance from left and bottom side of the picture in pixels
+        left_px <- hover$range$left + left_pct * (hover$range$right - hover$range$left)
+        top_px <- hover$range$top + top_pct * (hover$range$bottom - hover$range$top)
+        
+        # create style property fot tooltip
+        # background color is set so tooltip is a bit transparent
+        # z-index is set so we are sure are tooltip will be on top
+        style <- paste0("position:absolute; z-index:100; background-color: rgba(245, 245, 245, 0.85); ",
+                        "left:", left_px , "px; top:", top_px + 2, "px;")
+        
+        # actual tooltip created as wellPanel
+        wellPanel(
+            style = style,
+            p(HTML(paste0("<b> GeneID: </b>", 
+                          point$geneID, 
+                          "<br/>", 
+                          "<b> Log FC: </b>",
+                          round(point$logFC,digits = 2),
+                          "<br/>",
+                          "<b> p-value: </b>",
+                          format(point$BH.adj.P.Val, digits = 3, scientific = TRUE))))
+        )
+    })
+    
+    
+    #### GW: Data Table of Differentially Expressed Genes from User Subset ----
     assemble_DEGs_GW <- reactive({
+        tS<- vals$targetStage[vals$displayedComparison,
+                              ][vals$targetStage[vals$displayedComparison,
+                                                 ]!=""]
+        cS<- vals$contrastStage[vals$displayedComparison,
+                                ][vals$contrastStage[vals$displayedComparison,
+                                                     ]!=""]
         
-        
-        tS<- vals$targetStage[vals$displayedComparison,][vals$targetStage[vals$displayedComparison,]!=""]
-        cS<- vals$contrastStage[vals$displayedComparison,][vals$contrastStage[vals$displayedComparison,]!=""]
-        
+        # Correct for multiple tests, if necessary
+        if (vals$multipleCorrection == T) {
+            diffGenes.df <- v.DEGList.filtered.norm$E[vals$results[,
+                                                                   vals$displayedComparison] !=0,] %>%
+                as_tibble(rownames = "geneID", .name_repair = "unique")
+        }
         
         # Get log2CPM values for genes of interest
         highlight.tbl <- diffGenes.df %>%
@@ -240,18 +388,20 @@ server <- function(input, output, session) {
                           starts_with(paste0(cS,"-"))) %>%
             left_join(vals$highlight.df, by = "geneID")
         
-        highlight.tbl$BH.adj.P.Val <- formatC(highlight.tbl$BH.adj.P.Val, digits = 3, format = "E") 
+        highlight.tbl$BH.adj.P.Val <- formatC(highlight.tbl$BH.adj.P.Val, 
+                                              digits = 3, 
+                                              format = "E") 
         
         
         n_num_cols <- length(tS)*3 + length(cS)*3 + 2
-        #browser()
         highlight.datatable <- highlight.tbl %>%
             DT::datatable(extensions = c('KeyTable', "FixedHeader"),
                           rownames = FALSE,
                           caption = htmltools::tags$caption(
-                              style = 'caption-side: top; text-align: left;',
-                              htmltools::tags$b('Differentially Expressed Genes in', htmltools::tags$em('S. stercoralis'), 
-                                                vals$comparison[vals$displayedComparison]),
+                              style = 'caption-side: top; text-align: left; color: black',
+                              htmltools::tags$b('Differentially Expressed Genes in', 
+                                                htmltools::tags$em('S. stercoralis'), 
+                                                gsub('-',' vs ',vals$comparison[vals$displayedComparison])),
                               htmltools::tags$br(),
                               "Threshold: p < ",
                               adj.P.thresh, "; log-fold change > ",
@@ -261,13 +411,19 @@ server <- function(input, output, session) {
                           options = list(keys = TRUE,
                                          autoWidth = TRUE,
                                          scrollX = TRUE,
-                                         order = list(n_num_cols-1, 'desc'),
+                                         order = list(n_num_cols-1, 
+                                                      'desc'),
                                          searchHighlight = TRUE, 
                                          pageLength = 10, 
-                                         lengthMenu = c("10", "25", "50", "100"),
+                                         lengthMenu = c("10", 
+                                                        "25", 
+                                                        "50", 
+                                                        "100"),
                                          columnDefs = list(
                                              list(
-                                                 targets = ((n_num_cols + 4):(n_num_cols + 5)),
+                                                 targets = ((n_num_cols + 
+                                                                 4):(n_num_cols + 
+                                                                         5)),
                                                  render = JS(
                                                      "function(data, type, row, meta) {",
                                                      "return type === 'display' && data.length > 20 ?",
@@ -279,16 +435,17 @@ server <- function(input, output, session) {
                                          )
                                          
                           )) 
-        #browser()
         highlight.datatable <- highlight.datatable %>%
-            DT::formatRound(columns=c(2:n_num_cols,n_num_cols+2, n_num_cols+8), digits=2)
+            DT::formatRound(columns=c(2:n_num_cols,
+                                      n_num_cols+2, 
+                                      n_num_cols+8), 
+                            digits=2)
         
         highlight.datatable
     })
     
     
     output$highlight.df <- renderDT ({
-        #req(input$goGeneLS)
         req(vals$highlight.df)
         highlight.datatable<-assemble_DEGs_GW()
         highlight.datatable
@@ -296,29 +453,207 @@ server <- function(input, output, session) {
     
     
     
-    ## Life stage-wise display of pairwise comparisons ----
-    assemble_DEGs<-eventReactive(input$goLifeStage,{
-        req((input$selectTarget != input$selectContrast))
-        
-        if (length(input$selectTarget > 1) | length(input$selectContrast > 1)){
-            targetStage <- paste0(input$selectTarget, collapse = "+") %>%
-                paste0("(",.,")")
-            contrastStage <- paste0(input$selectContrast, collapse = "+") %>%
-                paste0("(",.,")")
-            comparison <- paste(targetStage, contrastStage, sep = "-")
+    ## LS: Display pairwise comparisons ----
+    ### Parse the inputs
+    parse_contrasts_LS<-eventReactive(input$goLS,{
+        if (isTruthy(input$multiContrasts_LS)) {
+            comparison <- input$multiContrasts_LS %>%
+                gsub(" ", "", ., fixed = TRUE) %>%
+                str_split(pattern = ",") %>%
+                unlist()
+            targetStage<- comparison %>%
+                str_split(pattern="-", simplify = T) %>%
+                .[,1] %>%
+                gsub("(", "", ., fixed = TRUE) %>%
+                gsub(")", "", ., fixed = TRUE) %>%
+                str_split(pattern = "\\+", simplify = T)
+            contrastStage<-comparison %>%
+                str_split(pattern="-", simplify = T) %>%
+                .[,2] %>%
+                gsub("(", "", ., fixed = TRUE) %>%
+                gsub(")", "", ., fixed = TRUE) %>%
+                str_split(pattern = "\\+", simplify = T)
+            if (input$multipleContrastsYN_LS == T) {
+                vals$multipleCorrection <- T
+            } else vals$multipleCorrection <- F
+        } else if (length(input$selectTarget_LS > 1) | 
+                   length(input$selectContrast_LS > 1)){
+            targetStage <- rbind(input$selectTarget_LS)
+            contrastStage <- rbind(input$selectContrast_LS)
+            comparison <- paste(paste0(input$selectTarget_LS, 
+                                       collapse = "+") %>%
+                                    paste0("(",.,")"), 
+                                paste0(input$selectContrast_LS, 
+                                       collapse = "+") %>%
+                                    paste0("(",.,")"), 
+                                sep = "-")
+            vals$multipleCorrection <- F
         } else {
-            targetStage <- input$selectTarget
-            contrastStage <- input$selectContrast
-            comparison <- paste(targetStage, contrastStage, sep = "-")
+            targetStage <- rbind(input$selectTarget_LS)
+            contrastStage <- rbind(input$selectContrast_LS)
+            comparison <- paste(input$selectTarget_LS, 
+                                input$selectContrast_LS, 
+                                sep = "-")
+            vals$multipleCorrection <- F
         }
         
-        source('Server/assemble_DEGs.R', local = TRUE)$value
+        vals$targetStage <- targetStage 
+        vals$contrastStage <- contrastStage
+        vals$comparison <- comparison
+        
     })
     
-    output$tbl <- renderDT ({
-        req(input$goLifeStage)
-        DEG.datatable<-assemble_DEGs()
-        DEG.datatable
+    ### LS: Generate Responsive Selection for Life Stage to Display ----
+    output$contrastDisplaySelection_LS <- renderUI({
+        comparison <- parse_contrasts_LS()
+        panel(
+            heading = tagList(h4(shiny::icon("fas fa-filter"),
+                                 "Step 1B: Select Contrast to Display")),
+            status = "default",
+            selectInput("displayedComparison_LS",
+                        "Choose a Comparison to Display", 
+                        comparison)
+        )
+    })
+    
+    ### LS: Set Contrast Matrix and Fit the Linear Model ----
+    set_linear_model_LS <- eventReactive(input$goLS,{
+        source('Server/limma_ranking.R', local = TRUE)$value
+    })
+    
+    ### LS: Extract the Differentially Expressed Genes ----
+    pull_DEGs_LS <- reactive({
+        req(vals$ebFit)
+        if (isTruthy(input$displayedComparison_LS)){
+            vals$displayedComparison <- match(input$displayedComparison_LS, 
+                                              vals$comparison)
+        } else {vals$displayedComparison <- 1}
+        
+        myTopHits.df <- calc_DEG_tbl(vals$ebFit, 
+                                     vals$displayedComparison)
+        
+        #### Filter dataset for desired columns to display
+        highlight.df <- myTopHits.df %>%
+            dplyr::select(geneID, 
+                          logFC, 
+                          BH.adj.P.Val:percent_homology)
+        vals$highlight.df <- highlight.df
+        
+        #### Volcano Plots
+        vplot <- ggplot(myTopHits.df) +
+            aes(y=-log10(BH.adj.P.Val), x=logFC) +
+            geom_point(size=2) +
+            geom_hline(yintercept = -log10(adj.P.thresh), 
+                       linetype="longdash", 
+                       colour="grey", 
+                       size=1) + 
+            geom_vline(xintercept = lfc.thresh, 
+                       linetype="longdash", 
+                       colour="#BE684D", 
+                       size=1) +
+            geom_vline(xintercept = -lfc.thresh, 
+                       linetype="longdash", 
+                       colour="#2C467A", 
+                       size=1) +
+            labs(title = paste0('Pairwise Comparison: ',
+                                gsub('-',
+                                     ' vs ',
+                                     vals$comparison[vals$displayedComparison])),
+                 color = "GeneIDs") +
+            theme_Publication() 
+        vplot
+    })
+    
+    ### LS: Volcano Plot, Generate UI ----
+    output$volcano_LS <- renderPlot({
+        set_linear_model_LS()
+        v_LS <- pull_DEGs_LS()
+        v_LS
+    })
+    
+    #### LS: Data Table of Differentially Expressed Genes ----
+    assemble_DEGs_LS <- reactive({
+        tS<- vals$targetStage[vals$displayedComparison,
+                              ][vals$targetStage[vals$displayedComparison,
+                                                 ]!=""]
+        cS<- vals$contrastStage[vals$displayedComparison,
+                                ][vals$contrastStage[vals$displayedComparison,
+                                                     ]!=""]
+        
+        # Correct for multiple tests, if necessary
+        if (vals$multipleCorrection == T) {
+            diffGenes.df <- v.DEGList.filtered.norm$E[vals$results[,
+                                                                   vals$displayedComparison] !=0,] %>%
+                as_tibble(rownames = "geneID", .name_repair = "unique")
+        }
+        
+        # Get log2CPM values for life stages of interest
+        LS.tbl <- diffGenes.df %>%
+            dplyr::select(geneID, starts_with(paste0(tS,"-")), 
+                          starts_with(paste0(cS,"-"))) %>%
+            left_join(vals$highlight.df, by = "geneID")
+        
+        
+        LS.tbl$BH.adj.P.Val <- formatC(LS.tbl$BH.adj.P.Val, 
+                                       digits = 3, 
+                                       format = "E") 
+        
+        n_num_cols <- length(tS)*3 + length(cS)*3 + 2
+        LS.datatable <- LS.tbl %>%
+            DT::datatable(extensions = c('KeyTable', "FixedHeader"),
+                          rownames = FALSE,
+                          caption = htmltools::tags$caption(
+                              style = 'caption-side: top; text-align: left; color: black;',
+                              htmltools::tags$b('Differentially Expressed Genes in', 
+                                                htmltools::tags$em('S. stercoralis'), 
+                                                gsub('-',' vs ',vals$comparison[vals$displayedComparison])),
+                              htmltools::tags$br(),
+                              "Threshold: p < ",
+                              adj.P.thresh, "; log-fold change > ",
+                              lfc.thresh,
+                              htmltools::tags$br(),
+                              'Values = log2 counts per million'),
+                          options = list(keys = TRUE,
+                                         autoWidth = TRUE,
+                                         scrollX = TRUE,
+                                         order = list(n_num_cols-1, 
+                                                      'desc'),
+                                         searchHighlight = TRUE, 
+                                         pageLength = 10, 
+                                         lengthMenu = c("10", 
+                                                        "25", 
+                                                        "50", 
+                                                        "100"),
+                                         columnDefs = list(
+                                             list(
+                                                 targets = ((n_num_cols + 
+                                                                 4):(n_num_cols + 
+                                                                         5)),
+                                                 render = JS(
+                                                     "function(data, type, row, meta) {",
+                                                     "return type === 'display' && data.length > 20 ?",
+                                                     "'<span title=\"' + data + '\">' + data.substr(0, 20) + '...</span>' : data;",
+                                                     "}")
+                                             ),
+                                             list(targets = "_all",
+                                                  class="dt-right")
+                                         )
+                                         
+                          )) 
+        LS.datatable <- LS.datatable %>%
+            DT::formatRound(columns=c(2:n_num_cols,
+                                      n_num_cols+2, 
+                                      n_num_cols+8), 
+                            digits=2)
+        
+        LS.datatable
+    })
+    
+    
+    output$tbl_LS <- renderDT ({
+        req(input$goLS)
+        DEG.datatable_LS<-assemble_DEGs_LS()
+        DEG.datatable_LS
         
     })
     
