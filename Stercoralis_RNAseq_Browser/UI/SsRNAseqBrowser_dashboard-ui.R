@@ -1,15 +1,15 @@
 
 # Header ----
-header <- dashboardHeader(title = "Browser Mode")
+header <- dashboardHeader()
 
-# Sidebar ----
 # Sidebar ----
 sidebar <- dashboardSidebar(
     sidebarMenu(
-        menuItem("by Gene(s)", tabName = "genebrowser", icon = icon("fas fa-dna")),
-        menuItem("by Life Stage", tabName = "lifestagebrowser", icon = icon("fas fa-recycle"))
+        menuItem(h4("by Gene(s)"), tabName = "genebrowser"),
+        menuItem(h4("by Life Stage"), tabName = "lifestagebrowser")
     )
 )
+
 # Body ----
 body <- dashboardBody(
     tabItems(
@@ -18,7 +18,7 @@ body <- dashboardBody(
                 fluidRow(
                     shinydashboard::box(
                         ## User Input Options ----
-                        title = tagList(shiny::icon("fas fa-sliders-h"), "Step 1: Input Genes"),
+                        title = tagList(shiny::icon("fas fa-dna"), "Step 1: Input Genes"),
                         width = 4,
                         status = "warning",
                         
@@ -34,13 +34,13 @@ body <- dashboardBody(
                                   multiple = FALSE),
                         
                         ### Action Button
-                        actionButton('goGene',
+                        actionButton('goGW',
                                      'Submit',
                                      width = '40%',
                                      icon = icon("paper-plane"))
                     ),
                     
-                    # Reactive Outputs ----
+                    # Gene Outputs ----
                     shinydashboard::box(
                         title = tagList(shiny::icon("fas fa-chart-bar"),
                                         "Gene Expression Across Life Stages"), 
@@ -50,7 +50,7 @@ body <- dashboardBody(
                         withSpinner(plotOutput('CPM'))
                     ),
                     
-                    
+                    # User Input: Life Stage Comparisons ----
                 ),
                 fluidRow(
                     shinydashboard::box(
@@ -60,7 +60,7 @@ body <- dashboardBody(
                         
                         # Select Target Life Stage
                         h4('Option A: Select Single Pairwise Comparison'),
-                    
+                        
                         pickerInput("selectTarget_GW",
                                     "Select One or More Targets",
                                     choices = list("FLF",
@@ -91,32 +91,51 @@ body <- dashboardBody(
                         h4('Option B: Manually Input Multiple Pairwise Comparisons'),
                         
                         # Text Input for Multiple Contrasts
-                        textAreaInput('multiContrasts',
+                        textAreaInput('multiContrasts_GW',
                                       label = ('Input At Least Two Comma-Separated Pairwise Comparisons'),
                                       placeholder = ('e.g. iL3-FLF, iL3-PF, (iL3+iL3a)-(PF+FLF)'),
                                       rows = 5, 
                                       resize = "vertical"),
-                        p('Note: using this option will automatically control for multiple testing.'),
+                        
+                        strong("Correct for Multiple Comparisons?"),
+                        switchInput(
+                            inputId = "multipleContrastsYN_GW",
+                            onLabel = "Yes",
+                            offLabel = "No",
+                            onStatus = "success"
+                        ),
+                        
+                        
+                        awesomeCheckbox('multipleContrastsYN_GW',
+                                      label = 'Correct for Multiple Comparisons?'),
+                        
                         
                         ### Action Button
-                        actionButton('goGeneLS',
+                        actionButton('goLifeStage_GW',
                                      'Submit',
                                      width = '40%',
                                      icon = icon("paper-plane"))
-                        ),
+                    ),
                     
                     shinydashboard::box(
                         title = tagList(shiny::icon("fas fa-table"),
-                                        "Pairwise Differential Gene Expression"), 
+                                        "Select Contrast to Display"), 
+                        width = 4,
+                        status = "warning",
+                        uiOutput('contrastDisplaySelection_GW')
+                    ),
+                    shinydashboard::box(
+                        title = tagList(shiny::icon("fas fa-table"),
+                                        "Pairwise Differential Gene Expression: Volcano Plot"), 
                         width = 8,
                         status = "success",
-                        uiOutput('contrastDisplaySelection'),
-                        h4("Volcano Plot"),
-                        withSpinner(plotOutput('volcano')),
-                        tags$br(),
-                        tags$hr(style="border-color: black;"),
-                        tags$br(),
-                        h4("DEG Table"),
+                        withSpinner(plotOutput('volcano_GW'))
+                    ),
+                    shinydashboard::box(
+                        title = tagList(shiny::icon("fas fa-table"),
+                                        "Pairwise Differential Gene Expression: Table"), 
+                        width = 12,
+                        status = "success",
                         withSpinner(DTOutput('highlight.df'))
                     )
                 ),
@@ -137,13 +156,14 @@ body <- dashboardBody(
                     ## User Input Options ----
                     
                     shinydashboard::box(
-                        title = tagList(shiny::icon("fas fa-sliders-h"), "Inputs"),
+                        title = tagList(shiny::icon("fas fa-recycle"), "Pick Life Stage Comparisons"),
                         width = 4,
                         status = "warning",
                         
                         # Select Target Life Stage
-                        checkboxGroupInput("selectTarget",
-                                    h4("Select Target(s)"),
+                        # 
+                        pickerInput("selectTarget_LS",
+                                    "Select One or More Targets",
                                     choices = list("FLF",
                                                    "PF",
                                                    "iL3",
@@ -151,10 +171,11 @@ body <- dashboardBody(
                                                    "ppL1",
                                                    "ppL3",
                                                    "pfL1"),
-                                    selected = "iL3"),
+                                    #selected = "iL3",
+                                    multiple = TRUE),
                         # Select Contrast Life Stage
-                        checkboxGroupInput("selectContrast",
-                                    h4("Select Contrast(s)"),
+                        pickerInput("selectContrast_LS",
+                                    "Select One or More Contrasts",
                                     choices = list("FLF",
                                                    "PF",
                                                    "iL3",
@@ -162,10 +183,26 @@ body <- dashboardBody(
                                                    "ppL1",
                                                    "ppL3",
                                                    "pfL1"),
-                                    selected = "FLF"),
+                                    #selected = "FLF",
+                                    multiple = TRUE),
+                        
+                        # Text Input for Multiple Contrasts
+                        textAreaInput('multiContrasts_LS',
+                                      label = ('Input At Least Two Comma-Separated Pairwise Comparisons'),
+                                      placeholder = ('e.g. iL3-FLF, iL3-PF, (iL3+iL3a)-(PF+FLF)'),
+                                      rows = 5, 
+                                      resize = "vertical"),
+                        
+                        strong("Correct for Multiple Comparisons?"),
+                        switchInput(
+                            inputId = "multipleContrastsYN_LS",
+                            onLabel = "Yes",
+                            offLabel = "No",
+                            onStatus = "success"
+                        ),
                         
                         ### Action Button
-                        actionButton('goLifeStage',
+                        actionButton('goLS',
                                      'Submit',
                                      width = '40%',
                                      icon = icon("paper-plane"))
@@ -178,11 +215,29 @@ body <- dashboardBody(
                     
                     shinydashboard::box(
                         title = tagList(shiny::icon("fas fa-table"),
-                                        "Pairwise Differential Gene Expression Table"), 
+                                        "Select Contrast to Display"), 
+                        width = 4,
+                        status = "warning",
+                        uiOutput('contrastDisplaySelection_LS')
+                    ),
+                    
+                    shinydashboard::box(
+                        title = tagList(shiny::icon("fas fa-table"),
+                                        "Pairwise Differential Gene Expression: Volcano Plot"), 
                         width = 8,
                         status = "success",
-                        DTOutput('tbl')
+                        withSpinner(plotOutput('volcano_LS'))
+                    ),
+                    
+                    shinydashboard::box(
+                        title = tagList(shiny::icon("fas fa-table"),
+                                        "Pairwise Differential Gene Expression: Table"), 
+                        width = 12,
+                        status = "success",
+                        withSpinner(DTOutput('tbl_LS'))
                     )
+                    
+                    
                 )
         )
     )

@@ -15,6 +15,9 @@ suppressPackageStartupMessages({
     library(shinycssloaders)
     library(magrittr)
     library(ggthemes)
+    library(gplots)
+    library(heatmaply)
+    library(RColorBrewer)
     source("Server/calc_DEG_tbl.R")
     source("Server/theme_Publication.R")
 })
@@ -103,11 +106,11 @@ server <- function(input, output, session) {
     ### GW: Generate Responsive Selection for Gene to Display ----
     output$geneDisplaySelection_GW <- renderUI({
         panel(
-            heading = tagList(h4(shiny::icon("fas fa-filter"),
+            heading = tagList(h5(shiny::icon("fas fa-filter"),
                                  "Step 1B: Select Gene to Display")),
             status = "default",
             selectInput("displayedGene",
-                        "Choose a Gene to Display", 
+                        NULL, 
                         c("All Genes", vals$genelist$geneID))
         )
     })
@@ -115,7 +118,6 @@ server <- function(input, output, session) {
     ### GW: Plot Gene Expression by Life Stage ----
     output$CPM <- renderPlot({
         parse_ids()
-        
         # Select gene to display
         if (isTruthy(input$displayedGene)){
             if (input$displayedGene == "All Genes"){
@@ -136,7 +138,6 @@ server <- function(input, output, session) {
                      title=paste("Log2 Counts per Million (CPM):",
                                  vals$gene_of_interest),
                      subtitle="filtered, normalized, variance-stabilized") +
-                #coord_fixed()+
                 theme_Publication()
             p 
         } else {
@@ -153,7 +154,7 @@ server <- function(input, output, session) {
             clustRows <- hclust(as.dist(1-cor(t(subset.diffGenes), 
                                               method="pearson")), 
                                 method="complete") 
-            par(cex.main=1.5)
+            par(cex.main=1.2)
             p<-heatmap.2(subset.diffGenes, 
                          srtCol = 45, adjCol= c(1,1),
                          Rowv= as.dendrogram(clustRows),
@@ -168,7 +169,7 @@ server <- function(input, output, session) {
                          labRow=vals$gene_of_interest,
                          density.info="none", 
                          trace="none",
-                         cexRow=2, cexCol=2) 
+                         cexRow=1.2, cexCol=1.2) 
             p
         }
         
@@ -187,9 +188,20 @@ server <- function(input, output, session) {
         p
     })
     
+    observeEvent(input$goLifeStage_GW,{
+        vals$comparison <- NULL
+        vals$targetStage <- NULL
+        vals$contrastStage <- NULL
+        vals$multipleCorrection <- NULL
+        vals$results <- NULL
+        vals$ebFit <- NULL
+    })
+   
+    
     ## GW: Pairwise Comparisons Across Life Stage ----
     ### Parse the inputs
     parse_contrasts_GW <- eventReactive(input$goLifeStage_GW,{
+        
         if (isTruthy(input$multiContrasts_GW)) {
             comparison <- input$multiContrasts_GW %>%
                 gsub(" ", "", ., fixed = TRUE) %>%
@@ -239,28 +251,29 @@ server <- function(input, output, session) {
     
     ### GW: Generate Responsive Selection for Life Stage to Display ----
     output$contrastDisplaySelection_GW <- renderUI({
+        #req(input$goLifeStage_GW) #Remove?
         comparison <- parse_contrasts_GW()
+        
         panel(
-            heading = tagList(h4(shiny::icon("fas fa-filter"),
+            heading = tagList(h5(shiny::icon("fas fa-filter"),
                                  "Step 2B: Select Contrast to Display")),
             status = "default",
             selectInput("displayedComparison_GW",
-                        "Choose a Comparison to Display", 
+                        NULL, 
                         comparison)
         )
     })
     
     ### GW: Set Contrast Matrix and Fit the Linear Model ----
     set_linear_model_GW <- eventReactive(input$goLifeStage_GW,{
-        source('Server/limma_ranking.R', local = TRUE)$value
+        source('Server/limma_ranking.R', local = TRUE)
     })
     
     ### GW: Extract the Differentially Expressed Genes ----
     pull_DEGs_GW <- reactive({
-        req(vals$genelist)
-        
+        req(vals$ebFit)
         if (isTruthy(input$displayedComparison_GW)){
-            vals$displayedComparison <- match(input$displayedComparison_GW, 
+            vals$displayedComparison <- match(input$displayedComparison_GW,
                                               vals$comparison)
         } else {vals$displayedComparison <- 1}
         
@@ -308,16 +321,16 @@ server <- function(input, output, session) {
                  color = "GeneIDs") +
             #coord_fixed()+
             theme_Publication()
-        
-        
+
         vplot
     })
     
     ## GW: Volcano Plot, Generate UI  ----
     output$volcano_GW <- renderPlot({
+        req(input$goLifeStage_GW)
+        req(vals$genelist)
         set_linear_model_GW()
-        v_GW <- pull_DEGs_GW()
-        v_GW
+        pull_DEGs_GW()
     })
     
     output$hover_info <- renderUI({
@@ -348,7 +361,7 @@ server <- function(input, output, session) {
         # background color is set so tooltip is a bit transparent
         # z-index is set so we are sure are tooltip will be on top
         style <- paste0("position:absolute; z-index:100; background-color: rgba(245, 245, 245, 0.85); ",
-                        "left:", left_px , "px; top:", top_px + 2, "px;")
+                        "left:", left_px - 200 , "px; top:", top_px - 200, "px;")
         
         # actual tooltip created as wellPanel
         wellPanel(
@@ -447,8 +460,7 @@ server <- function(input, output, session) {
     
     output$highlight.df <- renderDT ({
         req(vals$highlight.df)
-        highlight.datatable<-assemble_DEGs_GW()
-        highlight.datatable
+        assemble_DEGs_GW()
     })
     
     
@@ -507,7 +519,7 @@ server <- function(input, output, session) {
     output$contrastDisplaySelection_LS <- renderUI({
         comparison <- parse_contrasts_LS()
         panel(
-            heading = tagList(h4(shiny::icon("fas fa-filter"),
+            heading = tagList(h5(shiny::icon("fas fa-filter"),
                                  "Step 1B: Select Contrast to Display")),
             status = "default",
             selectInput("displayedComparison_LS",

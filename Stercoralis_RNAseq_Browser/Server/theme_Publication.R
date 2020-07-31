@@ -1,4 +1,4 @@
-theme_Publication <- function(base_size=18, base_family="Helvetica") {
+theme_Publication <- function(base_size=12, base_family="Helvetica") {
         
         (theme_foundation(base_size=base_size, base_family=base_family)
                 + theme(plot.title = element_text(face = "bold",
