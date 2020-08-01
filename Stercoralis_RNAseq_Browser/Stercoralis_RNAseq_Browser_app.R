@@ -122,7 +122,7 @@ server <- function(input, output, session) {
     output$geneDisplaySelection_GW <- renderUI({
         panel(
             heading = tagList(h5(shiny::icon("fas fa-filter"),
-                                 "Step 1B: Select Gene to Display")),
+                                 "Pick Gene to Display")),
             status = "default",
             selectInput("displayedGene",
                         NULL, 
@@ -271,7 +271,7 @@ server <- function(input, output, session) {
         
         panel(
             heading = tagList(h5(shiny::icon("fas fa-filter"),
-                                 "Step 2B: Select Contrast to Display")),
+                                 "Pick Contrast to Display")),
             status = "default",
             selectInput("displayedComparison_GW",
                         NULL, 
@@ -319,11 +319,11 @@ server <- function(input, output, session) {
                        linetype="longdash", 
                        colour="grey", 
                        size=1) + 
-            geom_vline(xintercept = lfc.thresh, 
+            geom_vline(xintercept = 1, 
                        linetype="longdash", 
-                       colour="#2C467A", 
+                       colour="#BE684D", 
                        size=1) +
-            geom_vline(xintercept = -lfc.thresh, 
+            geom_vline(xintercept = -1, 
                        linetype="longdash", 
                        colour="#2C467A", 
                        size=1) +
@@ -333,6 +333,8 @@ server <- function(input, output, session) {
                                 gsub('-',
                                      ' vs ',
                                      vals$comparison[vals$displayedComparison])),
+                 subtitle = paste0("grey line: p = ",
+                              adj.P.thresh, "; colored lines: log-fold change = 1 "),
                  color = "GeneIDs") +
             #coord_fixed()+
             theme_Publication()
@@ -547,7 +549,7 @@ server <- function(input, output, session) {
         comparison <- parse_contrasts_LS()
         panel(
             heading = tagList(h5(shiny::icon("fas fa-filter"),
-                                 "Step 1B: Select Contrast to Display")),
+                                 "Pick Contrast to Display")),
             status = "default",
             selectInput("displayedComparison_LS",
                         "Choose a Comparison to Display", 
@@ -586,11 +588,11 @@ server <- function(input, output, session) {
                        linetype="longdash", 
                        colour="grey", 
                        size=1) + 
-            geom_vline(xintercept = lfc.thresh, 
+            geom_vline(xintercept = 1, 
                        linetype="longdash", 
                        colour="#BE684D", 
                        size=1) +
-            geom_vline(xintercept = -lfc.thresh, 
+            geom_vline(xintercept = -1, 
                        linetype="longdash", 
                        colour="#2C467A", 
                        size=1) +
@@ -598,6 +600,8 @@ server <- function(input, output, session) {
                                 gsub('-',
                                      ' vs ',
                                      vals$comparison[vals$displayedComparison])),
+                 subtitle = paste0("grey line: p = ",
+                                   adj.P.thresh, "; colored lines: log-fold change = 1 "),
                  color = "GeneIDs") +
             theme_Publication() 
         vplot

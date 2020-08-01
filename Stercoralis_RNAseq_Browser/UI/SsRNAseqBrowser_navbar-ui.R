@@ -1,8 +1,9 @@
 
 # Header ----
-navbarPage(h4("Strongyloides stercoralis RNAseq Browser"),
-           windowTitle = "S ster RNAseq Browser",
-           theme = shinytheme("flatly"), collapsible = TRUE,
+navbarPage(h4(em("Strongyloides stercoralis"), "RNAseq Browser"),
+           windowTitle = "Ss-RNAseq Browser",
+          theme = shinytheme("flatly"), 
+           collapsible = TRUE,
            
            tabPanel(h5("Browse By Gene"),
                     
@@ -10,7 +11,7 @@ navbarPage(h4("Strongyloides stercoralis RNAseq Browser"),
                         column(3,
                                # Select Genes to Browse ----
                                panel(
-                                   heading = tagList(h5(shiny::icon("fas fa-dna"), "Step 1A: Input Genes")),
+                                   heading = tagList(h5(shiny::icon("fas fa-dna"), "Step 1: Input Genes")),
                                    status = "primary",
                                    ### GeneID (text box)
                                    textAreaInput('idtext',
@@ -52,13 +53,13 @@ navbarPage(h4("Strongyloides stercoralis RNAseq Browser"),
                                                 panel(
                                                     # Select Life Stage Comparisons ----
                                                     heading = tagList(h5(shiny::icon("fas fa-sliders-h"), 
-                                                                         "Step 2A: Pick Life Stage Comparisons")),
+                                                                         "Step 2: Pick Life Stage Comparisons")),
                                                     status = "primary",
                                                     # Select Target Life Stage
-                                                    strong('Select Single Pairwise Comparison'),
+                                                    strong('A: Select Single Pairwise Comparison'),
                                                     
                                                     selectInput("selectTarget_GW",
-                                                                NULL,
+                                                                "",
                                                                 choices = c('Choose one or more Targets' = ''
                                                                             ,list("FLF",
                                                                                   "PF",
@@ -84,11 +85,11 @@ navbarPage(h4("Strongyloides stercoralis RNAseq Browser"),
                                                                 multiple = TRUE),
                                                     
                                                     tags$hr(style="border-color: black;"),
-                                                    strong('Manually Input Multiple Pairwise Comparisons'),
+                                                    strong('B: Type Multiple Pairwise Comparisons'),
                                                     
                                                     # Text Input for Multiple Contrasts
                                                     textAreaInput('multiContrasts_GW',
-                                                                  NULL,
+                                                                  '',
                                                                   #label = ('Type Comma-Separated Pairwise Comparisons'),
                                                                   placeholder = ('e.g. iL3-FLF, iL3-PF, (iL3+iL3a)-(PF+FLF)'),
                                                                   rows = 5, 
@@ -168,11 +169,11 @@ navbarPage(h4("Strongyloides stercoralis RNAseq Browser"),
                         column(3,
                                panel(
                                    heading = tagList(h5(shiny::icon("fas fa-sliders-h"), 
-                                                        "Step 1A: Pick Life Stage Comparisons")),
+                                                        "Step 1: Pick Life Stage Comparisons")),
                                    status = "primary",
-                                   h5('A: Select Single Pairwise Comparison'),
+                                   strong('A: Select Single Pairwise Comparison'),
                                    selectInput("selectTarget_LS",
-                                               NULL,
+                                               "",
                                                choices = c('Choose one or more Targets' = ''
                                                            ,list("FLF",
                                                                  "PF",
@@ -198,10 +199,10 @@ navbarPage(h4("Strongyloides stercoralis RNAseq Browser"),
                                                multiple = TRUE),
                                    
                                    tags$hr(style="border-color: black;"),
-                                   h5('B: Manually Input Multiple Pairwise Comparisons'),
+                                   strong('B: Manually Input Multiple Pairwise Comparisons'),
                                    # Text Input for Multiple Contrasts
                                    textAreaInput('multiContrasts_LS',
-                                                 NULL,
+                                                 "",
                                                  #label = ('Input At Least Two Comma-Separated Pairwise Comparisons'),
                                                  placeholder = ('e.g. iL3-FLF, iL3-PF, (iL3+iL3a)-(PF+FLF)'),
                                                  rows = 5, 
@@ -225,7 +226,7 @@ navbarPage(h4("Strongyloides stercoralis RNAseq Browser"),
                                )
                         ),
                         
-                        column (7,
+                        column (6,
                                 conditionalPanel(condition = "input.goLS != 0",
                                                  panel(
                                                      heading = tagList(h5(shiny::icon("fas fa-chart-area"),
@@ -242,7 +243,7 @@ navbarPage(h4("Strongyloides stercoralis RNAseq Browser"),
                                                  
                                 )
                         ),
-                        column(2,
+                        column(3,
                                uiOutput('contrastDisplaySelection_LS')
                         ),
                         column(9,
