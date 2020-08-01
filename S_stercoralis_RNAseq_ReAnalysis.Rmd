@@ -1048,9 +1048,9 @@ output.DEG.SsRNAseq$`iL3-FLF`$DEG.datatable
 # Also saving all the pairwise comparison caluclations and plots.
 
 # Save the filtered, normalized DGEList object ----
-save(myDGEList.filtered.norm,
-     file = "./Outputs/SsDGEList")
-save(output.DEG.SsRNAseq)
+# save(myDGEList.filtered.norm,
+#      file = "./Outputs/SsDGEList")
+# save(output.DEG.SsRNAseq)
 
 # Join and save the output lists of DEG Identificationfunctions
 #output.SsRNAseq <- Map(c, output.DEG.SsRNAseq, output.clustering.SsRNAseq)
@@ -1062,14 +1062,14 @@ save(output.DEG.SsRNAseq)
 #                                      PCA.small.multiples = p6
 # )
 # Save the DEG datatables for all the pariwise comparisons, for working with a Shiny App
-DEGs.only<- sapply(contrasts, function(x) {output.DEG.SsRNAseq[[x]]$diffGenes.TopHits}, USE.NAMES = TRUE, simplify = F)
-TopHit.tbl <-sapply(contrasts, function(x) {output.DEG.SsRNAseq[[x]]$avg.myTopHits.df}, USE.NAMES = TRUE, simplify = F)
-output.SsRNAseq<-Map(c, output.DEG.SsRNAseq)
-
-save(DEGs.only,
-     file = "./Outputs/SsLifeStageComparisons_subset")
-save(TopHit.tbl,
-     file = "./Outputs/SsLifeStageComparisons_TopHits")
+# DEGs.only<- sapply(contrasts, function(x) {output.DEG.SsRNAseq[[x]]$diffGenes.TopHits}, USE.NAMES = TRUE, simplify = F)
+# TopHit.tbl <-sapply(contrasts, function(x) {output.DEG.SsRNAseq[[x]]$avg.myTopHits.df}, USE.NAMES = TRUE, simplify = F)
+# output.SsRNAseq<-Map(c, output.DEG.SsRNAseq)
+# 
+# save(DEGs.only,
+#      file = "./Outputs/SsLifeStageComparisons_subset")
+# save(TopHit.tbl,
+#      file = "./Outputs/SsLifeStageComparisons_TopHits")
 ```
 
 
