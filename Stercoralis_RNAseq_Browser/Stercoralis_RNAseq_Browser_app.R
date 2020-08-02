@@ -18,6 +18,7 @@ suppressPackageStartupMessages({
     library(gplots)
     library(heatmaply)
     library(RColorBrewer)
+    library(openxlsx)
     source("Server/calc_DEG_tbl.R")
     source("Server/theme_Publication.R")
 })
@@ -69,7 +70,9 @@ server <- function(input, output, session) {
     
     vals <- reactiveValues(genelist = NULL,
                            gene_of_interest = NULL,
-                           highlight.df = NULL,
+                           list.highlight.df = NULL,
+                           list.myTopHits.df = NULL,
+                           list.highlight.tbl = NULL,
                            comparison = NULL,
                            targetStage = NULL,
                            contrastStage = NULL,
@@ -79,16 +82,49 @@ server <- function(input, output, session) {
     
     ## GW: Single Gene Expression Plot ----
     
+    observe({
+        if (req(input$tab) == "GW"){
+            vals$genelist <- NULL
+            vals$gene_of_interest <- NULL
+            vals$list.highlight.df <- NULL
+            vals$list.myTopHits.df <- NULL
+            vals$list.highlight.tbl <- NULL
+            vals$comparison <- NULL
+            vals$targetStage <- NULL
+            vals$contrastStage <- NULL
+            vals$multipleCorrection <- NULL
+            vals$results <- NULL
+            vals$ebFit <- NULL
+            vals$displayedComparison <- NULL
+        } else if (req(input$tab) == "LS") {
+            vals$genelist <- NULL
+            vals$gene_of_interest <- NULL
+            vals$list.highlight.df <- NULL
+            vals$list.myTopHits.df <- NULL
+            vals$list.highlight.tbl <- NULL
+            vals$comparison <- NULL
+            vals$targetStage <- NULL
+            vals$contrastStage <- NULL
+            vals$multipleCorrection <- NULL
+            vals$results <- NULL
+            vals$ebFit <- NULL
+            vals$displayedComparison <- NULL
+        }
+    })
+    
     observeEvent(input$goGW,{
         vals$genelist <- NULL
         vals$gene_of_interest <- NULL
-        vals$highlight.df <- NULL
+        vals$list.highlight.df <- NULL
+        vals$list.myTopHits.df <- NULL
+        vals$list.highlight.tbl <- NULL
         vals$comparison <- NULL
         vals$targetStage <- NULL
         vals$contrastStage <- NULL
         vals$multipleCorrection <- NULL
         vals$results <- NULL
         vals$ebFit <- NULL
+        vals$displayedComparison <- NULL
         updateSelectInput(session,"selectContrast_GW", selected = "", choices = NULL)
         updateSelectInput(session,"selectTarget_GW", selected = "", choices = NULL)
         updateSelectInput(session, "displayedComparison_GW", selected = "", choices = NULL)
@@ -204,14 +240,18 @@ server <- function(input, output, session) {
     })
     
     observeEvent(input$goLifeStage_GW,{
+        vals$list.highlight.df <- NULL
+        vals$list.myTopHits.df <- NULL
+        vals$list.highlight.tbl <- NULL
         vals$comparison <- NULL
         vals$targetStage <- NULL
         vals$contrastStage <- NULL
         vals$multipleCorrection <- NULL
         vals$results <- NULL
         vals$ebFit <- NULL
+        updateSelectInput(session, "displayedComparison_GW", choices = NULL)
     }, ignoreInit = TRUE)
-   
+    
     
     ## GW: Pairwise Comparisons Across Life Stage ----
     ### Parse the inputs
@@ -268,14 +308,14 @@ server <- function(input, output, session) {
     output$contrastDisplaySelection_GW <- renderUI({
         #req(input$goLifeStage_GW) #Remove?
         comparison <- parse_contrasts_GW()
-        
         panel(
             heading = tagList(h5(shiny::icon("fas fa-filter"),
                                  "Pick Contrast to Display")),
             status = "default",
             selectInput("displayedComparison_GW",
                         NULL, 
-                        comparison)
+                        comparison,
+                        selected = comparison[[1]])
         )
     })
     
@@ -289,27 +329,14 @@ server <- function(input, output, session) {
         req(vals$ebFit)
         if (isTruthy(input$displayedComparison_GW)){
             vals$displayedComparison <- match(input$displayedComparison_GW,
-                                              vals$comparison)
+                                              vals$comparison, nomatch = 1)
         } else {vals$displayedComparison <- 1}
-        
-        myTopHits.df <- calc_DEG_tbl(vals$ebFit, 
-                                     vals$displayedComparison)
-        
-        #### Filter dataset looking for the genes on the list
-        highlight.df <- myTopHits.df %>%
-            dplyr::filter(geneID %in% vals$genelist[[1]]) %>%
-            dplyr::select(geneID, 
-                          logFC, 
-                          BH.adj.P.Val:percent_homology)
-        vals$highlight.df <- highlight.df
-        
-        #browser()
         #### Volcano Plots
-        vplot <- ggplot(myTopHits.df) +
+        vplot <- ggplot(vals$list.myTopHits.df[[vals$displayedComparison]]) +
             aes(y=-log10(BH.adj.P.Val), x=logFC) +
             geom_point(size=2,
                        na.rm = T) +
-            geom_point(data = highlight.df, 
+            geom_point(data = vals$list.highlight.df[[vals$displayedComparison]], 
                        aes(y=-log10(BH.adj.P.Val), 
                            x=logFC, 
                            color = geneID, 
@@ -334,11 +361,11 @@ server <- function(input, output, session) {
                                      ' vs ',
                                      vals$comparison[vals$displayedComparison])),
                  subtitle = paste0("grey line: p = ",
-                              adj.P.thresh, "; colored lines: log-fold change = 1 "),
+                                   adj.P.thresh, "; colored lines: log-fold change = 1 "),
                  color = "GeneIDs") +
             #coord_fixed()+
             theme_Publication()
-
+        
         vplot
     })
     
@@ -351,10 +378,9 @@ server <- function(input, output, session) {
     })
     
     output$hover_info <- renderUI({
-        req(vals$highlight.df)
-        #browser()
+        req(vals$displayedComparison)
         
-        pointer.df <- vals$highlight.df %>%
+        pointer.df <- vals$list.highlight.df[[vals$displayedComparison]] %>%
             dplyr::mutate(log10.adj.P.Val = -log10(BH.adj.P.Val))
         
         hover <- input$plot_hover
@@ -405,27 +431,8 @@ server <- function(input, output, session) {
                                 ][vals$contrastStage[vals$displayedComparison,
                                                      ]!=""]
         
-        # Correct for multiple tests, if necessary
-        if (vals$multipleCorrection == T) {
-            diffGenes.df <- v.DEGList.filtered.norm$E[vals$results[,
-                                                                   vals$displayedComparison] !=0,] %>%
-                as_tibble(rownames = "geneID", .name_repair = "unique")
-        }
-        
-        # Get log2CPM values for genes of interest
-        highlight.tbl <- diffGenes.df %>%
-            dplyr::filter(geneID %in% vals$genelist[[1]]) %>%
-            dplyr::select(geneID, starts_with(paste0(tS,"-")), 
-                          starts_with(paste0(cS,"-"))) %>%
-            left_join(vals$highlight.df, by = "geneID")
-        
-        highlight.tbl$BH.adj.P.Val <- formatC(highlight.tbl$BH.adj.P.Val, 
-                                              digits = 3, 
-                                              format = "E") 
-        
-        
-        n_num_cols <- length(tS)*3 + length(cS)*3 + 2
-        highlight.datatable <- highlight.tbl %>%
+        n_num_cols <- length(tS)*3 + length(cS)*3 + 3
+        highlight.datatable <- vals$list.highlight.tbl[[vals$displayedComparison]] %>%
             DT::datatable(extensions = c('KeyTable', "FixedHeader"),
                           rownames = FALSE,
                           caption = htmltools::tags$caption(
@@ -467,7 +474,7 @@ server <- function(input, output, session) {
                                          
                           )) 
         highlight.datatable <- highlight.datatable %>%
-            DT::formatRound(columns=c(2:n_num_cols,
+            DT::formatRound(columns=c(3:n_num_cols,
                                       n_num_cols+2, 
                                       n_num_cols+8), 
                             digits=2)
@@ -477,23 +484,38 @@ server <- function(input, output, session) {
     
     
     output$highlight.df <- renderDT ({
-        req(vals$highlight.df)
+        req(vals$list.highlight.df)
         assemble_DEGs_GW()
     })
     
+    # GW: Save Excel Tables with DEG Tables ----
     
+    
+    output$downloadbuttonGW <- renderUI({
+        req(input$goLifeStage_GW)
+        source("Server/excel_srv.R", local = TRUE)
+        output$generate_excel_report_GW <- temp
+        downloadButton("generate_excel_report_GW",
+                       "Download DEG Tables",
+                       class = "btn-primary")
+    })
     
     ## LS: Display pairwise comparisons ----
     ### Parse the inputs
     ### 
     observeEvent(input$goLS,{
+        vals$list.highlight.df <- NULL
+        vals$list.myTopHits.df <- NULL
+        vals$list.highlight.tbl <- NULL
         vals$comparison <- NULL
         vals$targetStage <- NULL
         vals$contrastStage <- NULL
         vals$multipleCorrection <- NULL
         vals$results <- NULL
         vals$ebFit <- NULL
-        updateSelectInput(session, "displayedComparison_LS", selected = "", choices = NULL)
+        vals$genelist <- NULL
+        vals$gene_of_interest <- NULL
+        updateSelectInput(session, "displayedComparison_LS", choices = NULL)
     }, ignoreInit = TRUE)
     
     parse_contrasts_LS<-eventReactive(input$goLS,{
@@ -517,8 +539,8 @@ server <- function(input, output, session) {
             if (input$multipleContrastsYN_LS == T) {
                 vals$multipleCorrection <- T
             } else vals$multipleCorrection <- F
-        } else if (length(input$selectTarget_LS > 1) | 
-                   length(input$selectContrast_LS > 1)){
+        } else if (length(input$selectTarget_LS) > 1 | 
+                   length(input$selectContrast_LS) > 1){
             targetStage <- rbind(input$selectTarget_LS)
             contrastStage <- rbind(input$selectContrast_LS)
             comparison <- paste(paste0(input$selectTarget_LS, 
@@ -547,12 +569,13 @@ server <- function(input, output, session) {
     ### LS: Generate Responsive Selection for Life Stage to Display ----
     output$contrastDisplaySelection_LS <- renderUI({
         comparison <- parse_contrasts_LS()
+        
         panel(
             heading = tagList(h5(shiny::icon("fas fa-filter"),
                                  "Pick Contrast to Display")),
             status = "default",
             selectInput("displayedComparison_LS",
-                        "Choose a Comparison to Display", 
+                        NULL, 
                         comparison)
         )
     })
@@ -566,22 +589,11 @@ server <- function(input, output, session) {
     pull_DEGs_LS <- reactive({
         req(vals$ebFit)
         if (isTruthy(input$displayedComparison_LS)){
-            vals$displayedComparison <- match(input$displayedComparison_LS, 
-                                              vals$comparison)
+            vals$displayedComparison <- match(input$displayedComparison_LS,
+                                              vals$comparison, nomatch = 1)
         } else {vals$displayedComparison <- 1}
-        
-        myTopHits.df <- calc_DEG_tbl(vals$ebFit, 
-                                     vals$displayedComparison)
-        
-        #### Filter dataset for desired columns to display
-        highlight.df <- myTopHits.df %>%
-            dplyr::select(geneID, 
-                          logFC, 
-                          BH.adj.P.Val:percent_homology)
-        vals$highlight.df <- highlight.df
-        
         #### Volcano Plots
-        vplot <- ggplot(myTopHits.df) +
+        vplot <- ggplot(vals$list.myTopHits.df[[vals$displayedComparison]]) +
             aes(y=-log10(BH.adj.P.Val), x=logFC) +
             geom_point(size=2) +
             geom_hline(yintercept = -log10(adj.P.thresh), 
@@ -615,9 +627,8 @@ server <- function(input, output, session) {
     })
     
     output$hover_info_LS <- renderUI({
-        req(vals$highlight.df)
-        
-        pointer.df <- vals$highlight.df %>%
+        req(vals$displayedComparison)
+        pointer.df <- vals$list.highlight.df[[vals$displayedComparison]] %>%
             dplyr::mutate(log10.adj.P.Val = -log10(BH.adj.P.Val))
         
         hover <- input$plot_hover_LS
@@ -660,6 +671,7 @@ server <- function(input, output, session) {
     #### LS: Data Table of Differentially Expressed Genes ----
     assemble_DEGs_LS <- reactive({
         req(vals$displayedComparison)
+        browser()
         tS<- vals$targetStage[vals$displayedComparison,
                               ][vals$targetStage[vals$displayedComparison,
                                                  ]!=""]
@@ -667,30 +679,12 @@ server <- function(input, output, session) {
                                 ][vals$contrastStage[vals$displayedComparison,
                                                      ]!=""]
         
-        # Correct for multiple tests, if necessary
-        if (vals$multipleCorrection == T) {
-            diffGenes.df <- v.DEGList.filtered.norm$E[vals$results[,
-                                                                   vals$displayedComparison] !=0,] %>%
-                as_tibble(rownames = "geneID", .name_repair = "unique")
-        }
-        
-        # Get log2CPM values for life stages of interest
-        LS.tbl <- diffGenes.df %>%
-            dplyr::select(geneID, starts_with(paste0(tS,"-")), 
-                          starts_with(paste0(cS,"-"))) %>%
-            left_join(vals$highlight.df, by = "geneID")
-        
-        
-        LS.tbl$BH.adj.P.Val <- formatC(LS.tbl$BH.adj.P.Val, 
-                                       digits = 3, 
-                                       format = "E") 
-        
-        n_num_cols <- length(tS)*3 + length(cS)*3 + 2
-        LS.datatable <- LS.tbl %>%
+        n_num_cols <- length(tS)*3 + length(cS)*3 + 3
+        LS.datatable <- vals$list.highlight.tbl[[vals$displayedComparison]] %>%
             DT::datatable(extensions = c('KeyTable', "FixedHeader"),
                           rownames = FALSE,
                           caption = htmltools::tags$caption(
-                              style = 'caption-side: top; text-align: left; color: black;',
+                              style = 'caption-side: top; text-align: left; color: black',
                               htmltools::tags$b('Differentially Expressed Genes in', 
                                                 htmltools::tags$em('S. stercoralis'), 
                                                 gsub('-',' vs ',vals$comparison[vals$displayedComparison])),
@@ -728,7 +722,7 @@ server <- function(input, output, session) {
                                          
                           )) 
         LS.datatable <- LS.datatable %>%
-            DT::formatRound(columns=c(2:n_num_cols,
+            DT::formatRound(columns=c(3:n_num_cols,
                                       n_num_cols+2, 
                                       n_num_cols+8), 
                             digits=2)
@@ -741,8 +735,18 @@ server <- function(input, output, session) {
         req(input$goLS)
         DEG.datatable_LS<-assemble_DEGs_LS()
         DEG.datatable_LS
-        
     })
+    
+    # LS: Save Excel Tables with DEG Tables ----
+    output$downloadbuttonLS <- renderUI({
+        req(input$goLS)
+        source("Server/excel_srv.R", local = TRUE)
+        output$generate_excel_report_LS <- temp
+        downloadButton("generate_excel_report_LS",
+                       "Download DEG Tables",
+                       class = "btn-primary")
+    })
+    
     
     session$onSessionEnded(stopApp)
 }

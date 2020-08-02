@@ -4,9 +4,9 @@ navbarPage(h4(em("Strongyloides stercoralis"), "RNAseq Browser"),
            windowTitle = "Ss-RNAseq Browser",
           theme = shinytheme("flatly"), 
            collapsible = TRUE,
-           
+           id = "tab",
            tabPanel(h5("Browse By Gene"),
-                    
+                    value = "GW",
                     fluidRow(
                         column(3,
                                # Select Genes to Browse ----
@@ -140,7 +140,8 @@ navbarPage(h4(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                                                          "Pairwise Differential Gene Expression: Table")),
                                                     status = "primary",
                                                     withSpinner(DTOutput('highlight.df'),
-                                                                color = "#2C3E50")
+                                                                color = "#2C3E50"),
+                                                    uiOutput('downloadbuttonGW')
                                                 )
                                )
                         )
@@ -165,6 +166,7 @@ navbarPage(h4(em("Strongyloides stercoralis"), "RNAseq Browser"),
            
            # Life Stage Browser ----
            tabPanel(h5("Browse by Life Stage"),
+                    value = "LS",
                     fluidRow(
                         column(3,
                                panel(
@@ -226,7 +228,7 @@ navbarPage(h4(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                )
                         ),
                         
-                        column (6,
+                        column (7,
                                 conditionalPanel(condition = "input.goLS != 0",
                                                  panel(
                                                      heading = tagList(h5(shiny::icon("fas fa-chart-area"),
@@ -243,7 +245,7 @@ navbarPage(h4(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                                  
                                 )
                         ),
-                        column(3,
+                        column(2,
                                uiOutput('contrastDisplaySelection_LS')
                         ),
                         column(9,
@@ -253,7 +255,8 @@ navbarPage(h4(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                                                          "Pairwise Differential Gene Expression: Table")),
                                                     status = "primary",
                                                     withSpinner(DTOutput('tbl_LS'),
-                                                                color = "#2C3E50")
+                                                                color = "#2C3E50"),
+                                                    uiOutput('downloadbuttonLS')
                                                 )
                                )
                         )
@@ -276,6 +279,7 @@ navbarPage(h4(em("Strongyloides stercoralis"), "RNAseq Browser"),
                     
                     
            )
+           
            
            
 )
