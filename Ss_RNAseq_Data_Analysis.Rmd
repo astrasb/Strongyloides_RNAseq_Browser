@@ -1,0 +1,648 @@
+---
+title: Re-analysis of Strongyloides stercoralis bulk RNAseq via an alignment-free
+  analysis pipeline
+output:
+  html_notebook:
+    toc: yes
+  html_document:
+    df_print: paged
+    toc: yes
+---
+
+# Introduction ---
+The human parasitic nematode *Strongyloides stercoralis* is estimated to infect approximately 610 million people (Buonfrate *et al* 2020). Similar to other intestinal parasitic nematodes, *S. stercoralis* has a complex life cycle in which distinct developmental stages navigate starkly different environments via life-stage specific behavioral preferences ( [Castelletto *et al* 2014](https://journals.plos.org/plospathogens/article?id=10.1371/journal.ppat.1004305), [Bryant and Hallem 2018a](https://www.sciencedirect.com/science/article/pii/S2211320718301118?via%3Dihub) ). Across nematode species, ethological and behavioral differences are often reflected in the temporal regulation of gene expression. For *S. stercoralis*, several studies have utilized bulk RNA sequencing to probe the genomic basis of parasitism by identifying gene families that are uniquely upregulated in parasitic life stages ( [Stolzfus *et al* 2012](https://journals.plos.org/plosntds/article?id=10.1371/journal.pntd.0001854), [Hunt *et al* 2016](https://www.nature.com/articles/ng.3495), [Hunt *et al* 2018](https://www.nature.com/articles/s41598-018-23514-z)). These efforts highlight a feature of modern bioinformatics - the secondary analysis of publically avaliable datasets. Here, an original dataset featuring bulk RNA sequencing of seven *S. stercoralis* developmental stages was initially aligned to genomic contigs (6 December 2011 draft, [Stolzfus *et al* 2012](https://journals.plos.org/plosntds/article?id=10.1371/journal.pntd.0001854) ). Subsequently, a subset of this dataset was re-analyzed coincident with the release of a high-quality draft assembly ( [Hunt *et al* 2016](https://www.nature.com/articles/ng.3495) ); this re-analysis focused on the differences between three life stages: free-living adults that navigate the environment, parasitic adults located within the host intestine, and infective third-stage larvae that actively engage in host-seeking behaviors. As genome assembly and RNA sequencing of additional parasitic nematode species continues, the publically-avaliable *S. stercoralis* RNAseq dataset continues to be utilized for cross-species and cross-life stage comparisons ( [Hunt *et al* 2016](https://www.nature.com/articles/ng.3495), [Hunt *et al* 2018](https://www.nature.com/articles/s41598-018-23514-z) ). Furthermore, several helminth RNA-seq datasets, including *S. stercoralis* were realigned to their reference genomes and integrated into WormBase Parasite, where they are accessible to the field at large in the form of genome-aligned RNA-seq expression tracks ( [Howe *et al* 2017](https://www.sciencedirect.com/science/article/pii/S0166685116301608?via%3Dihub) ).
+
+As research into the genomic basis of parasitism in helminths continues, access to quantitative gene expression levels will greatly enhance studies into the functional role of specific genes and gene families. Differential gene expression results have been published as supplemental data ( [Hunt *et al* 2016](https://www.nature.com/articles/ng.3495) ), however these analyses only included pairwise comparisons between three life stages. Quantitative comparisons that utilize the full seven avaliable life stages have not yet been published. 
+
+### Data Pre-Processing    
+**Code for this section can be found in: Ss_RNAseq_Data_Processing.rmd**  
+The introduction of alignment-free read mapping tools such as Kallisto has significantly lowered the computational barrier for re-analysis of publically avaliable RNAseq datasets. Here, I take advantage of these tools to re-analyze the *S. sterocoralis* bulk RNA-seq data, extending differential gene expression analyses across all avaliable developmental stages. Kallisto and custom R scripts were used to perform ultra-fast read mapping of raw reads to the *S. stercoalis* reference transcriptome (PRJEB528.WBPS14.mRNA_transcripts, downloaded from [WormBase Parasite](https://parasite.wormbase.org/Strongyloides_stercoralis_prjeb528/Info/Index/) on 16 June 2020); raw count data was saved as a digitial gene expression list. Raw reads were quantified as counts per million using the EdgeR package, then filtered to remove transcripts with low counts (less than 1 count-per-million in at least 3 samples), and normalized using the trimmed mean of M-values method (TMM, [Robinson and Oshlack](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-3-r25) ) to permit between-samples comparisons. The mean-variance relationship is modeled using a precision weights approach [Law *et al* 2014](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29). A variance-stabilized DGEList object is saved; this file can be imported to a Shiny Web App for downstream browsing and analysis. 
+
+### Data Analysis   
+**Code included in this section is not avaliable as part of the Shiny Web App**  
+Principal component analysis applied to filtered and TMM-normalized expression data identified two developmental clusters that account for 42.6% and 28.9% of expression variability between *S. stercoralis* developmental stages. The top 10% of genes contributing to PC1 and PC2 are identified and printed as a DataTable.
+
+The limma package ( [Ritchie *et al* 2015](https://pubmed.ncbi.nlm.nih.gov/25605792/), [Phipson *et al* 2016](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5373812/)) is used to conduct pairwise differential gene expression analyses between life stages. Here, all unique pairwise comparisons between life stages are displayed as interactive volcano plots and DataTables. In this analysis, genes included in DataTables are corrected for multiple life-stage comparisons. An additional code chunk identifies all genes that are differentially expressed in any way across groups (i.e. an ANOVA analysis across life stages). This set of genes is passed into a clustering analysis that generates a heatmap of differential gene expression across life stages.
+
+
+# Load and Parse Preprocessed Data ---
+```{r loadBaseData}
+load (file = "./Outputs/SsRNAseq_data_preprocessed")
+targets <- SsRNAseq.preprocessed.data$targets
+annotations <- SsRNAseq.preprocessed.data$annotations
+log2.cpm.filtered.norm <- SsRNAseq.preprocessed.data$log2.cpm.filtered.norm
+myDGEList.filtered.norm <-SsRNAseq.preprocessed.data$myDGEList.filtered.norm
+
+rm(SsRNAseq.preprocessed.data)
+
+load(file = "./Outputs/vDEGList")
+
+```
+
+
+# Hierarchical Clustering and Principle Components Analysis ---
+```{r multivariate}
+# Introduction to this chunk -----------
+# This code chunk starts with filtered and normalized abundance data in a data frame (not tidy).
+# It will implement hierarchical clustering and PCA analyses on the data.
+# It will plot various graphs and can save them in PDF files.
+# Load packages ------
+suppressPackageStartupMessages({
+  library(tidyverse) # you're familiar with this fromt the past two lectures
+  library(ggplot2)
+  library(RColorBrewer)
+  library(ggdendro)
+  library(magrittr)
+  library(factoextra)
+  library(gridExtra)
+  library(cowplot)
+  library(dendextend)
+})
+
+# Identify variables of interest in study design file ----
+group <- factor(targets$group)
+
+# Hierarchical clustering ---------------
+# Remember: hierarchical clustering can only work on a data matrix, not a data frame
+
+# Calculate distance matrix
+# dist calculates distance between rows, so transpose data so that we get distance between samples.
+# how similar are samples from each other
+colnames(log2.cpm.filtered.norm)<-targets$group
+distance <- dist(t(log2.cpm.filtered.norm), method = "maximum") #other distance methods are "euclidean", maximum", "manhattan", "canberra", "binary" or "minkowski"
+
+# Calculate clusters to visualize differences. This is the hierarchical clustering.
+# The methods here include: single (i.e. "friends-of-friends"), complete (i.e. complete linkage), and average (i.e. UPGMA). Here's a comparison of different types: https://en.wikipedia.org/wiki/UPGMA#Comparison_with_other_linkages
+clusters <- hclust(distance, method = "complete") #other agglomeration methods are "ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median", or "centroid"
+dend <- as.dendrogram(clusters) 
+
+p1<-dend %>% 
+  dendextend::set("branches_k_color", k = 5) %>% 
+  dendextend::set("hang_leaves", c(0.1)) %>% 
+  dendextend::set("labels_cex", c(0.5)) %>%
+  dendextend::set("labels_colors", k = 5) %>% 
+  dendextend::set("branches_lwd", c(0.7)) %>% 
+  
+  as.ggdend %>%
+  ggplot (offset_labels = -0.5) +
+  theme_dendro() +
+  ylim(0, max(get_branches_heights(dend))) +
+  labs(title = "Hierarchical Cluster Dendrogram ",
+       subtitle = "filtered, TMM normalized",
+       y = "Distance",
+       x = "Life stage") +
+  coord_fixed(1/2) +
+  theme(axis.title.x = element_text(color = "black"),
+        axis.title.y = element_text(angle = 90),
+        axis.text.y = element_text(angle = 0),
+        axis.line.y = element_line(color = "black"),
+        axis.ticks.y = element_line(color = "black"),
+        axis.ticks.length.y = unit(2, "mm"))
+p1
+
+# Principal component analysis (PCA) -------------
+# this also works on a data matrix, not a data frame
+pca.res <- prcomp(t(log2.cpm.filtered.norm), scale.=F, retx=T)
+summary(pca.res) # Prints variance summary for all principal components.
+
+#pca.res$rotation #$rotation shows you how much each gene influenced each PC (called 'scores')
+#pca.res$x # 'x' shows you how much each sample influenced each PC (called 'loadings')
+#note that these have a magnitude and a direction (this is the basis for making a PCA plot)
+## This generates a screeplot: a standard way to view eigenvalues for each PCA. Shows the proportion of variance accounted for by each PC. Plotting only the first 10 dimensions.
+p2<-fviz_eig(pca.res,
+             barcolor = brewer.pal(8,"Pastel2")[8],
+             barfill = brewer.pal(8,"Pastel2")[8],
+             linecolor = "black",
+             main = "Scree plot: proportion of variance accounted for by each principal component",
+             ggtheme = theme_bw()) 
+p2
+
+pc.var<-pca.res$sdev^2 # sdev^2 captures these eigenvalues from the PCA result
+pc.per<-round(pc.var/sum(pc.var)*100, 1) # we can then use these eigenvalues to calculate the percentage variance explained by each PC
+
+# Visualize the PCA result ------------------
+#lets first plot any two PCs against each other
+#We know how much each sample contributes to each PC (loadings), so let's plot
+pca.res.df <- as_tibble(pca.res$x)
+
+# Plotting PC1 and PC2
+p3<-ggplot(pca.res.df) +
+  aes(x=PC1, y=PC2, label=targets$group, 
+      fill = targets$group,
+      color = targets$group
+  ) +
+  geom_point(size=4, shape= 21, color = "black", alpha = 0.5) +
+  #geom_label(color = "black", size = 2) +
+  scale_fill_brewer(palette = "Set2") +
+  scale_color_brewer(palette = "Set2", guide = FALSE) +
+  #stat_ellipse() +
+  xlab(paste0("PC1 (",pc.per[1],"%",")")) + 
+  ylab(paste0("PC2 (",pc.per[2],"%",")")) +
+  labs(title="Principal Components Analysis of S. stercoralis RNAseq Samples",
+       sub = "Note: analysis is blind to life stage identity.",
+       fill = "Life Stage") +
+  scale_x_continuous(expand = c(.3, .3)) +
+  scale_y_continuous(expand = c(.3, .3)) +
+  coord_fixed() +
+  theme_bw()
+p3
+
+# A guess at the identity of PC1
+p4<-ggplot(pca.res.df) +
+  aes(x=PC1, y=PC2, label=targets$group,
+      color = factor(targets$Maturity),
+      fill = factor(targets$Maturity)
+  ) +
+  #geom_point(size=4) +
+  #stat_ellipse() +
+  geom_label(color = "black", size = 2, alpha = 0.7) +
+  scale_fill_manual(values = brewer.pal(8,"Set2")) +
+  scale_color_manual(values = brewer.pal(8,"Set2"), guide = FALSE) +
+  xlab(paste0("PC1 (",pc.per[1],"%",")")) + 
+  ylab(paste0("PC2 (",pc.per[2],"%",")")) +
+  labs(subtitle="Potential PC1 identity: Adults vs Larvae",
+       fill = "Maturity") +
+  scale_x_continuous(expand = c(.3, .3)) +
+  scale_y_continuous(expand = c(.3, .3)) +
+  coord_fixed() +
+  theme_bw()
+p4
+
+# A guess at the identity of PC2
+p5<-ggplot(pca.res.df) +
+  aes(x=PC1, y=PC2, label=targets$group, 
+      color = factor(targets$Infectious),
+      fill = factor(targets$Infectious)
+  ) +
+  #geom_point(size=4) +
+  #stat_ellipse() +
+  geom_label(color = "black", size = 2, alpha = 0.7) +
+  scale_fill_manual(values = brewer.pal(8,"Set2")[3:4]) +
+  scale_color_manual(values = brewer.pal(8,"Set2")[3:4], guide = FALSE) +
+  xlab(paste0("PC1 (",pc.per[1],"%",")")) + 
+  ylab(paste0("PC2 (",pc.per[2],"%",")")) +
+  labs(subtitle="Potential PC2 identity: Host-seeking/dwelling",
+       fill = 'Infectivity Stage') +
+  scale_x_continuous(expand = c(.3, .3)) +
+  scale_y_continuous(expand = c(.3, .3)) +
+  coord_fixed() +
+  theme_bw()
+p5
+
+# Create a PCA 'small multiples' chart ----
+pca.res.df <- pca.res$x[,1:6] %>% 
+  as_tibble() %>%
+  add_column(sample = targets$sample,
+             group = group,
+             maturity = factor(targets$Maturity),
+             infectious = factor(targets$Infectious))
+
+pca.pivot <- pivot_longer(pca.res.df, # dataframe to be pivoted
+                          cols = PC1:PC6, # column names to be stored as a SINGLE variable
+                          names_to = "PC", # name of that new variable (column)
+                          values_to = "loadings") # name of new variable (column) storing all the values (data)
+PC1<-subset(pca.pivot, PC == "PC1")
+PC2 <-subset(pca.pivot, PC == "PC2")
+#PC3 <- subset(pca.pivot, PC == "PC3")
+#PC4 <- subset(pca.pivot, PC == "PC4")
+
+p6<-ggplot(pca.pivot) +
+  aes(x=sample, y=loadings) + # you could iteratively 'paint' different covariates onto this plot using the 'fill' aes
+  geom_bar(stat="identity", fill = brewer.pal(8,"Pastel2")[8]) +
+  scale_fill_brewer(palette = "Set2") +
+  facet_wrap(~PC) +
+  geom_bar(data = PC1, stat = "identity", aes(fill = maturity)) +
+  geom_bar(data = PC2, stat = "identity", aes(fill = infectious)) +
+  labs(title="PCA 'small multiples' plot",
+       fill = "Life Stage Groups",
+       caption=paste0("produced on ", Sys.time())) +
+  scale_x_discrete(limits = targets$sample, labels = targets$group) +
+  theme_bw() +
+  coord_flip()
+p6
+
+# Graph all the plots generated in this script ----
+# Plot all the plots on a grid
+# p7<- grid.arrange(p1,p2,p3,p4, p5,p6,ncol = 4,
+#             layout_matrix = cbind(c(1,1,1,2,2,2),c(3,3,4,4,5,5),c(6,6,6,6,6,6), c(6,6,6,6,6,6)))
+# ggsave("Strongyloides stercoralis RNAseq Multivariate Analysis.pdf", 
+#        plot = p7, 
+#        device = "pdf",
+#        #height = 17,
+#        width = 22,
+#        path = './Outputs/'
+
+```
+
+# Genes Contributing to PC Identity ---
+```{r idPCgenes}
+# Introduction to this chunk ----
+# This chunk provides additional analysis of the principal components, in order to determine which genes are influencing the identified PCs.
+
+# Use pca.res$rotation to select genes influencing PC1-6 ----
+myscores.df <- pca.res$rotation[,1:6] %>% 
+  as_tibble(rownames = "geneID") %>%
+  pivot_longer(cols = -geneID, names_to = "PC", values_to = "scores") %>%
+  dplyr::mutate(abs_scores = abs(scores)) %>%
+  group_by(PC) %>%
+  slice_max(abs_scores, prop = .1) # get top 10% of genes in all PCs
+
+# Pull out genes that are the top 10% of contributors (in any direction) to PC1 and PC2. Annotate.
+myscores.Top10 <- myscores.df %>%
+  dplyr::filter(PC == "PC1" | PC == "PC2") %>%
+  pivot_wider(id_cols = geneID,
+              names_from = PC,
+              values_from = scores) %>%
+  dplyr::mutate(PC1_id = case_when(PC1 > 0 ~ "larval",
+                                   PC1 < 0 ~ "adult",
+                                   is.na(PC1) ~ "--")) %>%  
+  dplyr::mutate(PC2_id = case_when(PC2 > 0 ~ "parasite",
+                                   PC2 < 0 ~ "non_parasite",
+                                   is.na(PC2) ~ "--")) %>%  
+  dplyr::left_join(.,(rownames_to_column(annotations, var = "geneID")), by = "geneID") %>%
+  dplyr::relocate(UniProtKB, Description, InterPro, GO_term, Ce_geneID, percent_homology, .after = PC2_id)
+
+# Make Interactive Plot
+myscores.Top10.interactive <- myscores.Top10 %>%
+  DT::datatable(extensions = c('KeyTable', "FixedHeader"),
+                rownames = FALSE,
+                caption = htmltools::tags$caption(
+                  style = 'caption-side: top; text-align: left;',
+                  htmltools::tags$b('Top 10% of Genes Contributing to PC1 and PC2'),
+                  htmltools::tags$br(),
+                  'Search for PC1_id/PC2_id values to filter results'),
+                options = list(keys = TRUE,
+                               autoWidth = TRUE,
+                               scrollX = TRUE,
+                               order = list(1, 'desc'),
+                               searchHighlight = TRUE, 
+                               pageLength = 10, 
+                               lengthMenu = c("10", "25", "50", "100"))) %>%
+  DT::formatRound(columns=c(2:3), digits=3)
+
+myscores.Top10.interactive
+```
+
+
+# Differentially Expressed Genes ---
+```{r DEG, message=FALSE}
+# Introduction to this chunk ----
+# This chunk uses a variance-stabilized DGEList of filtered and normalized abundance data.
+# 
+# 
+# It does a computationally intensive thing: conductes pairwise differential expression analyses for every gene across every combintation of life stages.
+# 
+# These data/results are examples, a responsive version of this code is avaliable in a Shiny App.
+# 
+# Because we have access to biological replicates, we can use statistical tools for differential expression analysis
+# Useful reading on differential expression: https://ucdavis-bioinformatics-training.github.io/2018-June-RNA-Seq-Workshop/thursday/DE.html
+
+# Load packages ----
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(limma) # differential gene expression using linear modeling
+  library(edgeR)
+  library(gt) 
+  library(DT) 
+  library(plotly) 
+})
+
+# Set Expression threshold values for plotting and saving DEGs ----
+adj.P.thresh <- 0.05
+lfc.thresh <- 0 # Default for decideTests
+
+# Fit a linear model to the data ----
+fit <- lmFit(v.DEGList.filtered.norm, design)
+
+# As an example, generate comparison matrix for all unique pairwise comparisons ----
+comparisons<- combn(targets$group, m = 2) %>% 
+  t() %>%
+  unique() 
+comparisons <- tibble(targetStages = a[,1], contrastStages = a[,2]) %>%
+  dplyr::filter(!(targetStages == contrastStages))
+
+paste.compare <- function(targetStage, contrastStage) {
+  paste(targetStage, contrastStage, sep = "-")
+}
+contrasts <- mapply(paste.compare, comparisons$targetStages, comparisons$contrastStages, USE.NAMES = F)
+contrast.matrix <- makeContrasts(contrasts = contrasts,
+                                 levels=design)
+
+# extract the linear model fit -----
+fits <- contrasts.fit(fit, contrast.matrix)
+# empirical bayes smoothing of gene-wise standard deviations provides increased power (see: https://www.degruyter.com/doi/10.2202/1544-6115.1027)
+ebFit <- eBayes(fits)
+
+# Pull out the DEGs that pass a specific threshold for all pairwise comparisons ----
+# Adjust for multiple comparisons using method = global. 
+results <- decideTests(ebFit, method="global", adjust.method="BH", p.value = adj.P.thresh)
+
+
+# Function that identifies top DEG between a specific pairwise comparison ----
+identify.DEGs <- function (selected.contrast, contrasts) {
+  # TopTable to view DEGs -----
+  # Look at the top differentially expressed genes
+  # Note: this only considers the specific selected contrast, does not correct for multiple comparisons
+  
+  # parse selected contrast into the coefficient
+  coef <- grep(paste0("^",selected.contrast,"$"), contrasts)
+  targetStage <- str_split(selected.contrast, "-")[[1]][1]
+  contrastStage <- str_split(selected.contrast, "-")[[1]][2]
+  
+  myTopHits.df <- limma::topTable(ebFit, adjust ="BH", 
+                                  coef=coef, number=40000, 
+                                  sort.by="logFC") %>%
+    as_tibble(rownames = "geneID") %>%
+    dplyr::rename(tStatistic = t, LogOdds = B, BH.adj.P.Val = adj.P.Val) %>%
+    dplyr::relocate(UniProtKB, Description, InterPro, GO_term, Ce_geneID, percent_homology, .after = LogOdds)
+  
+  # Volcano Plots ----
+  vplot <- ggplot(myTopHits.df) +
+    aes(y=-log10(BH.adj.P.Val), x=logFC, text = paste(geneID, "<br>",
+                                                      "logFC:", round(logFC, digits = 2), "<br>",
+                                                      "p-val:", format(BH.adj.P.Val, digits = 3, scientific = TRUE), "<br>",
+                                                      "Description:", Description, "<br>", 
+                                                      "InterPro:", InterPro,"<br>",
+                                                      "Ce-Gene:", Ce_geneID, "<br>", 
+                                                      "% homology:", percent_homology)) +
+    geom_point(size=2) +
+    geom_hline(yintercept = -log10(adj.P.thresh), linetype="longdash", colour="grey", size=1) + #dashed line at given p value, w/: -log10(p)
+    geom_vline(xintercept = lfc.thresh, linetype="longdash", colour="#BE684D", size=1) + #logFC of 1 = 2 fold change
+    geom_vline(xintercept = -lfc.thresh, linetype="longdash", colour="#2C467A", size=1) +
+    labs(title="Volcano plot",
+         subtitle = paste0("S. stercoralis ", selected.contrast),
+         caption=paste0("produced on ", Sys.time())) +
+    theme_bw()
+  
+  # Make the volcano plot above interactive
+  interactive.vplot <- ggplotly(vplot, tooltip = "text") %>%
+    layout(title= list( text = paste0("Interactive Volcano plot",
+                                      "<br>",
+                                      "<sup>",
+                                      "S. stercoralis ", selected.contrast,
+                                      "</sup>")))
+  
+  # Generate variable containing expression data for thresholded DEGs ----
+  # Reminder that E (output from voom) = normalized expression values on the log2 scale
+  # [,coef] specifies which pairwise comparison to pull out. 
+  # This variable is necessary for generating heatmaps.
+  diffGenes <- v.DEGList.filtered.norm$E[results[,coef] !=0,] 
+  
+  # Calculate average normalized log2-cmp across life stages
+  avg.v.filtered.norm.Log2CPM<-v.DEGList.filtered.norm$E %>%
+  as_tibble(rownames = "geneID")%>%
+  setNames(nm = c("geneID", targets$group)) %>%
+  pivot_longer(cols = -geneID,
+               names_to = "life_stage", 
+               values_to = "log2CPM") %>%
+  group_by(geneID, life_stage) %>%
+  dplyr::summarize(life.stage.AVG = mean(log2CPM, na.rm = TRUE)) %>%
+  pivot_wider(names_from = life_stage,
+              names_prefix = "avg_",
+              values_from = life.stage.AVG,) %>%
+  ungroup() 
+  
+  diffGenes.df <- as_tibble(diffGenes, rownames = "geneID", .name_repair = "unique") %>% 
+    left_join(., avg.v.filtered.norm.Log2CPM, by = "geneID")  
+  
+  # merge list of thresholded DEGs with information contained in TopTable
+  diffGenes.TopHits <- left_join(diffGenes.df, myTopHits.df, by = "geneID")%>% 
+    dplyr::select(geneID:logFC, BH.adj.P.Val:percent_homology)
+  
+  # Set adjusted P value to scientific notation for cosmetic purposes
+  diffGenes.TopHits$BH.adj.P.Val <- formatC(diffGenes.TopHits$BH.adj.P.Val, digits = 3, format = "E") 
+  
+  # Create a version of myTopHits for exporting that includes averaged voom data
+  avg.myTopHits.df <- myTopHits.df %>%
+    dplyr::select(geneID, logFC, BH.adj.P.Val:percent_homology) %>%
+    left_join(avg.v.filtered.norm.Log2CPM, . , by = "geneID")
+  
+  
+  # create interactive tables to display the thresholded DEGs, ranked ----
+  if(any(grepl(targetStage, names(diffGenes.TopHits)))){
+    DEG.datatable <- diffGenes.TopHits %>%
+      dplyr::select(geneID, starts_with(paste0(targetStage,"-")), 
+                    paste0("avg_",targetStage),
+                    starts_with(paste0(contrastStage,"-")),
+                    paste0("avg_", contrastStage),
+                    logFC, BH.adj.P.Val:percent_homology)} else {
+                      DEG.datatable <- diffGenes.TopHits %>%
+                        dplyr::select(geneID, starts_with("avg"),logFC, BH.adj.P.Val:percent_homology)
+                    }
+  DEG.datatable <- DEG.datatable %>%
+    DT::datatable(extensions = c('KeyTable', "FixedHeader"),
+                  rownames = FALSE,
+                  caption = htmltools::tags$caption(
+                    style = 'caption-side: top; text-align: left;',
+                    htmltools::tags$b('Differentially Expressed Genes in', htmltools::tags$em('S. stercoralis'), 
+                                      targetStage, ' vs ', contrastStage),
+                    htmltools::tags$br(),
+                    "Threshold: p < ",
+                    adj.P.thresh, "; log-fold change > ",
+                    lfc.thresh,
+                    htmltools::tags$br(),
+                    'Values = log2 counts per million'),
+                  options = list(keys = TRUE,
+                                 autoWidth = TRUE,
+                                 scrollX = TRUE,
+                                 order = list(9, 'desc'),
+                                 searchHighlight = TRUE, 
+                                 pageLength = 10, 
+                                 lengthMenu = c("10", "25", "50", "100")))
+  
+  if(any(grepl(targetStage, names(diffGenes.TopHits)))){
+    DEG.datatable <- DEG.datatable %>%
+      DT::formatRound(columns=c(2:9), digits=2) %>%
+      DT::formatRound(columns = c(10,12), digits = 3)} else {
+        DEG.datatable <- DEG.datatable %>%
+          DT::formatRound(columns=c(2:8), digits=2) %>%
+          DT::formatRound(columns = c(9,11), digits = 3)
+      } 
+  
+  output <- list(#myTopHits.df = myTopHits.df, 
+    #diffGenes = diffGenes,
+    avg.myTopHits.df = avg.myTopHits.df,
+    diffGenes.TopHits = diffGenes.TopHits
+  )
+}
+
+# Calling function on all pairwise comparisons -----
+output.DEG.SsRNAseq <- sapply(contrasts, identify.DEGs, contrasts, simplify = F, USE.NAMES = T)
+names(output.DEG.SsRNAseq) <-  paste(comparisons$targetStages, comparisons$contrastStages, sep = "-")
+
+# Caching the call to identify.DEGs b/c it's computationally expensive.  ----
+if (!is.memoised(output.DEG.SsRNAseq)) {
+ output.DEG.SsRNAseq <- memoise(output.DEG.SsRNAseq)}
+# # Remove Cache - if I made a change to the underlying function
+# forget(pairwise.Compare)
+
+```
+
+# Across All Life Stages: DEGs ---
+```{r acrossGroupsDEG, warning=FALSE}
+# Introduction to this chunk ----
+# This chunk combines all pair-wise comparisons to identify all genes that are differentially expressed in any way across groups. 
+
+# These data/results are examples, a responsive version of this code is avaliable in a Shiny App.
+
+# Variation of the topTable call to use all comparisons ----
+# This is done by not including a coefficient variable.
+# from the results of the eBayes function, the statistic $F and the $F.p.value combine all pairwise comparisons into one F-test. So this should indicate which genes vary between the targets in any way.
+# 
+myTopHits.across.df <- limma::topTable(ebFit, adjust ="BH", 
+                                       number=40000) %>%
+  as_tibble(rownames = "geneID") %>%
+  dplyr::rename(fStatistic = F, BH.adj.P.Val = adj.P.Val) %>%
+  dplyr::relocate(UniProtKB, Description, InterPro, GO_term, Ce_geneID, percent_homology, .after = BH.adj.P.Val)
+
+
+# Pull out the DEGs that pass a specific threshold for all pairwise comparisons ----
+# p.value = set p value threshold, lfc = set log fold change threshold, 1 = fold change of 2
+results <- decideTests(ebFit, method="global", adjust.method="BH", p.value=adj.P.thresh, lfc=lfc.thresh)
+
+# Generate variable containing expression data for your thresholded DEGs ----
+diffGenes.across <- v.DEGList.filtered.norm$E[rowSums(results !=0) > 0,] # across all comparisons 
+colnames(diffGenes.across) <- targets$group
+
+diffGenes.TopHits.across <-avearrays(diffGenes.across) %>%
+  as_tibble(rownames = "geneID") %>% 
+  left_join(., 
+            dplyr::select(myTopHits.across.df,
+                          geneID,fStatistic, 
+                          BH.adj.P.Val:percent_homology), 
+            by = "geneID")
+diffGenes.TopHits.across$BH.adj.P.Val <- formatC(diffGenes.TopHits.across$BH.adj.P.Val, digits = 3, format = "E") # Set adjusted P value to scientific 
+
+
+# Make the table interactive? ----
+# Note that this table won't tell you which comparisons are driving the significant difference, only that they do vary.
+all.DEG.datatable <- diffGenes.TopHits.across %>%
+  DT::datatable(extensions = c('KeyTable', "FixedHeader"),
+                rownames = FALSE,
+                caption = htmltools::tags$caption(
+                  style = 'caption-side: top; text-align: left;',
+                  htmltools::tags$b('Differentially Expressed Genes in', htmltools::tags$em('S. stercoralis')),
+                  htmltools::tags$br(),
+                  "Genes differentially expressed in any life stage",
+                  htmltools::tags$br(),
+                  "Threshold: p < ",
+                  adj.P.thresh, "; log-fold change > ",
+                  lfc.thresh,
+                  htmltools::tags$br(),
+                  'Values = average log2 counts per million'),
+                options = list(keys = TRUE,
+                               autoWidth = TRUE,
+                               scrollX = TRUE,
+                               order = list(9, 'asc'),
+                               searchHighlight = TRUE, 
+                               pageLength = 10, 
+                               lengthMenu = c("10", "25", "50", "100"))) %>%
+  DT::formatRound(columns=c(2:8), digits=2) %>%
+  DT::formatRound(columns = c(9), digits = 3) 
+
+all.DEG.datatable
+```
+
+# Cluster DEGs into functional modules ---
+```{r heatmaps}
+# Introduction to this chunk ----
+# this chunk creates heatmaps from differentially expressed genes;
+# it takes as input a list of genes that are differentially expressed in any life stage
+# It selects modules of co-expressed genes based on pearson correlations
+# 
+# These data/results are examples of possible analyses that can be run on this data.
+
+# Load packages -----
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(limma)
+  library(RColorBrewer)
+  library(gplots)
+  library(heatmaply)
+})
+
+# Choose a color pallette ----
+#myheatcolors <- rev(brewer.pal(name="RdBu", n=11))
+myheatcolors <- RdBu(75)
+
+# Cluster DEGs across stages ----
+#begin by clustering the genes (rows) for a list of genes that are differentially expressed in at least one life stage
+# use the 'cor' function and the pearson method for finding all pairwise correlations of genes
+# '1-cor' converts this to a 0-2 scale for each of these correlations, which can then be used to calculate a distance matrix using 'as.dist'
+clustRows <- hclust(as.dist(1-cor(t(diffGenes.across), method="pearson")), method="complete") 
+# hierarchical clustering is a type of unsupervised clustering. 
+# NOTE: this cluster may provide different results to one based on log2.cpm.filtered.norm data, likely b/c this version is specifcally focused on genes that are significantly different between conditions.
+# Related methods include K-means, SOM, etc 
+# unsupervised methods are blind to sample/group identity
+# in contrast, supervised methods 'train' on a set of labeled data.  
+# supervised clustering methods include random forest, and artificial neural networks
+
+# cluster samples (columns)
+clustColumns <- hclust(as.dist(1-cor(diffGenes.across, method="spearman")), method="complete") #cluster columns by spearman correlation
+#note: use Spearman, instead of Pearson, for clustering samples because it gives equal weight to highly vs lowly expressed transcripts or genes
+
+#Cut the resulting tree and create color vector for clusters.  
+module.assign <- stats::cutree(clustRows, k=14) #The diffGenes info is based on a pairwise comparison between all 7 life stages. 
+
+# assign a color to each module (makes it easy to identify and manipulate)
+module.color <- rainbow(length(unique(module.assign)), start=0.1, end=0.9) 
+module.color <- module.color[as.vector(module.assign)] 
+
+# simplfy heatmap by averaging the biological replicates and display only one column per condition
+colnames(diffGenes.across) <- targets$group
+diffGenes.AVG <- avearrays(diffGenes.across)
+
+# plot the hclust results as a heatmap, grouping the life stages together
+diffGenes.heatmap.bygroup <- heatmap.2(diffGenes.AVG, 
+                                       srtCol = 0, adjCol= c(0.5,0.5),
+                                       Rowv=as.dendrogram(clustRows),
+                                       key.title = NA,
+                                       main = paste0("DEG Heatmap (by life stage): "),
+                                       sub = paste0("Genes pass threshold in >= 1 pairwise comparison. Threshold: p < ",
+                                                    adj.P.thresh, "; log-fold change > ",
+                                                    lfc.thresh),
+                                       RowSideColors=module.color,
+                                       col=rev(myheatcolors), scale='row', labRow=NA,
+                                       density.info="none", trace="none",  
+                                       cexRow=1, cexCol=1) 
+
+# Pairwise Clustering/Heatmaps
+pairwise.Clustering <- function (targetStage,contrastStage){
+  #Generate name of pairwise comparison
+  x <- paste(targetStage, contrastStage, sep = "-")
+  print(paste("Clustering ",x))
+  subset.diffGenes <- output.DEG.SsRNAseq[[x]]$diffGenes
+  colnames(subset.diffGenes) <- targets$group
+  selected.cols <- grepl(paste0("^", targetStage, "$"), colnames(subset.diffGenes)) | 
+    grepl(paste0("^", contrastStage, "$"), colnames(subset.diffGenes))
+  subset.diffGenes <- subset.diffGenes[,selected.cols]
+  
+  subset.clustRows <- hclust(as.dist(1-cor(t(subset.diffGenes), method="pearson")), method="complete")
+  subset.clustColumns <- hclust(as.dist(1-cor(subset.diffGenes, method="spearman")), method="complete") 
+  subset.module.assign <- stats::cutree(subset.clustRows, k=2)
+  subset.module.color <- rainbow(length(unique(subset.module.assign)), start=0.1, end=0.9) 
+  subset.module.color <- subset.module.color[as.vector(subset.module.assign)]
+  
+  subset.diffGenes.heatmap.bygroup <- heatmap.2(subset.diffGenes, 
+                                                srtCol = 0, adjCol= c(0.5,0.5),
+                                                Rowv=as.dendrogram(subset.clustRows),
+                                                Colv=as.dendrogram(subset.clustColumns),
+                                                key.title = NA,
+                                                main = paste0("DEG Heatmap (by life stage): ", x),
+                                                sub = paste0("Threshold: p < ",
+                                                             adj.P.thresh, "; log-fold change > ",
+                                                             lfc.thresh),
+                                                RowSideColors=subset.module.color,
+                                                col=rev(myheatcolors), scale='row', labRow=NA,
+                                                density.info="none", trace="none",
+                                                cexRow=1, cexCol=1) 
+  
+  output <- list(subset.diffGenes.heatmap.bygroup = subset.diffGenes.heatmap.bygroup)
+  
+}
+# Note that saving these files isn't really helpful b/c heatmap.2 objects can't be easily re-plotted; at least not without having all the raw components on hand.
+
+```
+
+
+
