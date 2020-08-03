@@ -2,10 +2,10 @@
 title: Re-analysis of Strongyloides stercoralis bulk RNAseq via an alignment-free
   analysis pipeline
 output:
-  html_notebook:
-    toc: yes
   html_document:
     df_print: paged
+    toc: yes
+  html_notebook:
     toc: yes
 ---
 

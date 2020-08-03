@@ -2,10 +2,10 @@
 title: Re-analysis of Strongyloides stercoralis bulk RNAseq via an alignment-free
   analysis pipeline
 output:
-  html_notebook:
-    toc: yes
   html_document:
     df_print: paged
+    toc: yes
+  html_notebook:
     toc: yes
 ---
 
@@ -18,7 +18,7 @@ As research into the genomic basis of parasitism in helminths continues, access 
 A description of Kallisto alignment and data filtering/normalization steps can be found in `Ss_RNAseq_Data_Processing.rmd`. 
 
 ### Data Analysis   
-**Code included in this section is not avaliable as part of the Shiny Web App**  
+**Code included in this section is not (yet) available as part of the Shiny Web App**  
 Principal component analysis applied to filtered and TMM-normalized expression data identified two developmental clusters that account for 42.6% and 28.9% of expression variability between *S. stercoralis* developmental stages. The top 10% of genes contributing to PC1 and PC2 are identified and printed as a DataTable.
 
 The limma package ( [Ritchie *et al* 2015](https://pubmed.ncbi.nlm.nih.gov/25605792/), [Phipson *et al* 2016](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5373812/)) is used to conduct pairwise differential gene expression analyses between life stages. Here, all unique pairwise comparisons between life stages are displayed as interactive volcano plots and DataTables. In this analysis, genes included in DataTables are corrected for multiple life-stage comparisons. An additional code chunk identifies all genes that are differentially expressed in any way across groups (i.e. an ANOVA analysis across life stages). This set of genes is passed into a clustering analysis that generates a heatmap of differential gene expression across life stages.
@@ -284,7 +284,7 @@ myscores.Top10.interactive
 
 
 # Differentially Expressed Genes ---
-```{r DEG, message=FALSE}
+```{r DEG, warning=FALSE}
 # Introduction to this chunk ----
 # This chunk uses a variance-stabilized DGEList of filtered and normalized abundance data.
 # 
@@ -303,12 +303,17 @@ suppressPackageStartupMessages({
   library(edgeR)
   library(gt) 
   library(DT) 
-  library(plotly) 
+  library(plotly)
+  library(memoise)
 })
 
 # Set Expression threshold values for plotting and saving DEGs ----
 adj.P.thresh <- 0.05
 lfc.thresh <- 0 # Default for decideTests
+
+group <- factor(targets$group)
+design <- model.matrix(~0 + group) # no intercept/blocking for matrix, comparisons across group
+colnames(design) <- levels(group)
 
 # Fit a linear model to the data ----
 fit <- lmFit(v.DEGList.filtered.norm, design)
@@ -317,7 +322,7 @@ fit <- lmFit(v.DEGList.filtered.norm, design)
 comparisons<- combn(targets$group, m = 2) %>% 
   t() %>%
   unique() 
-comparisons <- tibble(targetStages = a[,1], contrastStages = a[,2]) %>%
+comparisons <- tibble(targetStages = comparisons[,1], contrastStages = comparisons[,2]) %>%
   dplyr::filter(!(targetStages == contrastStages))
 
 paste.compare <- function(targetStage, contrastStage) {
@@ -366,21 +371,29 @@ identify.DEGs <- function (selected.contrast, contrasts) {
                                                       "% homology:", percent_homology)) +
     geom_point(size=2) +
     geom_hline(yintercept = -log10(adj.P.thresh), linetype="longdash", colour="grey", size=1) + #dashed line at given p value, w/: -log10(p)
-    geom_vline(xintercept = lfc.thresh, linetype="longdash", colour="#BE684D", size=1) + #logFC of 1 = 2 fold change
-    geom_vline(xintercept = -lfc.thresh, linetype="longdash", colour="#2C467A", size=1) +
-    labs(title="Volcano plot",
-         subtitle = paste0("S. stercoralis ", selected.contrast),
-         caption=paste0("produced on ", Sys.time())) +
+    geom_vline(xintercept = 1, linetype="longdash", colour="#BE684D", size=1) + #logFC of 1 = 2 fold change
+    geom_vline(xintercept = -1, linetype="longdash", colour="#2C467A", size=1) +
+    labs(
+      title = paste0('Pairwise Comparison: ',
+                                gsub('-',
+                                     ' vs ',
+                                     selected.contrast)),
+                 subtitle = paste0("grey line: p = ",
+                                   adj.P.thresh, "; colored lines: log-fold change = 1 ")) +
     theme_bw()
   
   # Make the volcano plot above interactive
   interactive.vplot <- ggplotly(vplot, tooltip = "text") %>%
-    layout(title= list( text = paste0("Interactive Volcano plot",
+    layout(title= list( text = paste0('Pairwise Comparison: ',
+                                gsub('-',
+                                     ' vs ',
+                                     selected.contrast),
                                       "<br>",
                                       "<sup>",
-                                      "S. stercoralis ", selected.contrast,
+                                      "grey line: p = ",
+                                   adj.P.thresh, "; colored lines: log-fold change = 1 ",
                                       "</sup>")))
-  
+  print(interactive.vplot)
   # Generate variable containing expression data for thresholded DEGs ----
   # Reminder that E (output from voom) = normalized expression values on the log2 scale
   # [,coef] specifies which pairwise comparison to pull out. 
@@ -457,24 +470,15 @@ identify.DEGs <- function (selected.contrast, contrasts) {
           DT::formatRound(columns=c(2:8), digits=2) %>%
           DT::formatRound(columns = c(9,11), digits = 3)
       } 
-  
-  output <- list(#myTopHits.df = myTopHits.df, 
-    #diffGenes = diffGenes,
-    avg.myTopHits.df = avg.myTopHits.df,
-    diffGenes.TopHits = diffGenes.TopHits
-  )
+
 }
 
 # Calling function on all pairwise comparisons -----
-output.DEG.SsRNAseq <- sapply(contrasts, identify.DEGs, contrasts, simplify = F, USE.NAMES = T)
-names(output.DEG.SsRNAseq) <-  paste(comparisons$targetStages, comparisons$contrastStages, sep = "-")
+# Currently running this only for a single comparison.
+output.DEG.SsRNAseq <- sapply(contrasts[2], identify.DEGs, contrasts, simplify = F, USE.NAMES = T)
+names(output.DEG.SsRNAseq) <-  paste(comparisons$targetStages[2], comparisons$contrastStages[2], sep = "-")
 
-# Caching the call to identify.DEGs b/c it's computationally expensive.  ----
-if (!is.memoised(output.DEG.SsRNAseq)) {
- output.DEG.SsRNAseq <- memoise(output.DEG.SsRNAseq)}
-# # Remove Cache - if I made a change to the underlying function
-# forget(pairwise.Compare)
-
+output.DEG.SsRNAseq$`FLF-iL3`
 ```
 
 # Across All Life Stages: DEGs ---
@@ -539,7 +543,6 @@ all.DEG.datatable <- diffGenes.TopHits.across %>%
   DT::formatRound(columns=c(2:8), digits=2) %>%
   DT::formatRound(columns = c(9), digits = 3) 
 
-all.DEG.datatable
 ```
 
 # Cluster DEGs into functional modules ---
@@ -597,7 +600,7 @@ diffGenes.heatmap.bygroup <- heatmap.2(diffGenes.AVG,
                                        Rowv=as.dendrogram(clustRows),
                                        key.title = NA,
                                        main = paste0("DEG Heatmap (by life stage): "),
-                                       sub = paste0("Genes pass threshold in >= 1 pairwise comparison. Threshold: p < ",
+                                       sub = paste0("Genes pass threshold in >= 1 comparison. Threshold: p < ",
                                                     adj.P.thresh, "; log-fold change > ",
                                                     lfc.thresh),
                                        RowSideColors=module.color,
