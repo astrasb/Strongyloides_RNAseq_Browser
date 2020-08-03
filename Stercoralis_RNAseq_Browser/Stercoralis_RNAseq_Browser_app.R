@@ -132,11 +132,33 @@ server <- function(input, output, session) {
     
     parse_ids <- eventReactive(input$goGW,{
         if (isTruthy(input$idtext)){
-            genelist <- input$idtext %>%
-                gsub(" ", "", ., fixed = TRUE) %>%
-                str_split(pattern = ",") %>%
-                unlist() %>%
-                as_tibble_col(column_name = "geneID")
+            
+            if (any(grepl('SSTP', input$idtext, ignore.case = TRUE))){
+                # Text input matches SSTP values
+                genelist <- input$idtext %>%
+                    gsub(" ", "", ., fixed = TRUE) %>%
+                    str_split(pattern = ",") %>%
+                    unlist() %>%
+                    as_tibble_col(column_name = "geneID")
+            } else {
+                # Assume the values here are keywords, search Description terms
+                terms <- input$idtext %>%
+                    str_split(pattern = ",") %>%
+                    unlist()
+                geneindex<-sapply(terms, function(y) {
+                    grepl(gsub("$ |^ ","",y), 
+                          v.DEGList.filtered.norm$genes$Description,
+                          ignore.case = TRUE)
+                    }) %>%
+                    rowSums() %>%
+                    as.logical()
+                genelist <- v.DEGList.filtered.norm$genes %>%
+                    rownames_to_column(var = "geneID") %>%
+                    dplyr::select(geneID)
+                genelist <- genelist$geneID[geneindex] %>%
+                    as_tibble_col(column_name = "geneID")
+            }
+            
         } else if (isTruthy(input$loadfile)){
             file <- input$loadfile
             ext <- tools::file_ext(file$datapath)
@@ -206,6 +228,8 @@ server <- function(input, output, session) {
                                               method="pearson")), 
                                 method="complete") 
             par(cex.main=1.2)
+            
+            row_labels <- if(length(vals$gene_of_interest)<20){vals$gene_of_interest} else {NA}
             p<-heatmap.2(subset.diffGenes, 
                          srtCol = 45, adjCol= c(1,1),
                          Rowv= as.dendrogram(clustRows),
@@ -217,7 +241,7 @@ server <- function(input, output, session) {
                          main = paste0("Log2 Counts Per Million (CPM) Expression Across Life Stages"),
                          col=rev(myheatcolors), 
                          scale='row', 
-                         labRow=vals$gene_of_interest,
+                         labRow=row_labels,
                          density.info="none", 
                          trace="none",
                          cexRow=1.2, cexCol=1.2) 
@@ -322,6 +346,7 @@ server <- function(input, output, session) {
     ### GW: Set Contrast Matrix and Fit the Linear Model ----
     set_linear_model_GW <- eventReactive(input$goLifeStage_GW,{
         source('Server/limma_ranking.R', local = TRUE)
+       
     })
     
     ### GW: Extract the Differentially Expressed Genes ----
@@ -332,6 +357,8 @@ server <- function(input, output, session) {
                                               vals$comparison, nomatch = 1)
         } else {vals$displayedComparison <- 1}
         #### Volcano Plots
+        point_labels <- if(nrow(vals$genelist)<20){guide_legend(override.aes = list(size = 6))} else {FALSE}
+        
         vplot <- ggplot(vals$list.myTopHits.df[[vals$displayedComparison]]) +
             aes(y=-log10(BH.adj.P.Val), x=logFC) +
             geom_point(size=2,
@@ -355,7 +382,7 @@ server <- function(input, output, session) {
                        colour="#2C467A", 
                        size=1) +
             guides(size = FALSE,
-                   colour = guide_legend(override.aes = list(size = 6)))+
+                   colour = point_labels)+
             labs(title = paste0('Pairwise Comparison: ',
                                 gsub('-',
                                      ' vs ',
@@ -626,52 +653,51 @@ server <- function(input, output, session) {
         pull_DEGs_LS()
     })
     
-    output$hover_info_LS <- renderUI({
-        req(vals$displayedComparison)
-        pointer.df <- vals$list.highlight.df[[vals$displayedComparison]] %>%
-            dplyr::mutate(log10.adj.P.Val = -log10(BH.adj.P.Val))
-        
-        hover <- input$plot_hover_LS
-        point <- nearPoints(pointer.df, hover, 
-                            xvar = "logFC",
-                            yvar = "log10.adj.P.Val",
-                            threshold = 5, maxpoints = 1, addDist = TRUE)
-        if (nrow(point) == 0) return(NULL)
-        
-        
-        # calculate point position INSIDE the image as percent of total dimensions
-        # from left (horizontal) and from top (vertical)
-        left_pct <- (hover$x - hover$domain$left) / (hover$domain$right - hover$domain$left)
-        top_pct <- (hover$domain$top - hover$y) / (hover$domain$top - hover$domain$bottom)
-        
-        # calculate distance from left and bottom side of the picture in pixels
-        left_px <- hover$range$left + left_pct * (hover$range$right - hover$range$left)
-        top_px <- hover$range$top + top_pct * (hover$range$bottom - hover$range$top)
-        
-        # create style property fot tooltip
-        # background color is set so tooltip is a bit transparent
-        # z-index is set so we are sure are tooltip will be on top
-        style <- paste0("position:absolute; z-index:100; background-color: rgba(245, 245, 245, 0.85); ",
-                        "left:", left_px - 200 , "px; top:", top_px - 200, "px;")
-        
-        # actual tooltip created as wellPanel
-        wellPanel(
-            style = style,
-            p(HTML(paste0("<b> GeneID: </b>", 
-                          point$geneID, 
-                          "<br/>", 
-                          "<b> Log FC: </b>",
-                          round(point$logFC,digits = 2),
-                          "<br/>",
-                          "<b> p-value: </b>",
-                          format(point$BH.adj.P.Val, digits = 3, scientific = TRUE))))
-        )
-    })
+    # output$hover_info_LS <- renderUI({
+    #     req(vals$displayedComparison)
+    #     pointer.df <- vals$list.highlight.df[[vals$displayedComparison]] %>%
+    #         dplyr::mutate(log10.adj.P.Val = -log10(BH.adj.P.Val))
+    #     
+    #     hover <- input$plot_hover_LS
+    #     point <- nearPoints(pointer.df, hover, 
+    #                         xvar = "logFC",
+    #                         yvar = "log10.adj.P.Val",
+    #                         threshold = 5, maxpoints = 1, addDist = TRUE)
+    #     if (nrow(point) == 0) return(NULL)
+    #     
+    #     
+    #     # calculate point position INSIDE the image as percent of total dimensions
+    #     # from left (horizontal) and from top (vertical)
+    #     left_pct <- (hover$x - hover$domain$left) / (hover$domain$right - hover$domain$left)
+    #     top_pct <- (hover$domain$top - hover$y) / (hover$domain$top - hover$domain$bottom)
+    #     
+    #     # calculate distance from left and bottom side of the picture in pixels
+    #     left_px <- hover$range$left + left_pct * (hover$range$right - hover$range$left)
+    #     top_px <- hover$range$top + top_pct * (hover$range$bottom - hover$range$top)
+    #     
+    #     # create style property fot tooltip
+    #     # background color is set so tooltip is a bit transparent
+    #     # z-index is set so we are sure are tooltip will be on top
+    #     style <- paste0("position:absolute; z-index:100; background-color: rgba(245, 245, 245, 0.85); ",
+    #                     "left:", left_px - 200 , "px; top:", top_px - 200, "px;")
+    #     
+    #     # actual tooltip created as wellPanel
+    #     wellPanel(
+    #         style = style,
+    #         p(HTML(paste0("<b> GeneID: </b>", 
+    #                       point$geneID, 
+    #                       "<br/>", 
+    #                       "<b> Log FC: </b>",
+    #                       round(point$logFC,digits = 2),
+    #                       "<br/>",
+    #                       "<b> p-value: </b>",
+    #                       format(point$BH.adj.P.Val, digits = 3, scientific = TRUE))))
+    #     )
+    # })
     
     #### LS: Data Table of Differentially Expressed Genes ----
     assemble_DEGs_LS <- reactive({
         req(vals$displayedComparison)
-        browser()
         tS<- vals$targetStage[vals$displayedComparison,
                               ][vals$targetStage[vals$displayedComparison,
                                                  ]!=""]

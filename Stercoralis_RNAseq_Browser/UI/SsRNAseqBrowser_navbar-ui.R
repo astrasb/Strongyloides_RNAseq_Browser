@@ -11,11 +11,11 @@ navbarPage(h4(em("Strongyloides stercoralis"), "RNAseq Browser"),
                         column(3,
                                # Select Genes to Browse ----
                                panel(
-                                   heading = tagList(h5(shiny::icon("fas fa-dna"), "Step 1: Input Genes")),
+                                   heading = tagList(h5(shiny::icon("fas fa-dna"), "Step 1: Input Genes / Keywords")),
                                    status = "primary",
                                    ### GeneID (text box)
                                    textAreaInput('idtext',
-                                                 'Gene Stable IDs (comma separated)',
+                                                 'Gene Stable IDs or Wormbase Parasite Description Term (comma separated)',
                                                  rows = 10, 
                                                  resize = "vertical"),
                                    
@@ -145,23 +145,7 @@ navbarPage(h4(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                                 )
                                )
                         )
-                    ) 
-                    # ),
-                    # fluidRow(
-                    #     column(3),
-                    #     column(9,
-                    #            conditionalPanel(condition = "input.goLifeStage_GW != 0",
-                    #                             panel(
-                    #                                 heading = tagList(h5(shiny::icon("fas fa-table"),
-                    #                                                      "Pairwise Differential Gene Expression: Table")),
-                    #                                 status = "primary",
-                    #                                 withSpinner(DTOutput('highlight.df'),
-                    #                                             color = "#2C3E50")
-                    #                             )
-                    #            )
-                    #     )
-                    # )
-                    
+                    )     
            ),
            
            # Life Stage Browser ----
@@ -234,10 +218,12 @@ navbarPage(h4(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                                      heading = tagList(h5(shiny::icon("fas fa-chart-area"),
                                                                           "Pairwise Differential Gene Expression: Volcano Plot")),
                                                      status = "primary",
-                                                     withSpinner(plotOutput('volcano_LS',
-                                                                            hover = hoverOpts("plot_hover_LS", 
-                                                                                              delay = 100, 
-                                                                                              delayType = "debounce")),
+                                                     # withSpinner(plotOutput('volcano_LS',
+                                                     #                        hover = hoverOpts("plot_hover_LS", 
+                                                     #                                          delay = 100, 
+                                                     #                                          delayType = "debounce")),
+                                                     #             color = "#2C3E50"),
+                                                     withSpinner(plotOutput('volcano_LS'),
                                                                  color = "#2C3E50"),
                                                      uiOutput("hover_info_LS")
                                                  )
@@ -261,25 +247,6 @@ navbarPage(h4(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                )
                         )
                     )
-                    # ),
-                    # fluidRow(
-                    #     column(3),
-                    #     column(9,
-                    #            conditionalPanel(condition = "input.goLS != 0",
-                    #                             panel(
-                    #                                 heading = tagList(h5(shiny::icon("fas fa-table"),
-                    #                                                      "Pairwise Differential Gene Expression: Table")),
-                    #                                 status = "primary",
-                    #                                 withSpinner(DTOutput('tbl_LS'),
-                    #                                             color = "#2C3E50")
-                    #                             )
-                    #            )
-                    #     )
-                    # )
-                    
-                    
            )
-           
-           
-           
+         
 )

@@ -5,8 +5,8 @@ account: asbryant
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 2597456
-bundleId: 3463455
+bundleId: 3467197
 url: https://asbryant.shinyapps.io/Stercoralis_RNAseq_Browser/
-when: 1596306901.05962
+when: 1596417185.81643
 asMultiple: FALSE
 asStatic: FALSE
