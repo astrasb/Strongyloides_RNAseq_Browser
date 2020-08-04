@@ -50,7 +50,7 @@ fit <- lmFit(v.DEGList.filtered.norm, v.DEGList.filtered.norm$design)
 
 # Set Expression threshold values for plotting and saving DEGs ----
 adj.P.thresh <- 0.05
-lfc.thresh <- 0
+lfc.thresh <- 1
 
 ## ---- UI ----
 
@@ -373,11 +373,11 @@ server <- function(input, output, session) {
                        linetype="longdash", 
                        colour="grey", 
                        size=1) + 
-            geom_vline(xintercept = 1, 
+            geom_vline(xintercept = lfc.thresh, 
                        linetype="longdash", 
                        colour="#BE684D", 
                        size=1) +
-            geom_vline(xintercept = -1, 
+            geom_vline(xintercept = -lfc.thresh, 
                        linetype="longdash", 
                        colour="#2C467A", 
                        size=1) +
@@ -388,7 +388,7 @@ server <- function(input, output, session) {
                                      ' vs ',
                                      vals$comparison[vals$displayedComparison])),
                  subtitle = paste0("grey line: p = ",
-                                   adj.P.thresh, "; colored lines: log-fold change = 1 "),
+                                   adj.P.thresh, "; colored lines: log-fold change =",  lfc.thresh),
                  color = "GeneIDs") +
             #coord_fixed()+
             theme_Publication()
@@ -627,11 +627,11 @@ server <- function(input, output, session) {
                        linetype="longdash", 
                        colour="grey", 
                        size=1) + 
-            geom_vline(xintercept = 1, 
+            geom_vline(xintercept = lfc.thresh, 
                        linetype="longdash", 
                        colour="#BE684D", 
                        size=1) +
-            geom_vline(xintercept = -1, 
+            geom_vline(xintercept = -lfc.thresh, 
                        linetype="longdash", 
                        colour="#2C467A", 
                        size=1) +
@@ -640,7 +640,7 @@ server <- function(input, output, session) {
                                      ' vs ',
                                      vals$comparison[vals$displayedComparison])),
                  subtitle = paste0("grey line: p = ",
-                                   adj.P.thresh, "; colored lines: log-fold change = 1 "),
+                                   adj.P.thresh, "; colored lines: log-fold change =", lfc.thresh),
                  color = "GeneIDs") +
             theme_Publication() 
         vplot

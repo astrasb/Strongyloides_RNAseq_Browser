@@ -309,7 +309,7 @@ suppressPackageStartupMessages({
 
 # Set Expression threshold values for plotting and saving DEGs ----
 adj.P.thresh <- 0.05
-lfc.thresh <- 0 # Default for decideTests
+lfc.thresh <- 1 
 
 group <- factor(targets$group)
 design <- model.matrix(~0 + group) # no intercept/blocking for matrix, comparisons across group
@@ -371,15 +371,15 @@ identify.DEGs <- function (selected.contrast, contrasts) {
                                                       "% homology:", percent_homology)) +
     geom_point(size=2) +
     geom_hline(yintercept = -log10(adj.P.thresh), linetype="longdash", colour="grey", size=1) + #dashed line at given p value, w/: -log10(p)
-    geom_vline(xintercept = 1, linetype="longdash", colour="#BE684D", size=1) + #logFC of 1 = 2 fold change
-    geom_vline(xintercept = -1, linetype="longdash", colour="#2C467A", size=1) +
+    geom_vline(xintercept = lfc.thresh, linetype="longdash", colour="#BE684D", size=1) + #logFC of 1 = 2 fold change
+    geom_vline(xintercept = -lfc.thresh, linetype="longdash", colour="#2C467A", size=1) +
     labs(
       title = paste0('Pairwise Comparison: ',
                                 gsub('-',
                                      ' vs ',
                                      selected.contrast)),
                  subtitle = paste0("grey line: p = ",
-                                   adj.P.thresh, "; colored lines: log-fold change = 1 ")) +
+                                   adj.P.thresh, "; colored lines: log-fold change = ",lfc.thresh)) +
     theme_bw()
   
   # Make the volcano plot above interactive
