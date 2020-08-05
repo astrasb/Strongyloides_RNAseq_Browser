@@ -84,7 +84,6 @@ ui <- fluidPage(
     }
     
     h5 {
-    color: #ad1d28;
     font-size: 14px;
     font-weight: bold;
     }

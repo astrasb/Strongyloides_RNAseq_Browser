@@ -16,16 +16,16 @@ navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                    heading = tagList(h4(shiny::icon("fas fa-dna"), "Step 1: Input Genes / Keywords")),
                                    status = "primary",
                                    ### GeneID (text box)
+                                   h5('Pick Genes', class = 'text-danger'),
                                    textAreaInput('idtext',
-                                                 (h5('Gene Stable IDs   -- or --  ',
-                                                 tags$br(),'Wormbase Parasite Description Term',
+                                                 (p('Gene Stable IDs or Wormbase Parasite Description Term',
                                                  tags$br(),'(comma separated)')),
                                                  rows = 10, 
                                                  resize = "vertical"),
                                    
                                    ### Upload list of GeneIDs
                                    fileInput('loadfile',
-                                             h5('Gene Stable ID List (.csv)'),
+                                             p('Gene Stable ID List (.csv)'),
                                              multiple = FALSE),
                                    
                                    ### Action Button
@@ -60,11 +60,11 @@ navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                                                          "Step 2: Pick Life Stage Comparisons")),
                                                     status = "primary",
                                                     # Select Target Life Stage
-                                                    h5('A: Select Single Pairwise Comparison'),
+                                                    h5('A: Single Comparison', class = 'text-danger'),
                                                     
                                                     selectInput("selectTarget_GW",
-                                                                "",
-                                                                choices = c('Choose one or more Targets' = ''
+                                                                p("Select Target"),
+                                                                choices = c('Choose one or more' = ''
                                                                             ,list("FLF",
                                                                                   "PF",
                                                                                   "iL3",
@@ -76,8 +76,8 @@ navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                                                 multiple = TRUE),
                                                     # Select Contrast Life Stage
                                                     selectInput("selectContrast_GW",
-                                                                NULL,
-                                                                choices = c('Choose one or more Contrasts' = '',
+                                                                p("Select Contrast"),
+                                                                choices = c('Choose one or more' = '',
                                                                             list("FLF",
                                                                                  "PF",
                                                                                  "iL3",
@@ -88,12 +88,14 @@ navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                                                 selectize = TRUE,
                                                                 multiple = TRUE),
                                                     
-                                                    tags$hr(style="border-color: black;"),
-                                                    h5('B: Type Multiple Pairwise Comparisons'),
+                                                    tags$hr(style="border-color: #2C3E50;"),
+                                                    h5('B: Multiple Comparisons', class = 'text-danger'),
                                                     
                                                     # Text Input for Multiple Contrasts
                                                     textAreaInput('multiContrasts_GW',
-                                                                  '',
+                                                                  (p('Type comma-separated comparisons using format: ',
+                                                                      tags$br(),'(Target)-(Contrast)',
+                                                                      tags$br(),'e.g. iL3-PF, (iL3+iL3a)-(PF+FLF)')),
                                                                   #label = ('Type Comma-Separated Pairwise Comparisons'),
                                                                   placeholder = ('e.g. iL3-FLF, iL3-PF, (iL3+iL3a)-(PF+FLF)'),
                                                                   rows = 5, 
@@ -107,6 +109,7 @@ navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                                         onStatus = "success"
                                                     ),
                                                     
+                                                    tags$hr(style="border-color: #2C3E50;"),
                                                     
                                                     ### Action Button
                                                     actionButton('goLifeStage_GW',
@@ -161,10 +164,10 @@ navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                    heading = tagList(h4(shiny::icon("fas fa-sliders-h"), 
                                                         "Step 1: Pick Life Stage Comparisons")),
                                    status = "primary",
-                                   h5('A: Select Single Pairwise Comparison'),
+                                   h5('A: Single Comparison', class = 'text-danger'),
                                    selectInput("selectTarget_LS",
-                                               "",
-                                               choices = c('Choose one or more Targets' = ''
+                                               p("Select Target"),
+                                               choices = c('Pick one or more' = ''
                                                            ,list("FLF",
                                                                  "PF",
                                                                  "iL3",
@@ -176,8 +179,8 @@ navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                                multiple = TRUE),
                                    # Select Contrast Life Stage
                                    selectInput("selectContrast_LS",
-                                               NULL,
-                                               choices = c('Choose one or more Contrasts' = ''
+                                               p("Select Contrast"),
+                                               choices = c('Pick one or more' = ''
                                                            ,list("FLF",
                                                                  "PF",
                                                                  "iL3",
@@ -189,14 +192,19 @@ navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                                multiple = TRUE),
                                    
                                    tags$hr(style="border-color: black;"),
-                                   h5('B: Manually Input Multiple Pairwise Comparisons'),
+                                   h5('B: Multiple Comparisons', class = 'text-danger'),
                                    # Text Input for Multiple Contrasts
                                    textAreaInput('multiContrasts_LS',
-                                                 "",
+                                                 (p('Type comma-separated comparisons using format: ',
+                                                    tags$br(),'(Target)-(Contrast)',
+                                                    tags$br(),'e.g. iL3-PF, (iL3+iL3a)-(PF+FLF)')),
                                                  #label = ('Input At Least Two Comma-Separated Pairwise Comparisons'),
                                                  placeholder = ('e.g. iL3-FLF, iL3-PF, (iL3+iL3a)-(PF+FLF)'),
                                                  rows = 5, 
                                                  resize = "vertical"),
+                                   
+                                   
+                                   
                                    
                                    p("Correct for Multiple Comparisons?"),
                                    switchInput(
@@ -205,6 +213,8 @@ navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                        offLabel = "No",
                                        onStatus = "success"
                                    ),
+                                   
+                                   tags$hr(style="border-color: #2C3E50;"),
                                    
                                    ### Action Button
                                    actionButton('goLS',
