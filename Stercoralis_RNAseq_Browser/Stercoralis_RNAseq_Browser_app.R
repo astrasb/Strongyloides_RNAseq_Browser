@@ -84,29 +84,33 @@ ui <- fluidPage(
     }
     
     h5 {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: bold;
     }
     
     strong {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: bold;
     }
     
     p{
-    font-size: 12px;
+    font-size: 13px;
     font-weight: normal;
     }
     
     .selectize-input {
     word-wrap: break-word;
-    font-size: 10px;
+    font-size: 13px;
     overflow-x: auto;
     }
     
     .selectize-dropdown {
     word-wrap: break-word;
-    font-size: 10px;
+    font-size: 13px;
+    }
+    
+    .form-control {
+    font-size: 13px;
     }
     
                   

@@ -1,4 +1,4 @@
-theme_Publication <- function(base_size=12, base_family="Helvetica") {
+theme_Publication <- function(base_size=15, base_family="Helvetica") {
         
         (theme_foundation(base_size=base_size, base_family=base_family)
                 + theme(plot.title = element_text(face = "bold",
@@ -7,7 +7,7 @@ theme_Publication <- function(base_size=12, base_family="Helvetica") {
                         panel.background = element_rect(colour = NA),
                         plot.background = element_rect(colour = NA),
                         panel.border = element_rect(colour = NA),
-                        axis.title = element_text(face = "bold",size = rel(1)),
+                        axis.title = element_text(face = "bold",size = rel(.8)),
                         axis.title.y = element_text(angle=90,vjust =2),
                         axis.title.x = element_text(vjust = -0.2),
                         axis.text = element_text(), 
