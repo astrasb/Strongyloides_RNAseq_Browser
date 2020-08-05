@@ -55,12 +55,65 @@ lfc.thresh <- 1
 ## ---- UI ----
 
 # Application title ----
-#
 
 ui <- fluidPage(
+    
     #titlePanel("Strongyloides stercoralis RNAseq Browser"),
     #source('UI/SsRNAseqBrowser_dashboard-ui.R', local = T)$value
-    source('UI/SsRNAseqBrowser_navbar-ui.R', local = T)$value
+    source('UI/SsRNAseqBrowser_navbar-ui.R', local = T)$value,
+    
+    # Custom CSS ----
+    tags$head(
+        tags$style(HTML("
+    h3 {
+    font-size: 22px;
+    margin: 10.5px 0px;
+    }
+    
+    .navbar-brand {
+    height: 80px;
+    }
+    
+    .navbar-nav>li>a{
+    height: 80px;
+    }
+    
+    h4 {
+    font-size: 16px;
+    font-weight: bold;
+    }
+    
+    h5 {
+    color: #ad1d28;
+    font-size: 14px;
+    font-weight: bold;
+    }
+    
+    strong {
+    font-size: 12px;
+    font-weight: bold;
+    }
+    
+    p{
+    font-size: 12px;
+    font-weight: normal;
+    }
+    
+    .selectize-input {
+    word-wrap: break-word;
+    font-size: 10px;
+    overflow-x: auto;
+    }
+    
+    .selectize-dropdown {
+    word-wrap: break-word;
+    font-size: 10px;
+    }
+    
+                  
+                    "))
+        
+    )
     
 )
 
@@ -96,6 +149,11 @@ server <- function(input, output, session) {
             vals$results <- NULL
             vals$ebFit <- NULL
             vals$displayedComparison <- NULL
+            updateSelectInput(session,"selectContrast_GW", selected = "", choices = NULL)
+            updateSelectInput(session,"selectTarget_GW", selected = "", choices = NULL)
+            updateTextAreaInput(session, "idtext", value = "")
+            updateTextAreaInput(session, "multiContrasts_GW", value = "")
+            updatePickerInput(session, "displayedComparison_GW", selected = "", choices = "")
         } else if (req(input$tab) == "LS") {
             vals$genelist <- NULL
             vals$gene_of_interest <- NULL
@@ -109,6 +167,10 @@ server <- function(input, output, session) {
             vals$results <- NULL
             vals$ebFit <- NULL
             vals$displayedComparison <- NULL
+            updateSelectInput(session,"selectContrast_LS", selected = "", choices = NULL)
+            updateSelectInput(session,"selectTarget_LS", selected = "", choices = NULL)
+            updateTextAreaInput(session, "multiContrasts_LS", value = "")
+            updatePickerInput(session, "displayedComparison_LS", selected = "", choices = "")
         }
     })
     
@@ -127,7 +189,8 @@ server <- function(input, output, session) {
         vals$displayedComparison <- NULL
         updateSelectInput(session,"selectContrast_GW", selected = "", choices = NULL)
         updateSelectInput(session,"selectTarget_GW", selected = "", choices = NULL)
-        updateSelectInput(session, "displayedComparison_GW", selected = "", choices = NULL)
+        updateTextAreaInput(session, "multiContrasts_GW", value = "")
+        updatePickerInput(session, "displayedComparison_GW", selected = "", choices = NULL)
     }, ignoreInit = TRUE)
     
     parse_ids <- eventReactive(input$goGW,{
@@ -179,18 +242,21 @@ server <- function(input, output, session) {
     ### GW: Generate Responsive Selection for Gene to Display ----
     output$geneDisplaySelection_GW <- renderUI({
         panel(
-            heading = tagList(h5(shiny::icon("fas fa-filter"),
+            heading = tagList(h4(shiny::icon("fas fa-filter"),
                                  "Pick Gene to Display")),
             status = "default",
-            selectInput("displayedGene",
+            pickerInput("displayedGene",
                         NULL, 
-                        c("All Genes", vals$genelist$geneID))
+                        c("All Genes", vals$genelist$geneID),
+                        options = list(style = 'btn btn-primary'))
         )
     })
     
     ### GW: Plot Gene Expression by Life Stage ----
     output$CPM <- renderPlot({
         parse_ids()
+        req(vals$genelist)
+        
         # Select gene to display
         if (isTruthy(input$displayedGene)){
             if (input$displayedGene == "All Genes"){
@@ -273,7 +339,7 @@ server <- function(input, output, session) {
         vals$multipleCorrection <- NULL
         vals$results <- NULL
         vals$ebFit <- NULL
-        updateSelectInput(session, "displayedComparison_GW", choices = NULL)
+        updatePickerInput(session, "displayedComparison_GW", choices = NULL)
     }, ignoreInit = TRUE)
     
     
@@ -333,13 +399,14 @@ server <- function(input, output, session) {
         #req(input$goLifeStage_GW) #Remove?
         comparison <- parse_contrasts_GW()
         panel(
-            heading = tagList(h5(shiny::icon("fas fa-filter"),
+            heading = tagList(h4(shiny::icon("fas fa-filter"),
                                  "Pick Contrast to Display")),
             status = "default",
-            selectInput("displayedComparison_GW",
+            pickerInput("displayedComparison_GW",
                         NULL, 
                         comparison,
-                        selected = comparison[[1]])
+                        selected = comparison[[1]],
+                        options = list(style = 'btn btn-primary'))
         )
     })
     
@@ -542,7 +609,8 @@ server <- function(input, output, session) {
         vals$ebFit <- NULL
         vals$genelist <- NULL
         vals$gene_of_interest <- NULL
-        updateSelectInput(session, "displayedComparison_LS", choices = NULL)
+        updatePickerInput(session, "displayedComparison_LS", choices = NULL)
+        updateTextAreaInput(session, "multiContrasts_LS", value = "")
     }, ignoreInit = TRUE)
     
     parse_contrasts_LS<-eventReactive(input$goLS,{
@@ -598,12 +666,13 @@ server <- function(input, output, session) {
         comparison <- parse_contrasts_LS()
         
         panel(
-            heading = tagList(h5(shiny::icon("fas fa-filter"),
+            heading = tagList(h4(shiny::icon("fas fa-filter"),
                                  "Pick Contrast to Display")),
             status = "default",
-            selectInput("displayedComparison_LS",
+            pickerInput("displayedComparison_LS",
                         NULL, 
-                        comparison)
+                        comparison,
+                        options = list(style = 'btn btn-primary'))
         )
     })
     

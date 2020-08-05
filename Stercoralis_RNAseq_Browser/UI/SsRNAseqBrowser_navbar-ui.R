@@ -1,27 +1,31 @@
 
+
 # Header ----
-navbarPage(h4(em("Strongyloides stercoralis"), "RNAseq Browser"),
+
+navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
            windowTitle = "Ss-RNAseq Browser",
           theme = shinytheme("flatly"), 
            collapsible = TRUE,
            id = "tab",
-           tabPanel(h5("Browse By Gene"),
+           tabPanel(h4("Browse By Gene"),
                     value = "GW",
                     fluidRow(
                         column(3,
                                # Select Genes to Browse ----
                                panel(
-                                   heading = tagList(h5(shiny::icon("fas fa-dna"), "Step 1: Input Genes / Keywords")),
+                                   heading = tagList(h4(shiny::icon("fas fa-dna"), "Step 1: Input Genes / Keywords")),
                                    status = "primary",
                                    ### GeneID (text box)
                                    textAreaInput('idtext',
-                                                 'Gene Stable IDs or Wormbase Parasite Description Term (comma separated)',
+                                                 (h5('Gene Stable IDs   -- or --  ',
+                                                 tags$br(),'Wormbase Parasite Description Term',
+                                                 tags$br(),'(comma separated)')),
                                                  rows = 10, 
                                                  resize = "vertical"),
                                    
                                    ### Upload list of GeneIDs
                                    fileInput('loadfile',
-                                             'Gene Stable ID List (.csv)',
+                                             h5('Gene Stable ID List (.csv)'),
                                              multiple = FALSE),
                                    
                                    ### Action Button
@@ -35,7 +39,7 @@ navbarPage(h4(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                conditionalPanel(condition = "input.goGW != 0",
                                                 # Display Selected Gene Expression ----
                                                 panel(
-                                                    heading = tagList(h5(shiny::icon("fas fa-chart-bar"),
+                                                    heading = tagList(h4(shiny::icon("fas fa-chart-bar"),
                                                                          "Gene Expression Across Life Stages")),
                                                     status = "primary",
                                                     withSpinner(plotOutput('CPM'),
@@ -52,11 +56,11 @@ navbarPage(h4(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                conditionalPanel(condition = "input.goGW != 0",
                                                 panel(
                                                     # Select Life Stage Comparisons ----
-                                                    heading = tagList(h5(shiny::icon("fas fa-sliders-h"), 
+                                                    heading = tagList(h4(shiny::icon("fas fa-sliders-h"), 
                                                                          "Step 2: Pick Life Stage Comparisons")),
                                                     status = "primary",
                                                     # Select Target Life Stage
-                                                    strong('A: Select Single Pairwise Comparison'),
+                                                    h5('A: Select Single Pairwise Comparison'),
                                                     
                                                     selectInput("selectTarget_GW",
                                                                 "",
@@ -85,7 +89,7 @@ navbarPage(h4(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                                                 multiple = TRUE),
                                                     
                                                     tags$hr(style="border-color: black;"),
-                                                    strong('B: Type Multiple Pairwise Comparisons'),
+                                                    h5('B: Type Multiple Pairwise Comparisons'),
                                                     
                                                     # Text Input for Multiple Contrasts
                                                     textAreaInput('multiContrasts_GW',
@@ -95,7 +99,7 @@ navbarPage(h4(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                                                   rows = 5, 
                                                                   resize = "vertical"),
                                                     
-                                                    strong("Correct for Multiple Comparisons?"),
+                                                    p("Correct for Multiple Comparisons?"),
                                                     switchInput(
                                                         inputId = "multipleContrastsYN_GW",
                                                         onLabel = "Yes",
@@ -116,7 +120,7 @@ navbarPage(h4(em("Strongyloides stercoralis"), "RNAseq Browser"),
                         column (7,
                                 conditionalPanel(condition = "input.goLifeStage_GW != 0",
                                                  panel(
-                                                     heading = tagList(h5(shiny::icon("fas fa-chart-area"),
+                                                     heading = tagList(h4(shiny::icon("fas fa-chart-area"),
                                                                           "Pairwise Differential Gene Expression: Volcano Plot")),
                                                      status = "primary",
                                                      withSpinner(plotOutput('volcano_GW',
@@ -136,7 +140,7 @@ navbarPage(h4(em("Strongyloides stercoralis"), "RNAseq Browser"),
                         column(9,
                                conditionalPanel(condition = "input.goLifeStage_GW != 0",
                                                 panel(
-                                                    heading = tagList(h5(shiny::icon("fas fa-table"),
+                                                    heading = tagList(h4(shiny::icon("fas fa-table"),
                                                                          "Pairwise Differential Gene Expression: Table")),
                                                     status = "primary",
                                                     withSpinner(DTOutput('highlight.df'),
@@ -149,15 +153,15 @@ navbarPage(h4(em("Strongyloides stercoralis"), "RNAseq Browser"),
            ),
            
            # Life Stage Browser ----
-           tabPanel(h5("Browse by Life Stage"),
+           tabPanel(h4("Browse by Life Stage"),
                     value = "LS",
                     fluidRow(
                         column(3,
                                panel(
-                                   heading = tagList(h5(shiny::icon("fas fa-sliders-h"), 
+                                   heading = tagList(h4(shiny::icon("fas fa-sliders-h"), 
                                                         "Step 1: Pick Life Stage Comparisons")),
                                    status = "primary",
-                                   strong('A: Select Single Pairwise Comparison'),
+                                   h5('A: Select Single Pairwise Comparison'),
                                    selectInput("selectTarget_LS",
                                                "",
                                                choices = c('Choose one or more Targets' = ''
@@ -185,7 +189,7 @@ navbarPage(h4(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                                multiple = TRUE),
                                    
                                    tags$hr(style="border-color: black;"),
-                                   strong('B: Manually Input Multiple Pairwise Comparisons'),
+                                   h5('B: Manually Input Multiple Pairwise Comparisons'),
                                    # Text Input for Multiple Contrasts
                                    textAreaInput('multiContrasts_LS',
                                                  "",
@@ -194,7 +198,7 @@ navbarPage(h4(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                                  rows = 5, 
                                                  resize = "vertical"),
                                    
-                                   strong("Correct for Multiple Comparisons?"),
+                                   p("Correct for Multiple Comparisons?"),
                                    switchInput(
                                        inputId = "multipleContrastsYN_LS",
                                        onLabel = "Yes",
@@ -215,7 +219,7 @@ navbarPage(h4(em("Strongyloides stercoralis"), "RNAseq Browser"),
                         column (7,
                                 conditionalPanel(condition = "input.goLS != 0",
                                                  panel(
-                                                     heading = tagList(h5(shiny::icon("fas fa-chart-area"),
+                                                     heading = tagList(h4(shiny::icon("fas fa-chart-area"),
                                                                           "Pairwise Differential Gene Expression: Volcano Plot")),
                                                      status = "primary",
                                                      # withSpinner(plotOutput('volcano_LS',
@@ -237,7 +241,7 @@ navbarPage(h4(em("Strongyloides stercoralis"), "RNAseq Browser"),
                         column(9,
                                conditionalPanel(condition = "input.goLS != 0",
                                                 panel(
-                                                    heading = tagList(h5(shiny::icon("fas fa-table"),
+                                                    heading = tagList(h4(shiny::icon("fas fa-table"),
                                                                          "Pairwise Differential Gene Expression: Table")),
                                                     status = "primary",
                                                     withSpinner(DTOutput('tbl_LS'),
@@ -247,6 +251,67 @@ navbarPage(h4(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                )
                         )
                     )
-           )
+           ),
+          ## About this app ----
+          tabPanel(h4("About"),
+                   value = "about",
+                   fluidRow(
+                       column(12,
+                              panel(heading =  tagList(h4(shiny::icon("fas fa-question-circle"),
+                                                              "About this App")),
+                                    
+                                    status = "primary",
+                                    
+                                    p('This Shiny app enables users to browse a bioinformatics dataset featuring bulk RNA sequencing of seven *S. stercoralis* developmental stages ',
+                                    tags$a(
+                                        href = 'https://journals.plos.org/plosntds/article?id=10.1371/journal.pntd.0001854', 
+                                        "(Stolzfus et al 2012)"), '.', br()),
+                                    tags$h5('Data Preprocessing', class = 'text-danger'),
+                                       p('Offline, Kallisto and custom R scripts were used to perform ultra-fast read mapping of raw reads to the *S. stercoalis* reference transcriptome (PRJEB528.WBPS14.mRNA_transcripts, downloaded from ',
+                                    tags$a(
+                                        href = "https://parasite.wormbase.org/Strongyloides_stercoralis_prjeb528/Info/Index/", 
+                                        'WormBase Parasite'),
+                                        'on 16 June 2020.',
+                                    tags$br(),
+                                    'Raw reads were quantified as counts per million using the EdgeR package, then filtered to remove transcripts with low counts (less than 1 count-per-million in at least 3 samples), and normalized using the trimmed mean of M-values method (TMM, ',
+                                    tags$a(
+                                        href = "https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-3-r25", 
+                                        'Robinson and Oshlack)'),
+                                        'to permit between-samples comparisons.', br(),
+                                        'The limma package',
+                                    tags$a(
+                                        href = "https://pubmed.ncbi.nlm.nih.gov/25605792/", 
+                                        '(Ritchie et al 2015'),
+                                    ', ',
+                                    tags$a(
+                                        href = "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5373812/", 
+                                        'Phipson et al 2016)'),
+                                    'is used to conduct pairwise differential gene expression analyses between life stages. The mean-variance relationship is modeled using a precision weights approach',
+                                    tags$a(
+                                        href = "https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29", 
+                                        '(Law et al 2014)'),
+                                    '.')
+                                    
+                                    
+                                    
+                              ),
+                              ## App Credits ----
+                              panel( heading =  tagList(h4(shiny::icon("fas fa-poop"),
+                                                               "Who is responsibe for this?")),
+                                     status = "primary",
+                                     p('This app was created by', 
+                                     tags$a(
+                                         href = "https://scholar.google.com/citations?user=uSGqqakAAAAJ&hl=en", 
+                                         'Astra S. Bryant, PhD'),'for the', 
+                                     tags$a(href="http://www.hallemlab.com/",'Hallem Lab'), 'at UCLA.', 
+                                     tags$br(),
+                                     'The underlying code is avaliable on Github:', 
+                                     tags$a(
+                                         href = "Stercoralis RNAseq Browser App  Repository", 
+                                         'https://github.com/astrasb/Strongyloides_Bioinformatics/tree/master/Stercoralis_RNAseq_Browser'))
+                              )
+                       )
+                   )
+          )
          
 )
