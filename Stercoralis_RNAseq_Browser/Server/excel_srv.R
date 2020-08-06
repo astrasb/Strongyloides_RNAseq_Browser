@@ -1,3 +1,5 @@
+generate_excel_report <- function(comparison, tbl){
+
 temp <- downloadHandler(
     
     filename = function(){
@@ -13,10 +15,10 @@ temp <- downloadHandler(
         
         # Write Data
         
-        sapply(seq_along(vals$comparison), function(y){
+        sapply(seq_along(comparison), function(y){
             
             # Create Tab
-            addWorksheet(wb = to_download, sheetName = vals$comparison[[y]])
+            addWorksheet(wb = to_download, sheetName = comparison[[y]])
             
             ## Sheet header
             writeData(
@@ -24,7 +26,7 @@ temp <- downloadHandler(
                 sheet = y,
                 x = c(
                     paste0("S. stercoralis RNAseq Differential Gene Expression"),
-                    paste0("Contrast: ", vals$comparison[[y]]),
+                    paste0("Contrast: ", comparison[[y]]),
                     paste0("Report generated on ", format(Sys.Date(), "%B %d, %Y"))
                 )
             )
@@ -33,7 +35,7 @@ temp <- downloadHandler(
             writeData(
                 to_download,
                 sheet = y,
-                x = vals$list.highlight.tbl[[y]],
+                x = tbl[[y]],
                 startRow = 5,
                 startCol = 1,
                 headerStyle = createStyle(
@@ -63,3 +65,5 @@ temp <- downloadHandler(
             message = "Generating Excel Report")
     }
 )
+
+}

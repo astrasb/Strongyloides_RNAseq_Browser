@@ -1,22 +1,22 @@
 # Run Limma based Differential Expression Analysis
 # Use Empirical Bayes Statistics to rank genes in order of evidence for differential expression
 # Adjust for Multiple Comparisons if necessary
-
-contrast.matrix <- makeContrasts(contrasts = vals$comparison,
+limma_ranking <- function(comparison, targetStage, contrastStage, multipleCorrection, genelist, vals, fit, v.DEGList.filtered.norm, adj.P.thresh, diffGenes.df){
+contrast.matrix <- makeContrasts(contrasts = comparison,
                                  levels = v.DEGList.filtered.norm$design)
 
 fits <- contrasts.fit(fit, contrast.matrix)
-vals$ebFit <- limma::eBayes(fits)
+ebFit <- limma::eBayes(fits)
 
 # Adjust for multiple comparisons using method = global.
 # Generate a corrected diffGenes value that accounts for multiple comparisons
-if (vals$multipleCorrection == T) {
-    results <- decideTests(vals$ebFit, 
+if (multipleCorrection == T) {
+    results <- decideTests(ebFit, 
                                 method="global", 
                                 adjust.method="BH", 
                                 p.value = adj.P.thresh)
 }else{
-    results <- decideTests(vals$ebFit, 
+    results <- decideTests(ebFit, 
                                 method="separate", 
                                 adjust.method="BH", 
                                 p.value = adj.P.thresh)    
@@ -34,23 +34,23 @@ diffDesc<-results %>%
     dplyr::mutate(across(-geneID, unclass)) %>%
     dplyr::mutate(across(where(is.double), recode01))
 
-vals$list.myTopHits.df <- sapply(vals$comparison, function(y){
-    calc_DEG_tbl(vals$ebFit, y)}, 
+vals$list.myTopHits.df <- sapply(comparison, function(y){
+    calc_DEG_tbl(ebFit, y)}, 
     simplify = FALSE, 
     USE.NAMES = TRUE)
 
 #### Filter dataset looking for the genes on the list
-if (isTruthy(vals$genelist)){
-    vals$list.highlight.df <- sapply(vals$comparison, function(y){
+if (isTruthy(genelist)){
+    vals$list.highlight.df <- sapply(comparison, function(y){
         vals$list.myTopHits.df[[y]] %>%
-            dplyr::filter(geneID %in% vals$genelist[[1]]) %>%
+            dplyr::filter(geneID %in% genelist[[1]]) %>%
             dplyr::select(geneID, 
                           logFC, 
                           BH.adj.P.Val:percent_homology)},
         simplify = FALSE, 
         USE.NAMES = TRUE)
 } else {
-    vals$list.highlight.df <- sapply(vals$comparison, function(y){
+    vals$list.highlight.df <- sapply(comparison, function(y){
         vals$list.myTopHits.df[[y]] %>%
             dplyr::select(geneID, 
                           logFC, 
@@ -62,37 +62,37 @@ if (isTruthy(vals$genelist)){
 
 
 # Get log2CPM values and threshold information for genes of interest
-if (isTruthy(vals$genelist)){
-    vals$list.highlight.tbl <- sapply(seq_along(vals$comparison), function(y){
-        tS<- vals$targetStage[y,][vals$targetStage[y,]!=""]
-        cS<- vals$contrastStage[y,][vals$contrastStage[y,]!=""]
+if (isTruthy(genelist)){
+    vals$list.highlight.tbl <- sapply(seq_along(comparison), function(y){
+        tS<- targetStage[y,][targetStage[y,]!=""]
+        cS<- contrastStage[y,][contrastStage[y,]!=""]
     
         diffGenes.df %>%
-            dplyr::filter(geneID %in% vals$genelist[[1]]) %>%
+            dplyr::filter(geneID %in% genelist[[1]]) %>%
             dplyr::select(geneID, starts_with(paste0(tS,"-")), 
                           starts_with(paste0(cS,"-"))) %>%
             left_join(vals$list.highlight.df[[y]], by = "geneID")%>%
-            left_join(dplyr::select(diffDesc,geneID,vals$comparison[y]), by = "geneID")%>%
-            dplyr::rename(DEG_Desc=vals$comparison[y])%>%
+            left_join(dplyr::select(diffDesc,geneID,comparison[y]), by = "geneID")%>%
+            dplyr::rename(DEG_Desc=comparison[y])%>%
             dplyr::relocate(DEG_Desc)},
     simplify = FALSE)
 } else {
-    vals$list.highlight.tbl <- sapply(seq_along(vals$comparison), function(y){
-        tS<- vals$targetStage[y,][vals$targetStage[y,]!=""]
-        cS<- vals$contrastStage[y,][vals$contrastStage[y,]!=""]
+    vals$list.highlight.tbl <- sapply(seq_along(comparison), function(y){
+        tS<- targetStage[y,][targetStage[y,]!=""]
+        cS<- contrastStage[y,][contrastStage[y,]!=""]
         
         diffGenes.df %>%
             dplyr::select(geneID, starts_with(paste0(tS,"-")), 
                           starts_with(paste0(cS,"-"))) %>%
             left_join(vals$list.highlight.df[[y]], by = "geneID") %>%
-            left_join(dplyr::select(diffDesc,geneID,vals$comparison[y]), by = "geneID") %>%
-            dplyr::rename(DEG_Desc=vals$comparison[y])%>%
+            left_join(dplyr::select(diffDesc,geneID,comparison[y]), by = "geneID") %>%
+            dplyr::rename(DEG_Desc=comparison[y])%>%
             dplyr::relocate(DEG_Desc)},
         simplify = FALSE)
 }
-names(vals$list.highlight.tbl) <- vals$comparison
+names(vals$list.highlight.tbl) <- comparison
 
-vals$list.highlight.tbl <- sapply(vals$comparison, function(y){
+vals$list.highlight.tbl <- sapply(comparison, function(y){
     vals$list.highlight.tbl[[y]] %>%
         dplyr::mutate(DEG_Desc = case_when(DEG_Desc == "Up" ~ paste0("Up in ", str_split(y,'-',simplify = T)[1,1]),
                                            DEG_Desc == "Down" ~ paste0("Down in ", str_split(y,'-',simplify = T)[1,1]),
@@ -101,9 +101,10 @@ vals$list.highlight.tbl <- sapply(vals$comparison, function(y){
     simplify = FALSE, 
     USE.NAMES = TRUE)
 
-sapply(vals$comparison, function(y) {
+sapply(comparison, function(y) {
     vals$list.highlight.tbl[[y]]$BH.adj.P.Val <-formatC(vals$list.highlight.tbl[[y]]$BH.adj.P.Val, 
                                                         digits = 3, 
                                                         format = "E") 
 })
 
+}
