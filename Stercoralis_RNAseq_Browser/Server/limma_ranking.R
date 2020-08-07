@@ -115,9 +115,12 @@ limma_ranking <- function(comparison, targetStage, contrastStage, multipleCorrec
     USE.NAMES = TRUE)
     
     sapply(comparison, function(y) {
-        vals$list.highlight.tbl[[y]]$BH.adj.P.Val <-formatC(vals$list.highlight.tbl[[y]]$BH.adj.P.Val, 
-                                                            digits = 3, 
-                                                            format = "E") 
+        vals$list.highlight.tbl[[y]]$BH.adj.P.Val <-format.pval(vals$list.highlight.tbl[[y]]$BH.adj.P.Val, 
+                                                            digits = 3)
+        
+        # vals$list.highlight.tbl[[y]]$BH.adj.P.Val <-formatC(vals$list.highlight.tbl[[y]]$BH.adj.P.Val, 
+        #                                                     digits = 3, 
+        #                                                     format = "E") 
     })
     
 }

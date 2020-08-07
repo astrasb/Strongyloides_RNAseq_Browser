@@ -510,8 +510,7 @@ server <- function(input, output, session) {
         
         n_num_cols <- length(tS)*3 + length(cS)*3 + 5
         highlight.datatable <- vals$list.highlight.tbl_GW[[vals$displayedComparison_GW]] %>%
-            DT::datatable(extensions = c('KeyTable', "FixedHeader"),
-                          rownames = FALSE,
+            DT::datatable(rownames = FALSE,
                           caption = htmltools::tags$caption(
                               style = 'caption-side: top; text-align: left; color: black',
                               htmltools::tags$b('Differentially Expressed Genes in', 
@@ -523,12 +522,10 @@ server <- function(input, output, session) {
                               lfc.thresh,
                               htmltools::tags$br(),
                               'Values = log2 counts per million'),
-                          options = list(keys = TRUE,
-                                         autoWidth = TRUE,
+                          options = list(autoWidth = TRUE,
                                          scrollX = TRUE,
                                          scrollY = '300px',
                                          scrollCollapse = TRUE,
-                                         fixedHeader = TRUE,
                                          order = list(n_num_cols-1, 
                                                       'desc'),
                                          searchHighlight = TRUE, 
@@ -784,8 +781,7 @@ server <- function(input, output, session) {
         
         n_num_cols <- length(tS)*3 + length(cS)*3 + 5
         LS.datatable <- vals$list.highlight.tbl_LS[[vals$displayedComparison_LS]] %>%
-            DT::datatable(extensions = c('KeyTable', "FixedHeader"),
-                          rownames = FALSE,
+            DT::datatable(rownames = FALSE,
                           caption = htmltools::tags$caption(
                               style = 'caption-side: top; text-align: left; color: black',
                               htmltools::tags$b('Differentially Expressed Genes in', 
@@ -797,12 +793,10 @@ server <- function(input, output, session) {
                               lfc.thresh,
                               htmltools::tags$br(),
                               'Values = log2 counts per million'),
-                          options = list(keys = TRUE,
-                                         autoWidth = TRUE,
+                          options = list(autoWidth = TRUE,
                                          scrollX = TRUE,
                                          scrollY = '300px',
                                          scrollCollapse = TRUE,
-                                         fixedHeader = TRUE,
                                          order = list(n_num_cols-1, 
                                                       'desc'),
                                          searchHighlight = TRUE, 
