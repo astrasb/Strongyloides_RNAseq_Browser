@@ -116,7 +116,14 @@ ui <- fluidPage(
     
     .form-control {
     font-size: 13px;
+    height: 40px;
     }
+    
+    .btn {
+    font-size: 13px;
+    height: 40px;
+    }
+    
     
                   
                     "))
@@ -519,13 +526,17 @@ server <- function(input, output, session) {
                           options = list(keys = TRUE,
                                          autoWidth = TRUE,
                                          scrollX = TRUE,
+                                         scrollY = '300px',
+                                         scrollCollapse = TRUE,
+                                         fixedHeader = TRUE,
                                          order = list(n_num_cols-1, 
                                                       'desc'),
                                          searchHighlight = TRUE, 
-                                         pageLength = 10, 
-                                         lengthMenu = c("10", 
-                                                        "25", 
-                                                        "50", 
+                                         pageLength = 25, 
+                                         lengthMenu = c("5",
+                                                        "10",
+                                                        "25",
+                                                        "50",
                                                         "100"),
                                          columnDefs = list(
                                              list(
