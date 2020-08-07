@@ -205,15 +205,15 @@ server <- function(input, output, session) {
             if (length(vals$genelist$geneID)>1) {
                 choices <- c("All Genes", vals$genelist$geneID)
             } else choices <- vals$genelist$geneID
-        panel(
-            heading = tagList(h4(shiny::icon("fas fa-filter"),
-                                 "Pick Gene to Display")),
-            status = "default",
-            pickerInput("displayedGene",
-                        NULL, 
-                        choices,
-                        options = list(style = 'btn btn-primary'))
-        )
+            panel(
+                heading = tagList(h4(shiny::icon("fas fa-filter"),
+                                     "Pick Gene to Display")),
+                status = "default",
+                pickerInput("displayedGene",
+                            NULL, 
+                            choices,
+                            options = list(style = 'btn btn-primary'))
+            )
         })
     })
     
@@ -386,7 +386,6 @@ server <- function(input, output, session) {
                       adj.P.thresh, 
                       diffGenes.df)
         #vals$ebFit_GW <- vals$ebFit
-        vals$list.highlight.df_GW <- vals$list.highlight.df
         vals$list.myTopHits.df_GW <- vals$list.myTopHits.df
         vals$list.highlight.tbl_GW <- vals$list.highlight.tbl
         
@@ -401,16 +400,16 @@ server <- function(input, output, session) {
             vals$displayedComparison_GW <- match(input$displayedComparison_GW,
                                                  vals$comparison_GW, nomatch = 1)
         } else {vals$displayedComparison_GW <- 1}
-       
+        
         
         #### Volcano Plots
-        point_labels <- if(nrow(vals$list.highlight.df_GW[[vals$displayedComparison_GW]])<
+        point_labels <- if(nrow(vals$list.highlight.tbl_GW[[vals$displayedComparison_GW]])<
                            20){guide_legend(override.aes = list(size = 6))} else {FALSE}
         vplot <- ggplot(vals$list.myTopHits.df_GW[[vals$displayedComparison_GW]]) +
             aes(y=-log10(BH.adj.P.Val), x=logFC) +
             geom_point(size=2,
                        na.rm = T) +
-            geom_point(data = vals$list.highlight.df_GW[[vals$displayedComparison_GW]], 
+            geom_point(data = vals$list.highlight.tbl_GW[[vals$displayedComparison_GW]], 
                        aes(y=-log10(BH.adj.P.Val), 
                            x=logFC, 
                            color = geneID, 
@@ -441,7 +440,7 @@ server <- function(input, output, session) {
             theme_Publication()
         
         vplot
-       
+        
     })
     
     ## GW: Volcano Plot, Generate UI  ----
@@ -457,7 +456,7 @@ server <- function(input, output, session) {
     output$hover_info <- renderUI({
         req(vals$displayedComparison_GW)
         
-        pointer.df <- vals$list.highlight.df_GW[[vals$displayedComparison_GW]] %>%
+        pointer.df <- vals$list.highlight.tbl_GW[[vals$displayedComparison_GW]] %>%
             dplyr::mutate(log10.adj.P.Val = -log10(BH.adj.P.Val))
         
         hover <- input$plot_hover
@@ -551,18 +550,26 @@ server <- function(input, output, session) {
                                          )
                                          
                           )) 
+        
         highlight.datatable <- highlight.datatable %>%
-            DT::formatRound(columns=c(3:n_num_cols,
-                                      n_num_cols+2, 
+            DT::formatRound(columns=c(3:n_num_cols), 
+                            digits=3)
+        
+        highlight.datatable <- highlight.datatable %>%
+            DT::formatRound(columns=c(n_num_cols+2, 
                                       n_num_cols+8), 
                             digits=2)
+        
+        highlight.datatable <- highlight.datatable %>%
+            DT::formatSignif(columns=c(n_num_cols+1), 
+                             digits=3)
         
         highlight.datatable
     })
     
     
     output$highlight.df <- renderDT ({
-        req(vals$list.highlight.df)
+        req(vals$list.highlight.tbl_GW)
         req(vals$displayedComparison_GW)
         assemble_DEGs_GW()
     })
@@ -571,8 +578,9 @@ server <- function(input, output, session) {
     output$downloadbuttonGW <- renderUI({
         req(input$goLifeStage_GW)
         req(vals$comparison_GW)
+       
         output$generate_excel_report_GW <- generate_excel_report(vals$comparison_GW, 
-                                                                 vals$list.highlight.df_GW)
+                                                                 vals$list.highlight.tbl_GW)
         downloadButton("generate_excel_report_GW",
                        "Download DEG Tables",
                        class = "btn-primary")
@@ -678,23 +686,20 @@ server <- function(input, output, session) {
                       adj.P.thresh, 
                       diffGenes.df)
         
-        #vals$ebFit_LS <- vals$ebFit
-        vals$list.highlight.df_LS <- vals$list.highlight.df
-        vals$list.myTopHits.df_LS <- vals$list.myTopHits.df
         vals$list.highlight.tbl_LS <- vals$list.highlight.tbl
     })
     
     ### LS: Extract the Differentially Expressed Genes ----
     pull_DEGs_LS <- reactive({
         req(vals$comparison_LS)
-        req(vals$list.myTopHits.df_LS)
-       
+        req(vals$list.highlight.tbl_LS)
+        
         if (isTruthy(input$displayedComparison_LS)){
             vals$displayedComparison_LS <- match(input$displayedComparison_LS,
                                                  vals$comparison_LS, nomatch = 1)
         } else {vals$displayedComparison_LS <- 1}
         #### Volcano Plots
-        vplot <- ggplot(vals$list.myTopHits.df_LS[[vals$displayedComparison_LS]]) +
+        vplot <- ggplot(vals$list.highlight.tbl_LS[[vals$displayedComparison_LS]]) +
             aes(y=-log10(BH.adj.P.Val), x=logFC) +
             geom_point(size=2) +
             geom_hline(yintercept = -log10(adj.P.thresh), 
@@ -809,6 +814,14 @@ server <- function(input, output, session) {
                                          columnDefs = list(
                                              list(
                                                  targets = ((n_num_cols + 
+                                                                 1)),
+                                                 render = JS(
+                                                     "function(data, row) {",
+                                                     "data.toExponential(1);",
+                                                     "}")
+                                             ),
+                                             list(
+                                                 targets = ((n_num_cols + 
                                                                  4):(n_num_cols + 
                                                                          5)),
                                                  render = JS(
@@ -823,10 +836,17 @@ server <- function(input, output, session) {
                                          
                           )) 
         LS.datatable <- LS.datatable %>%
-            DT::formatRound(columns=c(3:n_num_cols,
-                                      n_num_cols+2, 
-                                      n_num_cols+8), 
-                            digits=2)
+            DT::formatRound(columns=c(3:n_num_cols), 
+                            digits=3)
+        
+        LS.datatable <- LS.datatable %>%
+        DT::formatRound(columns=c(n_num_cols+2, 
+                                  n_num_cols+8), 
+                        digits=2)
+        
+        LS.datatable <- LS.datatable %>%
+            DT::formatSignif(columns=c(n_num_cols+1), 
+                             digits=3)
         
         LS.datatable
     })
@@ -842,8 +862,9 @@ server <- function(input, output, session) {
     output$downloadbuttonLS <- renderUI({
         req(input$goLS)
         req(vals$comparison_LS)
+       
         output$generate_excel_report_LS <- generate_excel_report(vals$comparison_LS, 
-                                                                 vals$list.highlight.df_LS)
+                                                                 vals$list.highlight.tbl_LS)
         downloadButton("generate_excel_report_LS",
                        "Download DEG Tables",
                        class = "btn-primary")

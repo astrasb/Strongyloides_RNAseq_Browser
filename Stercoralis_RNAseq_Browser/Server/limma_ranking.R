@@ -41,7 +41,7 @@ limma_ranking <- function(comparison, targetStage, contrastStage, multipleCorrec
     
     #### Filter dataset looking for the genes on the list
     if (isTruthy(genelist)){
-        vals$list.highlight.df <- sapply(comparison, function(y){
+        list.highlight.df <- sapply(comparison, function(y){
             vals$list.myTopHits.df[[y]] %>%
                 dplyr::filter(geneID %in% genelist[[1]]) %>%
                 dplyr::select(geneID, 
@@ -50,7 +50,7 @@ limma_ranking <- function(comparison, targetStage, contrastStage, multipleCorrec
             simplify = FALSE, 
             USE.NAMES = TRUE)
     } else {
-        vals$list.highlight.df <- sapply(comparison, function(y){
+        list.highlight.df <- sapply(comparison, function(y){
             vals$list.myTopHits.df[[y]] %>%
                 dplyr::select(geneID, 
                               logFC, 
@@ -94,7 +94,7 @@ limma_ranking <- function(comparison, targetStage, contrastStage, multipleCorrec
             dplyr::select(geneID, starts_with(paste0(tS,"-")), 
                           starts_with(paste0(cS,"-"))) %>%
             left_join(groupAvgs, by = "geneID") %>%
-            left_join(vals$list.highlight.df[[y]], by = "geneID") %>%
+            left_join(list.highlight.df[[y]], by = "geneID") %>%
             left_join(dplyr::select(diffDesc,geneID,comparison[y]), by = "geneID") %>%
             dplyr::rename(DEG_Desc=comparison[y]) %>%
             dplyr::relocate(DEG_Desc)
@@ -114,13 +114,5 @@ limma_ranking <- function(comparison, targetStage, contrastStage, multipleCorrec
     simplify = FALSE, 
     USE.NAMES = TRUE)
     
-    sapply(comparison, function(y) {
-        vals$list.highlight.tbl[[y]]$BH.adj.P.Val <-format.pval(vals$list.highlight.tbl[[y]]$BH.adj.P.Val, 
-                                                            digits = 3)
-        
-        # vals$list.highlight.tbl[[y]]$BH.adj.P.Val <-formatC(vals$list.highlight.tbl[[y]]$BH.adj.P.Val, 
-        #                                                     digits = 3, 
-        #                                                     format = "E") 
-    })
     
 }
