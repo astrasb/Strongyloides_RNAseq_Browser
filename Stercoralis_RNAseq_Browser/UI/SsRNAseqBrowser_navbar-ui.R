@@ -25,9 +25,6 @@ navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                    
                                    ### Upload list of GeneIDs
                                    uiOutput('genefile_upload'),
-                                   # fileInput('loadfile',
-                                   #           h6('Gene Stable ID List (.csv)'),
-                                   #           multiple = FALSE),
                                    
                                    ### Action Button
                                    actionButton('goGW',
@@ -36,7 +33,7 @@ navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                                 icon = icon("fas fa-share"),
                                                 class = "btn-primary"),
                                    
-                                   actionButton('reset', 'Clear',
+                                   actionButton('resetGenes', 'Clear',
                                                 icon = icon("far fa-trash-alt"))
                                )),
                         column(7,
@@ -120,7 +117,10 @@ navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                                                  'Process',
                                                                  #width = '50%',
                                                                  icon = icon("fas fa-share"),
-                                                                 class = "btn-primary")
+                                                                 class = "btn-primary"),
+                                                    
+                                                    actionButton('resetGW', 'Clear',
+                                                                 icon = icon("far fa-trash-alt"))
                                                 ))
                         ),
                         
@@ -225,7 +225,10 @@ navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                                 'Submit',
                                                 #width = '50%',
                                                 icon = icon("fas fa-share"),
-                                                class = "btn-primary")
+                                                class = "btn-primary"),
+                                   
+                                   actionButton('resetLS', 'Clear',
+                                                icon = icon("far fa-trash-alt"))
                                    
                                )
                         ),

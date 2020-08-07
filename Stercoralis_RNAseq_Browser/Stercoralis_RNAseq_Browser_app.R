@@ -130,18 +130,20 @@ ui <- fluidPage(
 server <- function(input, output, session) {
     vals<-reactiveValues()
     
-    ## GW: Generate/Reset Gene File Upload
+    ## GW: Generate/Reset Gene File Upload ----
     output$genefile_upload <- renderUI({
-        input$reset
+        input$resetGenes
         fileInput('loadfile',
                   h6('Gene Stable ID List (.csv)'),
                   multiple = FALSE)
     })
     
-    observeEvent(input$reset,{
+    observeEvent(input$resetGenes,{
+        updateTextAreaInput(session,"idtext",value = "")
         vals$genelist <- NULL
     })
     
+    ## GW: Parse Gene Inputs ----
     parse_ids <- eventReactive(input$goGW,{
         isolate({
             if (isTruthy(input$idtext)){
@@ -191,15 +193,21 @@ server <- function(input, output, session) {
     
     ### GW: Generate Responsive Selection for Gene to Display ----
     output$geneDisplaySelection_GW <- renderUI({
+        req(vals$genelist)
+        isolate({
+            if (length(vals$genelist$geneID)>1) {
+                choices <- c("All Genes", vals$genelist$geneID)
+            } else choices <- vals$genelist$geneID
         panel(
             heading = tagList(h4(shiny::icon("fas fa-filter"),
                                  "Pick Gene to Display")),
             status = "default",
             pickerInput("displayedGene",
                         NULL, 
-                        c("All Genes", vals$genelist$geneID),
+                        choices,
                         options = list(style = 'btn btn-primary'))
         )
+        })
     })
     
     ### GW: Plot Gene Expression by Life Stage ----
@@ -267,13 +275,22 @@ server <- function(input, output, session) {
         p
     })
     
+    ## GW: Clear Comparison Selections ----
+    observeEvent(input$resetGW,{
+        updateSelectInput(session, "selectContrast_GW", selected = "")
+        updateSelectInput(session, "selectTarget_GW", selected = "")
+        updateTextAreaInput(session,"multiContrasts_GW",value = "")
+        
+    })
+    
     ## GW: Pairwise Comparisons Across Life Stage ----
+    
     ### Parse the inputs
     parse_contrasts_GW <- eventReactive(input$goLifeStage_GW,{
         if (isTruthy(input$multiContrasts_GW)) {
             comparison <- input$multiContrasts_GW %>%
                 gsub(" ", "", ., fixed = TRUE) %>%
-                str_split(pattern = ",") %>%
+                str_split(pattern = "[,;]") %>%
                 unlist()
             targetStage<- comparison %>%
                 str_split(pattern="-", simplify = T) %>%
@@ -281,12 +298,28 @@ server <- function(input, output, session) {
                 gsub("(", "", ., fixed = TRUE) %>%
                 gsub(")", "", ., fixed = TRUE) %>%
                 str_split(pattern = "\\+", simplify = T)
+            
             contrastStage<-comparison %>%
                 str_split(pattern="-", simplify = T) %>%
                 .[,2] %>%
                 gsub("(", "", ., fixed = TRUE) %>%
-                gsub(")", "", ., fixed = TRUE) %>%
+                gsub(")", "", ., fixed = TRUE)  %>%
                 str_split(pattern = "\\+", simplify = T)
+            
+            comparison<- sapply(seq_along(comparison),function(x){
+                tS <- as.vector(targetStage[x,]) %>%
+                    .[. != ""] 
+                cS <- as.vector(contrastStage[x,]) %>%
+                    .[. != ""] 
+                paste(paste0(tS, 
+                             collapse = "+") %>%
+                          paste0("(",.,")/",length(tS)),
+                      paste0(cS, 
+                             collapse = "+") %>%
+                          paste0("(",.,")/",length(cS)),
+                      sep = "-")
+                
+            })
             if (input$multipleContrastsYN_GW == T) {
                 vals$multipleCorrection_GW <- T
             } else vals$multipleCorrection_GW <- F
@@ -296,10 +329,10 @@ server <- function(input, output, session) {
             contrastStage <- rbind(input$selectContrast_GW)
             comparison <- paste(paste0(input$selectTarget_GW, 
                                        collapse = "+") %>%
-                                    paste0("(",.,")"), 
+                                    paste0("(",.,")/",length(input$selectTarget_GW)), 
                                 paste0(input$selectContrast_GW, 
                                        collapse = "+") %>%
-                                    paste0("(",.,")"), 
+                                    paste0("(",.,")/",length(input$selectContrast_GW)), 
                                 sep = "-")
             vals$multipleCorrection_GW <- F
         } else {
@@ -313,7 +346,9 @@ server <- function(input, output, session) {
         
         vals$targetStage_GW <- targetStage 
         vals$contrastStage_GW <- contrastStage
-        vals$comparison_GW <- comparison
+        vals$limmacontrast_GW <- comparison
+        vals$comparison_GW <- gsub("/[0-9]*","", comparison)
+        
     })
     
     ### GW: Generate Responsive Selection for Life Stage to Display ----
@@ -333,7 +368,8 @@ server <- function(input, output, session) {
     
     ### GW: Set Contrast Matrix and Fit the Linear Model ----
     set_linear_model_GW <- eventReactive(input$goLifeStage_GW,{
-        limma_ranking(vals$comparison_GW, 
+        req(vals$limmacontrast_GW)
+        limma_ranking(vals$limmacontrast_GW, 
                       vals$targetStage_GW, 
                       vals$contrastStage_GW, 
                       vals$multipleCorrection_GW, 
@@ -351,18 +387,18 @@ server <- function(input, output, session) {
     
     ### GW: Extract the Differentially Expressed Genes ----
     pull_DEGs_GW <- reactive({
+        
         req(vals$comparison_GW)
         req(vals$list.myTopHits.df_GW)
-        #req(vals$ebFit_GW)
         if (isTruthy(input$displayedComparison_GW)){
             vals$displayedComparison_GW <- match(input$displayedComparison_GW,
                                                  vals$comparison_GW, nomatch = 1)
         } else {vals$displayedComparison_GW <- 1}
-        
+       
         
         #### Volcano Plots
-        point_labels <- if(nrow(vals$genelist)<20){guide_legend(override.aes = list(size = 6))} else {FALSE}
-        
+        point_labels <- if(nrow(vals$list.highlight.df_GW[[vals$displayedComparison_GW]])<
+                           20){guide_legend(override.aes = list(size = 6))} else {FALSE}
         vplot <- ggplot(vals$list.myTopHits.df_GW[[vals$displayedComparison_GW]]) +
             aes(y=-log10(BH.adj.P.Val), x=logFC) +
             geom_point(size=2,
@@ -398,13 +434,13 @@ server <- function(input, output, session) {
             theme_Publication()
         
         vplot
-        
+       
     })
     
     ## GW: Volcano Plot, Generate UI  ----
     output$volcano_GW <- renderPlot({
         req(input$goLifeStage_GW)
-        req(vals$genelist)
+        req(vals$comparison_GW)
         
         set_linear_model_GW()
         pull_DEGs_GW()
@@ -465,7 +501,7 @@ server <- function(input, output, session) {
                                    ][vals$contrastStage_GW[vals$displayedComparison_GW,
                                                            ]!=""]
         
-        n_num_cols <- length(tS)*3 + length(cS)*3 + 3
+        n_num_cols <- length(tS)*3 + length(cS)*3 + 5
         highlight.datatable <- vals$list.highlight.tbl_GW[[vals$displayedComparison_GW]] %>%
             DT::datatable(extensions = c('KeyTable', "FixedHeader"),
                           rownames = FALSE,
@@ -534,12 +570,20 @@ server <- function(input, output, session) {
                        class = "btn-primary")
     })
     
+    ## LS: Clear Comparison Selections ----
+    observeEvent(input$resetLS,{
+        updateSelectInput(session, "selectContrast_LS", selected = "")
+        updateSelectInput(session, "selectTarget_LS", selected = "")
+        updateTextAreaInput(session,"multiContrasts_LS",value = "")
+        
+    })
+    
     ## LS: Pairwise comparisons Across Life Stages ----
     parse_contrasts_LS<-eventReactive(input$goLS,{
         if (isTruthy(input$multiContrasts_LS)) {
             comparison <- input$multiContrasts_LS %>%
                 gsub(" ", "", ., fixed = TRUE) %>%
-                str_split(pattern = ",") %>%
+                str_split(pattern = "[,;]") %>%
                 unlist()
             targetStage<- comparison %>%
                 str_split(pattern="-", simplify = T) %>%
@@ -553,6 +597,20 @@ server <- function(input, output, session) {
                 gsub("(", "", ., fixed = TRUE) %>%
                 gsub(")", "", ., fixed = TRUE) %>%
                 str_split(pattern = "\\+", simplify = T)
+            comparison<- sapply(seq_along(comparison),function(x){
+                tS <- as.vector(targetStage[x,]) %>%
+                    .[. != ""] 
+                cS <- as.vector(contrastStage[x,]) %>%
+                    .[. != ""] 
+                paste(paste0(tS, 
+                             collapse = "+") %>%
+                          paste0("(",.,")/",length(tS)),
+                      paste0(cS, 
+                             collapse = "+") %>%
+                          paste0("(",.,")/",length(cS)),
+                      sep = "-")
+                
+            })
             if (input$multipleContrastsYN_LS == T) {
                 vals$multipleCorrection_LS <- T
             } else vals$multipleCorrection_LS <- F
@@ -562,10 +620,10 @@ server <- function(input, output, session) {
             contrastStage <- rbind(input$selectContrast_LS)
             comparison <- paste(paste0(input$selectTarget_LS, 
                                        collapse = "+") %>%
-                                    paste0("(",.,")"), 
+                                    paste0("(",.,")/",length(input$selectTarget_LS)), 
                                 paste0(input$selectContrast_LS, 
                                        collapse = "+") %>%
-                                    paste0("(",.,")"), 
+                                    paste0("(",.,")/",length(input$selectContrast_LS)), 
                                 sep = "-")
             vals$multipleCorrection_LS <- F
         } else {
@@ -579,7 +637,9 @@ server <- function(input, output, session) {
         
         vals$targetStage_LS <- targetStage 
         vals$contrastStage_LS <- contrastStage
-        vals$comparison_LS <- comparison
+        vals$limmacontrast_LS <- comparison
+        vals$comparison_LS <- gsub("/[0-9]*","", comparison)
+        
         
     })
     
@@ -600,7 +660,7 @@ server <- function(input, output, session) {
     
     ### LS: Set Contrast Matrix and Fit the Linear Model ----
     set_linear_model_LS <- eventReactive(input$goLS,{
-        limma_ranking(vals$comparison_LS, 
+        limma_ranking(vals$limmacontrast_LS, 
                       vals$targetStage_LS, 
                       vals$contrastStage_LS, 
                       vals$multipleCorrection_LS, 
@@ -620,7 +680,7 @@ server <- function(input, output, session) {
     pull_DEGs_LS <- reactive({
         req(vals$comparison_LS)
         req(vals$list.myTopHits.df_LS)
-        #req(vals$ebFit_LS)
+       
         if (isTruthy(input$displayedComparison_LS)){
             vals$displayedComparison_LS <- match(input$displayedComparison_LS,
                                                  vals$comparison_LS, nomatch = 1)
@@ -711,7 +771,7 @@ server <- function(input, output, session) {
                                    ][vals$contrastStage_LS[vals$displayedComparison_LS,
                                                            ]!=""]
         
-        n_num_cols <- length(tS)*3 + length(cS)*3 + 3
+        n_num_cols <- length(tS)*3 + length(cS)*3 + 5
         LS.datatable <- vals$list.highlight.tbl_LS[[vals$displayedComparison_LS]] %>%
             DT::datatable(extensions = c('KeyTable', "FixedHeader"),
                           rownames = FALSE,
@@ -735,7 +795,7 @@ server <- function(input, output, session) {
                                          order = list(n_num_cols-1, 
                                                       'desc'),
                                          searchHighlight = TRUE, 
-                                          pageLength = 25, 
+                                         pageLength = 25, 
                                          lengthMenu = c("5",
                                                         "10",
                                                         "25",

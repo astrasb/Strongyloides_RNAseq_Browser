@@ -3,8 +3,6 @@
 ## Produces a Top Table of differentially expressed genes. 
 
 calc_DEG_tbl <- function (ebFit, coef) {
-   
-   
     myTopHits.df <- limma::topTable(ebFit, adjust ="BH", 
                                     coef=coef, number=40000, 
                                     sort.by="logFC") %>%
