@@ -16,6 +16,8 @@ suppressPackageStartupMessages({
     library(magrittr)
     library(ggthemes)
     library(gplots)
+    library(svglite)
+    library(Cairo)
     library(heatmaply)
     library(RColorBrewer)
     library(openxlsx)
@@ -145,6 +147,7 @@ server <- function(input, output, session) {
                   multiple = FALSE)
     })
     
+    ## GW: Clear Genes ----
     observeEvent(input$resetGenes,{
         updateTextAreaInput(session,"idtext",value = "")
         vals$genelist <- NULL
@@ -217,9 +220,8 @@ server <- function(input, output, session) {
         })
     })
     
-    ### GW: Plot Gene Expression by Life Stage ----
-    output$CPM <- renderPlot({
-        parse_ids()
+    ## Generate GGPlot of Gene Expression ----
+    generateGenePlot <- reactive({
         req(vals$genelist)
         
         # Select gene to display
@@ -242,7 +244,8 @@ server <- function(input, output, session) {
                      title=paste("Log2 Counts per Million (CPM):",
                                  vals$gene_of_interest),
                      subtitle="filtered, normalized, variance-stabilized") +
-                theme_Publication()
+                theme_Publication() +
+                theme(aspect.ratio=2/3)
             p 
         } else {
             # Make a heatmap for all the genes using the Log2CPM values
@@ -277,10 +280,28 @@ server <- function(input, output, session) {
                          trace="none",
                          cexRow=1.2, cexCol=1.2) 
             p
-            
         }
-        p
     })
+    ### GW: Plot Gene Expression by Life Stage ----
+    output$CPM <- renderPlot({
+        parse_ids()
+        generateGenePlot()
+    })
+    
+    ## GW: Save Gene Plots ----
+    output$downloadGenePlot <- downloadHandler(
+        filename = function(){
+            paste(input$displayedGene, '_',Sys.Date(),'.pdf', sep='')
+        },
+        content = function(file){
+            generateGenePlot() 
+            ggsave(file, 
+                   width = 7,
+                   height = 7, 
+                   device = "pdf", 
+                   useDingbats=FALSE)}
+        
+    )
     
     ## GW: Clear Comparison Selections ----
     observeEvent(input$resetGW,{
@@ -404,16 +425,17 @@ server <- function(input, output, session) {
         
         #### Volcano Plots
         point_labels <- if(nrow(vals$list.highlight.tbl_GW[[vals$displayedComparison_GW]])<
-                           20){guide_legend(override.aes = list(size = 6))} else {FALSE}
+                           20){guide_legend(override.aes = list(size = 4))} else {FALSE}
+        
         vplot <- ggplot(vals$list.myTopHits.df_GW[[vals$displayedComparison_GW]]) +
             aes(y=-log10(BH.adj.P.Val), x=logFC) +
-            geom_point(size=2,
+            geom_point(size=3,
                        na.rm = T) +
             geom_point(data = vals$list.highlight.tbl_GW[[vals$displayedComparison_GW]], 
-                       aes(y=-log10(BH.adj.P.Val), 
-                           x=logFC, 
-                           color = geneID, 
-                           size = 2),
+                       mapping = aes(y=-log10(BH.adj.P.Val), 
+                                     x=logFC, 
+                                     color = geneID),
+                       size = 3,
                        na.rm = T) +
             geom_hline(yintercept = -log10(adj.P.thresh), 
                        linetype="longdash", 
@@ -434,10 +456,10 @@ server <- function(input, output, session) {
                                      ' vs ',
                                      vals$comparison_GW[vals$displayedComparison_GW])),
                  subtitle = paste0("grey line: p = ",
-                                   adj.P.thresh, "; colored lines: log-fold change =",  lfc.thresh),
+                                   adj.P.thresh, "; colored lines: log-fold change = ",  lfc.thresh),
                  color = "GeneIDs") +
-            #coord_fixed()+
-            theme_Publication()
+            theme_Publication() +
+            theme(aspect.ratio=1/3)
         
         vplot
         
@@ -452,6 +474,17 @@ server <- function(input, output, session) {
         pull_DEGs_GW()
         
     })
+    
+    ## GW: Save Volcano Plot ----
+    output$downloadVolcano_GW <- downloadHandler(
+        filename = function(){
+            paste(vals$comparison_GW[vals$displayedComparison_GW], '_',Sys.Date(),'.pdf', sep='')
+        },
+        content = function(file){
+            pull_DEGs_GW()
+            ggsave(file,width = 11, height = 8, units = "in", device = "pdf", useDingbats=FALSE)
+        }
+    )
     
     output$hover_info <- renderUI({
         req(vals$displayedComparison_GW)
@@ -578,7 +611,7 @@ server <- function(input, output, session) {
     output$downloadbuttonGW <- renderUI({
         req(input$goLifeStage_GW)
         req(vals$comparison_GW)
-       
+        
         output$generate_excel_report_GW <- generate_excel_report(vals$comparison_GW, 
                                                                  vals$list.highlight.tbl_GW)
         downloadButton("generate_excel_report_GW",
@@ -721,7 +754,8 @@ server <- function(input, output, session) {
                  subtitle = paste0("grey line: p = ",
                                    adj.P.thresh, "; colored lines: log-fold change =", lfc.thresh),
                  color = "GeneIDs") +
-            theme_Publication() 
+            theme_Publication() +
+            theme(aspect.ratio=1/3)
         vplot
     })
     
@@ -731,6 +765,17 @@ server <- function(input, output, session) {
         set_linear_model_LS()
         pull_DEGs_LS()
     })
+    
+    ## LS: Save Volcano Plot
+    output$downloadVolcano_LS <- downloadHandler(
+        filename = function(){
+            paste(vals$comparison_LS[vals$displayedComparison_LS], '_',Sys.Date(),'.pdf', sep='')
+        },
+        content = function(file){
+            pull_DEGs_LS()
+            ggsave(file,width = 11, height = 8, units = "in", device = "pdf", useDingbats=FALSE)
+        }
+    )
     
     # output$hover_info_LS <- renderUI({
     #     req(vals$displayedComparison)
@@ -840,9 +885,9 @@ server <- function(input, output, session) {
                             digits=3)
         
         LS.datatable <- LS.datatable %>%
-        DT::formatRound(columns=c(n_num_cols+2, 
-                                  n_num_cols+8), 
-                        digits=2)
+            DT::formatRound(columns=c(n_num_cols+2, 
+                                      n_num_cols+8), 
+                            digits=2)
         
         LS.datatable <- LS.datatable %>%
             DT::formatSignif(columns=c(n_num_cols+1), 
@@ -862,7 +907,7 @@ server <- function(input, output, session) {
     output$downloadbuttonLS <- renderUI({
         req(input$goLS)
         req(vals$comparison_LS)
-       
+        
         output$generate_excel_report_LS <- generate_excel_report(vals$comparison_LS, 
                                                                  vals$list.highlight.tbl_LS)
         downloadButton("generate_excel_report_LS",

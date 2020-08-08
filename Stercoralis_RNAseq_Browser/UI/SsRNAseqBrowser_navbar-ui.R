@@ -44,7 +44,11 @@ navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                                                          "Gene Expression Across Life Stages")),
                                                     status = "primary",
                                                     withSpinner(plotOutput('CPM'),
-                                                                color = "#2C3E50")
+                                                                color = "#2C3E50"),
+                                                    
+                                                    # downloadButton("downloadGenePlot",
+                                                    #                "Download Plot as PDF",
+                                                    #                class = "btn-primary")
                                                 )
                                )
                         ),
@@ -136,7 +140,11 @@ navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                                                                               delayType = "debounce")),
                                                                  
                                                                  color = "#2C3E50"),
-                                                     uiOutput("hover_info")
+                                                     uiOutput("hover_info"),
+                                                     
+                                                     downloadButton("downloadVolcano_GW",
+                                                                    "Download Plot as PDF",
+                                                                    class = "btn-primary")
                                                  )
                                                  
                                 )
@@ -246,7 +254,11 @@ navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                                      #             color = "#2C3E50"),
                                                      withSpinner(plotOutput('volcano_LS'),
                                                                  color = "#2C3E50"),
-                                                     uiOutput("hover_info_LS")
+                                                     uiOutput("hover_info_LS"),
+                                                     
+                                                     downloadButton("downloadVolcano_LS",
+                                                                    "Download Plot as PDF",
+                                                                    class = "btn-primary")
                                                  )
                                                  
                                                  
