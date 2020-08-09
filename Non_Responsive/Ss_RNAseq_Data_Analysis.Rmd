@@ -284,12 +284,9 @@ myscores.Top10.interactive
 
 
 # Differentially Expressed Genes ---
-```{r DEG, warning=FALSE}
+```{r DEG, echo=TRUE, warning=FALSE, paged.print=TRUE}
 # Introduction to this chunk ----
 # This chunk uses a variance-stabilized DGEList of filtered and normalized abundance data.
-# 
-# 
-# It does a computationally intensive thing: conductes pairwise differential expression analyses for every gene across every combintation of life stages.
 # 
 # These data/results are examples, a responsive version of this code is avaliable in a Shiny App.
 # 
@@ -304,8 +301,13 @@ suppressPackageStartupMessages({
   library(gt) 
   library(DT) 
   library(plotly)
-  library(memoise)
+  library(ggthemes)
+  library(RColorBrewer)
+  source("../Stercoralis_RNAseq_Browser/Server/theme_Publication.R")
 })
+
+diffGenes.df <- v.DEGList.filtered.norm$E %>%
+  as_tibble(rownames = "geneID", .name_repair = "unique")
 
 # Set Expression threshold values for plotting and saving DEGs ----
 adj.P.thresh <- 0.05
@@ -318,18 +320,44 @@ colnames(design) <- levels(group)
 # Fit a linear model to the data ----
 fit <- lmFit(v.DEGList.filtered.norm, design)
 
-# As an example, generate comparison matrix for all unique pairwise comparisons ----
-comparisons<- combn(targets$group, m = 2) %>% 
-  t() %>%
-  unique() 
-comparisons <- tibble(targetStages = comparisons[,1], contrastStages = comparisons[,2]) %>%
-  dplyr::filter(!(targetStages == contrastStages))
+# As an example, generate comparison matrix for two pairwise comparisons ----
+# PC1 elements (FLF, PF vs iL3s, iL3+, ppL1, ppL3, pfL1) and PC2 elements
+# Note that the target/contrast goups will be divided by the number of life 
+# stage groups e.g. PF+FLF/2 - iL3+iL3a+pfL1+ppL1+ppL3/5
+comparison <- c('(PF+FLF)-(iL3+iL3a+pfL1+ppL1+ppL3)',
+                '(PF+iL3+iL3a)-(FLF+pfL1+ppL1+ppL3)')
 
-paste.compare <- function(targetStage, contrastStage) {
-  paste(targetStage, contrastStage, sep = "-")
-}
-contrasts <- mapply(paste.compare, comparisons$targetStages, comparisons$contrastStages, USE.NAMES = F)
-contrast.matrix <- makeContrasts(contrasts = contrasts,
+targetStage<- comparison %>%
+  str_split(pattern="-", simplify = T) %>%
+  .[,1] %>%
+  gsub("(", "", ., fixed = TRUE) %>%
+  gsub(")", "", ., fixed = TRUE) %>%
+  str_split(pattern = "\\+", simplify = T)
+
+contrastStage<-comparison %>%
+  str_split(pattern="-", simplify = T) %>%
+  .[,2] %>%
+  gsub("(", "", ., fixed = TRUE) %>%
+  gsub(")", "", ., fixed = TRUE)  %>%
+  str_split(pattern = "\\+", simplify = T)
+
+comparison<- sapply(seq_along(comparison),function(x){
+  tS <- as.vector(targetStage[x,]) %>%
+    .[. != ""] 
+  cS <- as.vector(contrastStage[x,]) %>%
+    .[. != ""] 
+  paste(paste0(tS, 
+               collapse = "+") %>%
+          paste0("(",.,")/",length(tS)),
+        paste0(cS, 
+               collapse = "+") %>%
+          paste0("(",.,")/",length(cS)),
+        sep = "-")
+  
+})
+
+# Generate contrast matrix ----
+contrast.matrix <- makeContrasts(contrasts = comparison,
                                  levels=design)
 
 # extract the linear model fit -----
@@ -341,18 +369,18 @@ ebFit <- eBayes(fits)
 # Adjust for multiple comparisons using method = global. 
 results <- decideTests(ebFit, method="global", adjust.method="BH", p.value = adj.P.thresh)
 
+recode01<- function(x){
+  case_when(x == 1 ~ "Up",
+            x == -1 ~ "Down",
+            x == 0 ~ "NotSig")
+}
+diffDesc <- results %>%
+  as_tibble(rownames = "geneID") %>%
+  dplyr::mutate(across(-geneID, unclass)) %>%
+  dplyr::mutate(across(where(is.double), recode01))
 
-# Function that identifies top DEG between a specific pairwise comparison ----
-identify.DEGs <- function (selected.contrast, contrasts) {
-  # TopTable to view DEGs -----
-  # Look at the top differentially expressed genes
-  # Note: this only considers the specific selected contrast, does not correct for multiple comparisons
-  
-  # parse selected contrast into the coefficient
-  coef <- grep(paste0("^",selected.contrast,"$"), contrasts)
-  targetStage <- str_split(selected.contrast, "-")[[1]][1]
-  contrastStage <- str_split(selected.contrast, "-")[[1]][2]
-  
+# Function that identifies top DEGs between a specific contrast ----
+calc_DEG_tbl <- function (ebFit, coef) {
   myTopHits.df <- limma::topTable(ebFit, adjust ="BH", 
                                   coef=coef, number=40000, 
                                   sort.by="logFC") %>%
@@ -360,193 +388,274 @@ identify.DEGs <- function (selected.contrast, contrasts) {
     dplyr::rename(tStatistic = t, LogOdds = B, BH.adj.P.Val = adj.P.Val) %>%
     dplyr::relocate(UniProtKB, Description, InterPro, GO_term, Ce_geneID, percent_homology, .after = LogOdds)
   
-  # Volcano Plots ----
-  vplot <- ggplot(myTopHits.df) +
-    aes(y=-log10(BH.adj.P.Val), x=logFC, text = paste(geneID, "<br>",
-                                                      "logFC:", round(logFC, digits = 2), "<br>",
-                                                      "p-val:", format(BH.adj.P.Val, digits = 3, scientific = TRUE), "<br>",
-                                                      "Description:", Description, "<br>", 
-                                                      "InterPro:", InterPro,"<br>",
-                                                      "Ce-Gene:", Ce_geneID, "<br>", 
-                                                      "% homology:", percent_homology)) +
-    geom_point(size=2) +
-    geom_hline(yintercept = -log10(adj.P.thresh), linetype="longdash", colour="grey", size=1) + #dashed line at given p value, w/: -log10(p)
-    geom_vline(xintercept = lfc.thresh, linetype="longdash", colour="#BE684D", size=1) + #logFC of 1 = 2 fold change
-    geom_vline(xintercept = -lfc.thresh, linetype="longdash", colour="#2C467A", size=1) +
-    labs(
-      title = paste0('Pairwise Comparison: ',
-                                gsub('-',
-                                     ' vs ',
-                                     selected.contrast)),
-                 subtitle = paste0("grey line: p = ",
-                                   adj.P.thresh, "; colored lines: log-fold change = ",lfc.thresh)) +
-    theme_bw()
-  
-  # Make the volcano plot above interactive
-  interactive.vplot <- ggplotly(vplot, tooltip = "text") %>%
-    layout(title= list( text = paste0('Pairwise Comparison: ',
-                                gsub('-',
-                                     ' vs ',
-                                     selected.contrast),
-                                      "<br>",
-                                      "<sup>",
-                                      "grey line: p = ",
-                                   adj.P.thresh, "; colored lines: log-fold change = 1 ",
-                                      "</sup>")))
-  print(interactive.vplot)
-  # Generate variable containing expression data for thresholded DEGs ----
-  # Reminder that E (output from voom) = normalized expression values on the log2 scale
-  # [,coef] specifies which pairwise comparison to pull out. 
-  # This variable is necessary for generating heatmaps.
-  diffGenes <- v.DEGList.filtered.norm$E[results[,coef] !=0,] 
-  
-  # Calculate average normalized log2-cmp across life stages
-  avg.v.filtered.norm.Log2CPM<-v.DEGList.filtered.norm$E %>%
-  as_tibble(rownames = "geneID")%>%
-  setNames(nm = c("geneID", targets$group)) %>%
-  pivot_longer(cols = -geneID,
-               names_to = "life_stage", 
-               values_to = "log2CPM") %>%
-  group_by(geneID, life_stage) %>%
-  dplyr::summarize(life.stage.AVG = mean(log2CPM, na.rm = TRUE)) %>%
-  pivot_wider(names_from = life_stage,
-              names_prefix = "avg_",
-              values_from = life.stage.AVG,) %>%
-  ungroup() 
-  
-  diffGenes.df <- as_tibble(diffGenes, rownames = "geneID", .name_repair = "unique") %>% 
-    left_join(., avg.v.filtered.norm.Log2CPM, by = "geneID")  
-  
-  # merge list of thresholded DEGs with information contained in TopTable
-  diffGenes.TopHits <- left_join(diffGenes.df, myTopHits.df, by = "geneID")%>% 
-    dplyr::select(geneID:logFC, BH.adj.P.Val:percent_homology)
-  
-  # Set adjusted P value to scientific notation for cosmetic purposes
-  diffGenes.TopHits$BH.adj.P.Val <- formatC(diffGenes.TopHits$BH.adj.P.Val, digits = 3, format = "E") 
-  
-  # Create a version of myTopHits for exporting that includes averaged voom data
-  avg.myTopHits.df <- myTopHits.df %>%
-    dplyr::select(geneID, logFC, BH.adj.P.Val:percent_homology) %>%
-    left_join(avg.v.filtered.norm.Log2CPM, . , by = "geneID")
-  
-  
-  # create interactive tables to display the thresholded DEGs, ranked ----
-  if(any(grepl(targetStage, names(diffGenes.TopHits)))){
-    DEG.datatable <- diffGenes.TopHits %>%
-      dplyr::select(geneID, starts_with(paste0(targetStage,"-")), 
-                    paste0("avg_",targetStage),
-                    starts_with(paste0(contrastStage,"-")),
-                    paste0("avg_", contrastStage),
-                    logFC, BH.adj.P.Val:percent_homology)} else {
-                      DEG.datatable <- diffGenes.TopHits %>%
-                        dplyr::select(geneID, starts_with("avg"),logFC, BH.adj.P.Val:percent_homology)
-                    }
-  DEG.datatable <- DEG.datatable %>%
-    DT::datatable(extensions = c('KeyTable', "FixedHeader"),
-                  rownames = FALSE,
-                  caption = htmltools::tags$caption(
-                    style = 'caption-side: top; text-align: left;',
-                    htmltools::tags$b('Differentially Expressed Genes in', htmltools::tags$em('S. stercoralis'), 
-                                      targetStage, ' vs ', contrastStage),
-                    htmltools::tags$br(),
-                    "Threshold: p < ",
-                    adj.P.thresh, "; log-fold change > ",
-                    lfc.thresh,
-                    htmltools::tags$br(),
-                    'Values = log2 counts per million'),
-                  options = list(keys = TRUE,
-                                 autoWidth = TRUE,
-                                 scrollX = TRUE,
-                                 order = list(9, 'desc'),
-                                 searchHighlight = TRUE, 
-                                 pageLength = 10, 
-                                 lengthMenu = c("10", "25", "50", "100")))
-  
-  if(any(grepl(targetStage, names(diffGenes.TopHits)))){
-    DEG.datatable <- DEG.datatable %>%
-      DT::formatRound(columns=c(2:9), digits=2) %>%
-      DT::formatRound(columns = c(10,12), digits = 3)} else {
-        DEG.datatable <- DEG.datatable %>%
-          DT::formatRound(columns=c(2:8), digits=2) %>%
-          DT::formatRound(columns = c(9,11), digits = 3)
-      } 
-
+  myTopHits.df
 }
 
-# Calling function on all pairwise comparisons -----
-# Currently running this only for a single comparison.
-output.DEG.SsRNAseq <- sapply(contrasts[2], identify.DEGs, contrasts, simplify = F, USE.NAMES = T)
-names(output.DEG.SsRNAseq) <-  paste(comparisons$targetStages[2], comparisons$contrastStages[2], sep = "-")
+list.myTopHits.df <- sapply(comparison, function(y){
+  calc_DEG_tbl(ebFit, y)}, 
+  simplify = FALSE, 
+  USE.NAMES = TRUE)
 
-output.DEG.SsRNAseq$`FLF-iL3`
-```
+list.myTopHits.df <- sapply(comparison, function(y){
+  list.myTopHits.df[[y]] %>%
+    dplyr::select(geneID, 
+                  logFC, 
+                  BH.adj.P.Val:percent_homology)},
+  simplify = FALSE, 
+  USE.NAMES = TRUE)
 
-# Across All Life Stages: DEGs ---
-```{r acrossGroupsDEG, warning=FALSE}
-# Introduction to this chunk ----
-# This chunk combines all pair-wise comparisons to identify all genes that are differentially expressed in any way across groups. 
+# Get log2CPM values and threshold information for genes of interest
+list.myTopHits.df <- sapply(seq_along(comparison), function(y){
+  tS<- targetStage[y,][targetStage[y,]!=""]
+  cS<- contrastStage[y,][contrastStage[y,]!=""]
+  
+  concat_name <- function(x) {
+    ifelse(x == "target", 
+           paste(tS, collapse = "+"), 
+           paste(cS, collapse = "+"))
+  }
+  
+  groupAvgs <- diffGenes.df %>%
+    dplyr::select(geneID, starts_with(paste0(tS,"-")), 
+                  starts_with(paste0(cS,"-"))) %>%
+    pivot_longer(cols = -geneID, names_to = c("group","sample"), values_to = "CPM",
+                 names_sep = "-") %>%
+    dplyr::mutate(contrastID = if_else(group %in% tS,"target", "contrast")) %>%
+    group_by(geneID, contrastID) %>%
+    dplyr::select(-sample) %>%
+    summarize(mean = mean(CPM), .groups = "drop_last") %>%
+    pivot_wider(names_from = contrastID, values_from = mean) %>%
+    dplyr::relocate(contrast, .after = target) %>%
+    dplyr::rename_with(concat_name, -geneID) %>%
+    dplyr::rename_with(.cols =-geneID, .fn = ~ paste0("avg_(",.x,")"))
+  
+  diffGenes.df %>%
+    dplyr::select(geneID, starts_with(paste0(tS,"-")), 
+                  starts_with(paste0(cS,"-"))) %>%
+    left_join(groupAvgs, by = "geneID") %>%
+    left_join(list.myTopHits.df[[y]], by = "geneID") %>%
+    left_join(dplyr::select(diffDesc,geneID,comparison[y]), by = "geneID") %>%
+    dplyr::rename(DEG_Desc=comparison[y]) %>%
+    dplyr::relocate(DEG_Desc)
+  
+},
+simplify = FALSE)
 
-# These data/results are examples, a responsive version of this code is avaliable in a Shiny App.
+comparison <- gsub("/[0-9]*","", comparison)
+names(list.myTopHits.df) <- comparison
 
-# Variation of the topTable call to use all comparisons ----
-# This is done by not including a coefficient variable.
-# from the results of the eBayes function, the statistic $F and the $F.p.value combine all pairwise comparisons into one F-test. So this should indicate which genes vary between the targets in any way.
-# 
-myTopHits.across.df <- limma::topTable(ebFit, adjust ="BH", 
-                                       number=40000) %>%
-  as_tibble(rownames = "geneID") %>%
-  dplyr::rename(fStatistic = F, BH.adj.P.Val = adj.P.Val) %>%
-  dplyr::relocate(UniProtKB, Description, InterPro, GO_term, Ce_geneID, percent_homology, .after = BH.adj.P.Val)
+list.myTopHits.df <- sapply(comparison, function(y){
+  list.myTopHits.df[[y]] %>%
+    dplyr::mutate(DEG_Desc = case_when(DEG_Desc == "Up" ~ paste0("Up in ", str_split(y,'-',simplify = T)[1,1]),
+                                       DEG_Desc == "Down" ~ paste0("Down in ", str_split(y,'-',simplify = T)[1,1]),
+                                       DEG_Desc == "NotSig" ~ "NotSig")) 
+},
+simplify = FALSE, 
+USE.NAMES = TRUE)
 
+# PC1 Volcano Plot and Interactive Table ----
+vplot1 <- ggplot(list.myTopHits.df[[1]]) +
+  aes(y=-log10(BH.adj.P.Val), x=logFC, text = paste(geneID, "<br>",
+                                                    "logFC:", round(logFC, digits = 2), "<br>",
+                                                    "p-val:", format(BH.adj.P.Val, digits = 3, scientific = TRUE))) +
+  geom_point(size=2) +
+  geom_hline(yintercept = -log10(adj.P.thresh), 
+             linetype="longdash", 
+             colour="grey", 
+             size=1) + 
+  geom_vline(xintercept = lfc.thresh, 
+             linetype="longdash", 
+             colour="#BE684D", 
+             size=1) +
+  geom_vline(xintercept = -lfc.thresh, 
+             linetype="longdash", 
+             colour="#2C467A", 
+             size=1) +
+  labs(title = paste0('Pairwise Comparison: ',
+                      gsub('-',
+                           ' vs ',
+                           comparison[1])),
+       subtitle = paste0("grey line: p = ",
+                         adj.P.thresh, "; colored lines: log-fold change = ", lfc.thresh),
+       color = "GeneIDs") +
+  theme_Publication() 
+vplot1
 
-# Pull out the DEGs that pass a specific threshold for all pairwise comparisons ----
-# p.value = set p value threshold, lfc = set log fold change threshold, 1 = fold change of 2
-results <- decideTests(ebFit, method="global", adjust.method="BH", p.value=adj.P.thresh, lfc=lfc.thresh)
+# Interactive Tables
+y<- 1
+tS<- targetStage[y,][targetStage[y,]!=""]
+cS<- contrastStage[y,][contrastStage[y,]!=""]
 
-# Generate variable containing expression data for your thresholded DEGs ----
-diffGenes.across <- v.DEGList.filtered.norm$E[rowSums(results !=0) > 0,] # across all comparisons 
-colnames(diffGenes.across) <- targets$group
-
-diffGenes.TopHits.across <-avearrays(diffGenes.across) %>%
-  as_tibble(rownames = "geneID") %>% 
-  left_join(., 
-            dplyr::select(myTopHits.across.df,
-                          geneID,fStatistic, 
-                          BH.adj.P.Val:percent_homology), 
-            by = "geneID")
-diffGenes.TopHits.across$BH.adj.P.Val <- formatC(diffGenes.TopHits.across$BH.adj.P.Val, digits = 3, format = "E") # Set adjusted P value to scientific 
-
-
-# Make the table interactive? ----
-# Note that this table won't tell you which comparisons are driving the significant difference, only that they do vary.
-all.DEG.datatable <- diffGenes.TopHits.across %>%
-  DT::datatable(extensions = c('KeyTable', "FixedHeader"),
-                rownames = FALSE,
+n_num_cols <- length(tS)*3 + length(cS)*3 + 5
+LS.datatable <- list.myTopHits.df[[y]] %>%
+  DT::datatable(rownames = FALSE,
                 caption = htmltools::tags$caption(
-                  style = 'caption-side: top; text-align: left;',
-                  htmltools::tags$b('Differentially Expressed Genes in', htmltools::tags$em('S. stercoralis')),
-                  htmltools::tags$br(),
-                  "Genes differentially expressed in any life stage",
+                  style = 'caption-side: top; text-align: left; color: black',
+                  htmltools::tags$b('Differentially Expressed Genes in', 
+                                    htmltools::tags$em('S. stercoralis'), 
+                                    gsub('-',' vs ',comparison[y])),
                   htmltools::tags$br(),
                   "Threshold: p < ",
                   adj.P.thresh, "; log-fold change > ",
                   lfc.thresh,
                   htmltools::tags$br(),
-                  'Values = average log2 counts per million'),
-                options = list(keys = TRUE,
-                               autoWidth = TRUE,
+                  'Values = log2 counts per million'),
+                options = list(autoWidth = TRUE,
                                scrollX = TRUE,
-                               order = list(9, 'asc'),
+                               scrollY = '300px',
+                               scrollCollapse = TRUE,
+                               order = list(n_num_cols-1, 
+                                            'desc'),
                                searchHighlight = TRUE, 
-                               pageLength = 10, 
-                               lengthMenu = c("10", "25", "50", "100"))) %>%
-  DT::formatRound(columns=c(2:8), digits=2) %>%
-  DT::formatRound(columns = c(9), digits = 3) 
+                               pageLength = 25, 
+                               lengthMenu = c("5",
+                                              "10",
+                                              "25",
+                                              "50",
+                                              "100"),
+                               columnDefs = list(
+                                 list(
+                                   targets = ((n_num_cols + 
+                                                 1)),
+                                   render = JS(
+                                     "function(data, row) {",
+                                     "data.toExponential(1);",
+                                     "}")
+                                 ),
+                                 list(
+                                   targets = ((n_num_cols + 
+                                                 4):(n_num_cols + 
+                                                       5)),
+                                   render = JS(
+                                     "function(data, type, row, meta) {",
+                                     "return type === 'display' && data.length > 20 ?",
+                                     "'<span title=\"' + data + '\">' + data.substr(0, 20) + '...</span>' : data;",
+                                     "}")
+                                 ),
+                                 list(targets = "_all",
+                                      class="dt-right")
+                               )
+                               
+                )) 
+LS.datatable <- LS.datatable %>%
+  DT::formatRound(columns=c(3:n_num_cols), 
+                  digits=3)
 
+LS.datatable <- LS.datatable %>%
+  DT::formatRound(columns=c(n_num_cols+2, 
+                            n_num_cols+8), 
+                  digits=2)
+
+LS.datatable <- LS.datatable %>%
+  DT::formatSignif(columns=c(n_num_cols+1), 
+                   digits=3)
+
+LS.datatable
+
+# PC2 Volcano Plot and Interactive Table ----
+vplot2 <- ggplot(list.myTopHits.df[[2]]) +
+  aes(y=-log10(BH.adj.P.Val), x=logFC, 
+      text = paste(geneID, "<br>",
+                   "logFC:", round(logFC, digits = 2), "<br>",
+                   "p-val:", format(BH.adj.P.Val, digits = 3, scientific = TRUE))) +
+  geom_point(size=2) +
+  geom_hline(yintercept = -log10(adj.P.thresh), 
+             linetype="longdash", 
+             colour="grey", 
+             size=1) + 
+  geom_vline(xintercept = lfc.thresh, 
+             linetype="longdash", 
+             colour="#BE684D", 
+             size=1) +
+  geom_vline(xintercept = -lfc.thresh, 
+             linetype="longdash", 
+             colour="#2C467A", 
+             size=1) +
+  labs(title = paste0('Pairwise Comparison: ',
+                      gsub('-',
+                           ' vs ',
+                           comparison[2])),
+       subtitle = paste0("grey line: p = ",
+                         adj.P.thresh, "; colored lines: log-fold change = ", lfc.thresh),
+       color = "GeneIDs") +
+  theme_Publication() 
+vplot2
+
+y<- 2
+tS<- targetStage[y,][targetStage[y,]!=""]
+cS<- contrastStage[y,][contrastStage[y,]!=""]
+
+n_num_cols <- length(tS)*3 + length(cS)*3 + 5
+LS.datatable <- list.myTopHits.df[[y]] %>%
+  DT::datatable(rownames = FALSE,
+                caption = htmltools::tags$caption(
+                  style = 'caption-side: top; text-align: left; color: black',
+                  htmltools::tags$b('Differentially Expressed Genes in', 
+                                    htmltools::tags$em('S. stercoralis'), 
+                                    gsub('-',' vs ',comparison[y])),
+                  htmltools::tags$br(),
+                  "Threshold: p < ",
+                  adj.P.thresh, "; log-fold change > ",
+                  lfc.thresh,
+                  htmltools::tags$br(),
+                  'Values = log2 counts per million'),
+                options = list(autoWidth = TRUE,
+                               scrollX = TRUE,
+                               scrollY = '300px',
+                               scrollCollapse = TRUE,
+                               order = list(n_num_cols-1, 
+                                            'desc'),
+                               searchHighlight = TRUE, 
+                               pageLength = 25, 
+                               lengthMenu = c("5",
+                                              "10",
+                                              "25",
+                                              "50",
+                                              "100"),
+                               columnDefs = list(
+                                 list(
+                                   targets = ((n_num_cols + 
+                                                 1)),
+                                   render = JS(
+                                     "function(data, row) {",
+                                     "data.toExponential(1);",
+                                     "}")
+                                 ),
+                                 list(
+                                   targets = ((n_num_cols + 
+                                                 4):(n_num_cols + 
+                                                       5)),
+                                   render = JS(
+                                     "function(data, type, row, meta) {",
+                                     "return type === 'display' && data.length > 20 ?",
+                                     "'<span title=\"' + data + '\">' + data.substr(0, 20) + '...</span>' : data;",
+                                     "}")
+                                 ),
+                                 list(targets = "_all",
+                                      class="dt-right")
+                               )
+                               
+                )) 
+LS.datatable <- LS.datatable %>%
+  DT::formatRound(columns=c(3:n_num_cols), 
+                  digits=3)
+
+LS.datatable <- LS.datatable %>%
+  DT::formatRound(columns=c(n_num_cols+2, 
+                            n_num_cols+8), 
+                  digits=2)
+
+LS.datatable <- LS.datatable %>%
+  DT::formatSignif(columns=c(n_num_cols+1), 
+                   digits=3)
+
+LS.datatable
 ```
 
+
+
 # Cluster DEGs into functional modules ---
-```{r heatmaps}
+```{r heatmaps, eval=FALSE, include=FALSE}
 # Introduction to this chunk ----
 # this chunk creates heatmaps from differentially expressed genes;
 # it takes as input a list of genes that are differentially expressed in any life stage
@@ -561,17 +670,29 @@ suppressPackageStartupMessages({
   library(RColorBrewer)
   library(gplots)
   library(heatmaply)
+  library(ggplot2)
+  library(egg)
+  library(dendextend)
+  source("../Stercoralis_RNAseq_Browser/Server/ggheatmap_local.R")
 })
 
 # Choose a color pallette ----
 #myheatcolors <- rev(brewer.pal(name="RdBu", n=11))
 myheatcolors <- RdBu(75)
 
+# Select the comparison
+y = 1
+
+# Generate variable containing expression data for the thresholded DEGs 
+diffGenes.thresh <- v.DEGList.filtered.norm$E[results[,y] !=0,]
+colnames(diffGenes.thresh) <- paste0(targets$group, "-", targets$sample)
+
+
 # Cluster DEGs across stages ----
 #begin by clustering the genes (rows) for a list of genes that are differentially expressed in at least one life stage
 # use the 'cor' function and the pearson method for finding all pairwise correlations of genes
 # '1-cor' converts this to a 0-2 scale for each of these correlations, which can then be used to calculate a distance matrix using 'as.dist'
-clustRows <- hclust(as.dist(1-cor(t(diffGenes.across), method="pearson")), method="complete") 
+clustRows <- hclust(as.dist(1-cor(t(diffGenes.thresh), method="pearson")), method="complete") 
 # hierarchical clustering is a type of unsupervised clustering. 
 # NOTE: this cluster may provide different results to one based on log2.cpm.filtered.norm data, likely b/c this version is specifcally focused on genes that are significantly different between conditions.
 # Related methods include K-means, SOM, etc 
@@ -580,7 +701,7 @@ clustRows <- hclust(as.dist(1-cor(t(diffGenes.across), method="pearson")), metho
 # supervised clustering methods include random forest, and artificial neural networks
 
 # cluster samples (columns)
-clustColumns <- hclust(as.dist(1-cor(diffGenes.across, method="spearman")), method="complete") #cluster columns by spearman correlation
+clustColumns <- hclust(as.dist(1-cor(diffGenes.thresh, method="spearman")), method="complete") #cluster columns by spearman correlation
 #note: use Spearman, instead of Pearson, for clustering samples because it gives equal weight to highly vs lowly expressed transcripts or genes
 
 #Cut the resulting tree and create color vector for clusters.  
@@ -590,59 +711,56 @@ module.assign <- stats::cutree(clustRows, k=14) #The diffGenes info is based on 
 module.color <- rainbow(length(unique(module.assign)), start=0.1, end=0.9) 
 module.color <- module.color[as.vector(module.assign)] 
 
-# simplfy heatmap by averaging the biological replicates and display only one column per condition
-colnames(diffGenes.across) <- targets$group
-diffGenes.AVG <- avearrays(diffGenes.across)
+# # simplfy heatmap by averaging the biological replicates and display only one column per condition
+# diffGenes.AVG <- avearrays(diffGenes.thresh)
 
 # plot the hclust results as a heatmap, grouping the life stages together
-diffGenes.heatmap.bygroup <- heatmap.2(diffGenes.AVG, 
-                                       srtCol = 0, adjCol= c(0.5,0.5),
-                                       Rowv=as.dendrogram(clustRows),
-                                       key.title = NA,
-                                       main = paste0("DEG Heatmap (by life stage): "),
-                                       sub = paste0("Genes pass threshold in >= 1 comparison. Threshold: p < ",
-                                                    adj.P.thresh, "; log-fold change > ",
-                                                    lfc.thresh),
-                                       RowSideColors=module.color,
-                                       col=rev(myheatcolors), scale='row', labRow=NA,
-                                       density.info="none", trace="none",  
-                                       cexRow=1, cexCol=1) 
+# diffGenes.heatmap <- heatmap.2(diffGenes.thresh, 
+#                                srtCol = 0, adjCol= c(0.5,0.5),
+#                                Rowv=as.dendrogram(clustRows),
+#                                Colv=as.dendrogram(clustColumns),
+#                                key.title = NA,
+#                                main = paste0("DEG Heatmap (by life stage): "),
+#                                sub = paste0("Genes pass threshold in >= 1 comparison. Threshold: p < ",
+#                                             adj.P.thresh, "; log-fold change > ",
+#                                             lfc.thresh),
+#                                RowSideColors=module.color,
+#                                col=rev(myheatcolors), scale='row', labRow=NA,
+#                                density.info="none", trace="none",  
+#                                cexRow=1, cexCol=1) 
 
-# Pairwise Clustering/Heatmaps
-pairwise.Clustering <- function (targetStage,contrastStage){
-  #Generate name of pairwise comparison
-  x <- paste(targetStage, contrastStage, sep = "-")
-  print(paste("Clustering ",x))
-  subset.diffGenes <- output.DEG.SsRNAseq[[x]]$diffGenes
-  colnames(subset.diffGenes) <- targets$group
-  selected.cols <- grepl(paste0("^", targetStage, "$"), colnames(subset.diffGenes)) | 
-    grepl(paste0("^", contrastStage, "$"), colnames(subset.diffGenes))
-  subset.diffGenes <- subset.diffGenes[,selected.cols]
-  
-  subset.clustRows <- hclust(as.dist(1-cor(t(subset.diffGenes), method="pearson")), method="complete")
-  subset.clustColumns <- hclust(as.dist(1-cor(subset.diffGenes, method="spearman")), method="complete") 
-  subset.module.assign <- stats::cutree(subset.clustRows, k=2)
-  subset.module.color <- rainbow(length(unique(subset.module.assign)), start=0.1, end=0.9) 
-  subset.module.color <- subset.module.color[as.vector(subset.module.assign)]
-  
-  subset.diffGenes.heatmap.bygroup <- heatmap.2(subset.diffGenes, 
-                                                srtCol = 0, adjCol= c(0.5,0.5),
-                                                Rowv=as.dendrogram(subset.clustRows),
-                                                Colv=as.dendrogram(subset.clustColumns),
-                                                key.title = NA,
-                                                main = paste0("DEG Heatmap (by life stage): ", x),
-                                                sub = paste0("Threshold: p < ",
-                                                             adj.P.thresh, "; log-fold change > ",
-                                                             lfc.thresh),
-                                                RowSideColors=subset.module.color,
-                                                col=rev(myheatcolors), scale='row', labRow=NA,
-                                                density.info="none", trace="none",
-                                                cexRow=1, cexCol=1) 
-  
-  output <- list(subset.diffGenes.heatmap.bygroup = subset.diffGenes.heatmap.bygroup)
-  
-}
-# Note that saving these files isn't really helpful b/c heatmap.2 objects can't be easily re-plotted; at least not without having all the raw components on hand.
+## GGPlots version
+gg.diffGenes.heatmap<-ggheatmap_local(diffGenes.thresh,
+                   colors = rev(myheatcolors),
+                   Rowv= ladderize(as.dendrogram(clustRows)),
+                   Colv=ladderize(as.dendrogram(clustColumns)),
+                   key.title = "Log2CPM",
+                   branches_lwd = 0.2,
+                   showticklabels = c(TRUE, FALSE),
+                   scale='row',
+                   cexRow=1, cexCol=1)
+
+# ggsave("./heatmap.pdf", plot = gg.heatmap, width = 11, height = 8, units = "in", device = "pdf")
+# Make an interactive version
+interactive.diffGenes.heatmap <- heatmaply(diffGenes.thresh,
+                                 colors = rev(myheatcolors),
+                                 Rowv= ladderize(as.dendrogram(clustRows)),
+                                 Colv=ladderize(as.dendrogram(clustColumns)),
+                                 showticklabels = c(TRUE, FALSE),
+                                 scale='row',
+                                 plot_method = "ggplot",
+                                 branches_lwd = 0.2,
+                                 key.title = "Log2CPM",
+                                 cexRow=1, cexCol=1)
+
+
+
+
+
+```
+
+# Functional Enrichment Analysis ---
+```{r functionalEnrichment}
 
 ```
 

@@ -21,6 +21,9 @@ suppressPackageStartupMessages({
     library(heatmaply)
     library(RColorBrewer)
     library(openxlsx)
+    library(egg)
+    library(dendextend)
+    source("Server/ggheatmap_local.R")
     source("Server/calc_DEG_tbl.R")
     source("Server/theme_Publication.R")
     source('Server/limma_ranking.R')
@@ -258,27 +261,40 @@ server <- function(input, output, session) {
             colnames(diffGenes) <- as.character(v.DEGList.filtered.norm$targets$group)
             clustColumns <- hclust(as.dist(1-cor(diffGenes, method="spearman")), method="complete")
             subset.diffGenes<- diffGenes[vals$gene_of_interest,]
+            colnames(subset.diffGenes) <- paste0(v.DEGList.filtered.norm$targets$group, 
+                                                 "-", 
+                                                 v.DEGList.filtered.norm$targets$sample)
             clustRows <- hclust(as.dist(1-cor(t(subset.diffGenes), 
                                               method="pearson")), 
                                 method="complete") 
             par(cex.main=1.2)
             
-            row_labels <- if(length(vals$gene_of_interest)<20){vals$gene_of_interest} else {NA}
-            p<-heatmap.2(subset.diffGenes, 
-                         srtCol = 45, adjCol= c(1,1),
-                         Rowv= as.dendrogram(clustRows),
-                         Colv=as.dendrogram(clustColumns),
-                         lmat=rbind( c(0, 3, 4), c(2,1,0 ) ), 
-                         lwid=c(0.2, 5, 1 ) ,
-                         dendrogram = 'both',
-                         key.title = NA,
-                         main = paste0("Log2 Counts Per Million (CPM) Expression Across Life Stages"),
-                         col=rev(myheatcolors), 
-                         scale='row', 
-                         labRow=row_labels,
-                         density.info="none", 
-                         trace="none",
-                         cexRow=1.2, cexCol=1.2) 
+            showticklabels <- if(length(vals$gene_of_interest)<20){c(TRUE,TRUE)} else {c(TRUE,FALSE)}
+            p<-ggheatmap_local(subset.diffGenes,
+                               colors = rev(myheatcolors),
+                               Rowv= ladderize(as.dendrogram(clustRows)),
+                               Colv=ladderize(as.dendrogram(clustColumns)),
+                               key.title = "Log2CPM",
+                               branches_lwd = 0.5,
+                               showticklabels = showticklabels,
+                               scale='row',
+                               cexRow=1.2, cexCol=1.2,
+                               main = paste0("Log2 Counts Per Million (CPM) Expression Across Life Stages"))
+            # p<-heatmap.2(subset.diffGenes, 
+            #              srtCol = 45, adjCol= c(1,1),
+            #              Rowv= as.dendrogram(clustRows),
+            #              Colv=as.dendrogram(clustColumns),
+            #              lmat=rbind( c(0, 3, 4), c(2,1,0 ) ), 
+            #              lwid=c(0.2, 5, 1 ) ,
+            #              dendrogram = 'both',
+            #              key.title = NA,
+            #              main = paste0("Log2 Counts Per Million (CPM) Expression Across Life Stages"),
+            #              col=rev(myheatcolors), 
+            #              scale='row', 
+            #              labRow=row_labels,
+            #              density.info="none", 
+            #              trace="none",
+            #              cexRow=1.2, cexCol=1.2) 
             p
         }
     })
@@ -294,12 +310,23 @@ server <- function(input, output, session) {
             paste(input$displayedGene, '_',Sys.Date(),'.pdf', sep='')
         },
         content = function(file){
-            generateGenePlot() 
-            ggsave(file, 
-                   width = 7,
-                   height = 7, 
-                   device = "pdf", 
-                   useDingbats=FALSE)}
+            p<-generateGenePlot() 
+            if (input$displayedGene == "All Genes") {
+                ggsave(file, 
+                       plot = p,
+                       width = 11,
+                       height = 5, 
+                       device = "pdf", 
+                       useDingbats=FALSE)
+            } else {
+                ggsave(file, 
+                       plot = p,
+                       width = 7,
+                       height = 7, 
+                       device = "pdf", 
+                       useDingbats=FALSE)
+            }
+        }
         
     )
     

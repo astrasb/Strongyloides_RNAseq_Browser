@@ -46,9 +46,9 @@ navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                                     withSpinner(plotOutput('CPM'),
                                                                 color = "#2C3E50"),
                                                     
-                                                    # downloadButton("downloadGenePlot",
-                                                    #                "Download Plot as PDF",
-                                                    #                class = "btn-primary")
+                                                    downloadButton("downloadGenePlot",
+                                                                   "Download Plot as PDF",
+                                                                   class = "btn-primary")
                                                 )
                                )
                         ),
