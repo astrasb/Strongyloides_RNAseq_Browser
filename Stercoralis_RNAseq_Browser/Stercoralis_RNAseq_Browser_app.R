@@ -201,6 +201,8 @@ server <- function(input, output, session) {
             } 
             
             vals$genelist <- genelist
+            vals$genelist.Log2CPM <- Log2CPM %>%
+                dplyr::filter(geneID %in% genelist$geneID)
         })
     })
     
@@ -229,6 +231,7 @@ server <- function(input, output, session) {
     generateGenePlot <- reactive({
         req(vals$genelist)
         req(input$displayedGene)
+        req(vals$genelist.Log2CPM)
         # Select gene to display
         if (isTruthy(input$displayedGene)){
             if (input$displayedGene == "All Genes"){
@@ -239,7 +242,7 @@ server <- function(input, output, session) {
         
         if (length(vals$gene_of_interest) == 1) {
             # Plot Log2CPM values for an individual gene
-            gene_vals <- Log2CPM %>%
+            gene_vals <- vals$genelist.Log2CPM %>%
                 dplyr::filter(geneID == vals$gene_of_interest)
             
             p<- ggplot(gene_vals) + 
