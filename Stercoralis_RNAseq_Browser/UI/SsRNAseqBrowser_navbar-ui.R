@@ -43,12 +43,17 @@ navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                                     heading = tagList(h4(shiny::icon("fas fa-chart-bar"),
                                                                          "Gene Expression Across Life Stages")),
                                                     status = "primary",
-                                                    withSpinner(plotOutput('CPM'),
-                                                                color = "#2C3E50"),
+                                                    tagList(div(id = "test",
+                                                    # withSpinner(plotOutput('CPM'),
+                                                    #             color = "#2C3E50"),
+                                                    # 
+                                                    # withSpinner(plotlyOutput('CPMPlotly'),
+                                                    #             color = "#2C3E50"),
                                                     
                                                     downloadButton("downloadGenePlot",
                                                                    "Download Plot as PDF",
                                                                    class = "btn-primary")
+                                                    ))
                                                 )
                                )
                         ),

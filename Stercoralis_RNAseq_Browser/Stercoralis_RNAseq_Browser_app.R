@@ -206,10 +206,12 @@ server <- function(input, output, session) {
     
     ### GW: Generate Responsive Selection for Gene to Display ----
     output$geneDisplaySelection_GW <- renderUI({
+        parse_ids()
         req(vals$genelist)
         isolate({
             if (length(vals$genelist$geneID)>1) {
                 choices <- c("All Genes", vals$genelist$geneID)
+                selected <- "All Genes"
             } else choices <- vals$genelist$geneID
             panel(
                 heading = tagList(h4(shiny::icon("fas fa-filter"),
@@ -223,10 +225,10 @@ server <- function(input, output, session) {
         })
     })
     
-    ## Generate GGPlot of Gene Expression ----
+    ## GW: Plots of Gene Expression ----
     generateGenePlot <- reactive({
         req(vals$genelist)
-        
+        req(input$displayedGene)
         # Select gene to display
         if (isTruthy(input$displayedGene)){
             if (input$displayedGene == "All Genes"){
@@ -247,8 +249,8 @@ server <- function(input, output, session) {
                      title=paste("Log2 Counts per Million (CPM):",
                                  vals$gene_of_interest),
                      subtitle="filtered, normalized, variance-stabilized") +
-                theme_Publication() +
-                theme(aspect.ratio=2/3)
+                theme_Publication() + 
+                theme(aspect.ratio=2/3) 
             p 
         } else {
             # Make a heatmap for all the genes using the Log2CPM values
@@ -258,50 +260,88 @@ server <- function(input, output, session) {
                 dplyr::select(-geneID) %>%
                 as.matrix()
             rownames(diffGenes) <- rownames(v.DEGList.filtered.norm$E)
-            colnames(diffGenes) <- as.character(v.DEGList.filtered.norm$targets$group)
             clustColumns <- hclust(as.dist(1-cor(diffGenes, method="spearman")), method="complete")
             subset.diffGenes<- diffGenes[vals$gene_of_interest,]
             colnames(subset.diffGenes) <- paste0(v.DEGList.filtered.norm$targets$group, 
-                                                 "-", 
-                                                 v.DEGList.filtered.norm$targets$sample)
+                                                 "_", 
+                                                 rep(1:3,7))
             clustRows <- hclust(as.dist(1-cor(t(subset.diffGenes), 
                                               method="pearson")), 
                                 method="complete") 
             par(cex.main=1.2)
             
+            hovertext <- as.data.frame(subset.diffGenes) %>%
+                round(digits = 2)
+            
+            hovertext[] <- lapply(hovertext, function(x){
+                paste0("Log2CPM: ", x)
+            })
+            
             showticklabels <- if(length(vals$gene_of_interest)<20){c(TRUE,TRUE)} else {c(TRUE,FALSE)}
-            p<-ggheatmap_local(subset.diffGenes,
-                               colors = rev(myheatcolors),
-                               Rowv= ladderize(as.dendrogram(clustRows)),
-                               Colv=ladderize(as.dendrogram(clustColumns)),
-                               key.title = "Log2CPM",
-                               branches_lwd = 0.5,
-                               showticklabels = showticklabels,
-                               scale='row',
-                               cexRow=1.2, cexCol=1.2,
-                               main = paste0("Log2 Counts Per Million (CPM) Expression Across Life Stages"))
-            # p<-heatmap.2(subset.diffGenes, 
-            #              srtCol = 45, adjCol= c(1,1),
-            #              Rowv= as.dendrogram(clustRows),
-            #              Colv=as.dendrogram(clustColumns),
-            #              lmat=rbind( c(0, 3, 4), c(2,1,0 ) ), 
-            #              lwid=c(0.2, 5, 1 ) ,
-            #              dendrogram = 'both',
-            #              key.title = NA,
-            #              main = paste0("Log2 Counts Per Million (CPM) Expression Across Life Stages"),
-            #              col=rev(myheatcolors), 
-            #              scale='row', 
-            #              labRow=row_labels,
-            #              density.info="none", 
-            #              trace="none",
-            #              cexRow=1.2, cexCol=1.2) 
-            p
+            
+            p <- heatmaply(subset.diffGenes,
+                           colors = rev(myheatcolors),
+                           Rowv= ladderize(as.dendrogram(clustRows)),
+                           Colv=ladderize(as.dendrogram(clustColumns)),
+                           show_dendrogram = c(FALSE, TRUE),
+                           showticklabels = showticklabels,
+                           scale='row', #rows are scaled to have mean zero and standard deviation one. 
+                           plot_method = "ggplot",
+                           branches_lwd = 0.2,
+                           key.title = "Z-Score",
+                           cexRow=1.2, cexCol=1.2,
+                           main = paste0("Log2 Counts Per Million (CPM) Expression Across Life Stages"),
+                           custom_hovertext = hovertext)
         }
     })
-    ### GW: Plot Gene Expression by Life Stage ----
+    
+    
+    
+    
+    ### GW: Switch what type of GW Plot is produced ----
     output$CPM <- renderPlot({
-        parse_ids()
+        req(input$displayedGene != "All Genes")
         generateGenePlot()
+    })
+    
+    output$CPMPlotly <- renderPlotly({
+        req(input$displayedGene == "All Genes")
+        generateGenePlot()
+    })
+    
+    observeEvent(input$displayedGene,{
+        if(input$displayedGene == "All Genes"){
+            removeUI(
+                selector = "#CPMPlotlydiv"
+            )
+            insertUI(
+                selector = '#test',
+                where = "afterBegin",
+                ui = tagList(div(id = "CPMPlotlydiv",
+                                 withSpinner(plotlyOutput('CPMPlotly'),
+                                             color = "#2C3E50")
+                ))
+            )
+            removeUI(
+                selector = "#CPMdiv"
+            )
+            
+        }else{
+            removeUI(
+                selector = "#CPMdiv"
+            )
+            insertUI(
+                selector = '#test',
+                where = "afterBegin",
+                ui = tagList(div(id = "CPMdiv",
+                                 withSpinner(plotOutput('CPM'),
+                                             color = "#2C3E50")
+                                 ))
+            )
+            removeUI(
+                selector = "#CPMPlotlydiv"
+            )
+        }
     })
     
     ## GW: Save Gene Plots ----
@@ -310,8 +350,41 @@ server <- function(input, output, session) {
             paste(input$displayedGene, '_',Sys.Date(),'.pdf', sep='')
         },
         content = function(file){
-            p<-generateGenePlot() 
+           
+            
             if (input$displayedGene == "All Genes") {
+                
+                # Make a heatmap for all the genes using the Log2CPM values
+                myheatcolors <- RdBu(75)
+                
+                diffGenes <- diffGenes.df %>%
+                    dplyr::select(-geneID) %>%
+                    as.matrix()
+                rownames(diffGenes) <- rownames(v.DEGList.filtered.norm$E)
+                colnames(diffGenes) <- as.character(v.DEGList.filtered.norm$targets$group)
+                clustColumns <- hclust(as.dist(1-cor(diffGenes, method="spearman")), method="complete")
+                subset.diffGenes<- diffGenes[vals$gene_of_interest,]
+                colnames(subset.diffGenes) <- paste0(v.DEGList.filtered.norm$targets$group, 
+                                                     "_", 
+                                                     rep(1:3,7))
+                clustRows <- hclust(as.dist(1-cor(t(subset.diffGenes), 
+                                                  method="pearson")), 
+                                    method="complete") 
+                par(cex.main=1.2)
+                
+                showticklabels <- if(length(vals$gene_of_interest)<20){c(TRUE,TRUE)} else {c(TRUE,FALSE)}
+                p<-ggheatmap_local(subset.diffGenes,
+                                   colors = rev(myheatcolors),
+                                   Rowv= ladderize(as.dendrogram(clustRows)),
+                                   Colv=ladderize(as.dendrogram(clustColumns)),
+                                   show_dendrogram = c(FALSE, TRUE),
+                                   key.title = "Z-Score",
+                                   branches_lwd = 0.5,
+                                   showticklabels = showticklabels,
+                                   scale='row',
+                                   cexRow=1.2, cexCol=1.2,
+                                   #margin = c(50,1000),
+                                   main = "Log2 Counts Per Million (CPM) Expression Across Life Stages")
                 ggsave(file, 
                        plot = p,
                        width = 11,
@@ -319,6 +392,8 @@ server <- function(input, output, session) {
                        device = "pdf", 
                        useDingbats=FALSE)
             } else {
+                p<-generateGenePlot()
+                
                 ggsave(file, 
                        plot = p,
                        width = 7,
