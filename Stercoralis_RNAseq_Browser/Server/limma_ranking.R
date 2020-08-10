@@ -94,7 +94,7 @@ limma_ranking <- function(comparison, targetStage, contrastStage, multipleCorrec
             dplyr::select(geneID, starts_with(paste0(tS,"-")), 
                           starts_with(paste0(cS,"-"))) %>%
             left_join(groupAvgs, by = "geneID") %>%
-            left_join(list.highlight.df[[y]], by = "geneID") %>%
+            left_join(list.highlight.df[[y]],., by = "geneID") %>%
             left_join(dplyr::select(diffDesc,geneID,comparison[y]), by = "geneID") %>%
             dplyr::rename(DEG_Desc=comparison[y]) %>%
             dplyr::relocate(DEG_Desc)
