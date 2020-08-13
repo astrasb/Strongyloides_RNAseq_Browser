@@ -425,9 +425,10 @@ server <- function(input, output, session) {
         req(vals$HeatmapOrder)
         
         isolate({
+
             vals$genelist.Log2CPM$sampleID <- rep(as.character(v.DEGList.filtered.norm$targets$samples), 
                                                   times =  nrow(vals$genelist))
-            
+   
             map.order <- tibble(OldOrder = vals$HeatmapOrder,
                                 NewOrder = seq_along(vals$HeatmapOrder)) %>%
                 dplyr::arrange(-desc(OldOrder))
