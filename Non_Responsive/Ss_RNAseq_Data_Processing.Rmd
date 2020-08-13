@@ -85,7 +85,7 @@ echo "Finished"
 ```
 
 # Import Kallisto reads into R ---
-```{r txImport, eval=FALSE, message=FALSE, warning=FALSE}
+```{r txImport, eval=TRUE, message=FALSE, warning=FALSE}
 # load packages ----
 suppressPackageStartupMessages({
   library(tidyverse) 
@@ -128,7 +128,7 @@ Txi_gene <- tximport(path,
                      ignoreTxVersion = FALSE)
 ```
 # Annotate Genes with C. elegans homology and gene Description Terms ---
-```{r geneAnnotation, message=FALSE, eval=FALSE}
+```{r geneAnnotation, message=FALSE, eval=TRUE}
 # Introduction to this chunk -----------
 # This chunk imports gene annotation information for S. stercoralis genes, including:
 # C. elegans homologs, percent homology, and any Interprot or general Description information using biomart.
@@ -205,7 +205,7 @@ annotations<-dplyr::left_join(Annt.logs, Annt.interpro) %>%
 ```
 
 # Data Filtering and Normalization ---
-```{r dataWrangling, echo=TRUE, message=FALSE, eval=FALSE}
+```{r dataWrangling, eval=TRUE, echo=TRUE, message=FALSE}
 # Goals of this chunk:
 # 1 - Filter and normalize data
 # 2 - use ggplot2 to visualize the impact of filtering and normalization on the data.

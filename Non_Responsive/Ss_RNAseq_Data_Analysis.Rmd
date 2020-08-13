@@ -321,11 +321,11 @@ colnames(design) <- levels(group)
 fit <- lmFit(v.DEGList.filtered.norm, design)
 
 # As an example, generate comparison matrix for two pairwise comparisons ----
-# PC1 elements (FLF, PF vs iL3s, iL3+, ppL1, ppL3, pfL1) and PC2 elements
+# iL3s vs FLF and iL3s vs iL3+s
 # Note that the target/contrast goups will be divided by the number of life 
 # stage groups e.g. PF+FLF/2 - iL3+iL3a+pfL1+ppL1+ppL3/5
-comparison <- c('(PF+FLF)-(iL3+iL3a+pfL1+ppL1+ppL3)',
-                '(PF+iL3+iL3a)-(FLF+pfL1+ppL1+ppL3)')
+comparison <- c('(iL3)-(FLF)',
+                '(PF)-(FLF)')
 
 targetStage<- comparison %>%
   str_split(pattern="-", simplify = T) %>%
@@ -433,7 +433,7 @@ list.myTopHits.df <- sapply(seq_along(comparison), function(y){
     dplyr::select(geneID, starts_with(paste0(tS,"-")), 
                   starts_with(paste0(cS,"-"))) %>%
     left_join(groupAvgs, by = "geneID") %>%
-    left_join(list.myTopHits.df[[y]], by = "geneID") %>%
+    left_join(list.myTopHits.df[[y]],., by = "geneID") %>%
     left_join(dplyr::select(diffDesc,geneID,comparison[y]), by = "geneID") %>%
     dplyr::rename(DEG_Desc=comparison[y]) %>%
     dplyr::relocate(DEG_Desc)
@@ -552,104 +552,6 @@ LS.datatable <- LS.datatable %>%
 
 LS.datatable
 
-# PC2 Volcano Plot and Interactive Table ----
-vplot2 <- ggplot(list.myTopHits.df[[2]]) +
-  aes(y=-log10(BH.adj.P.Val), x=logFC, 
-      text = paste(geneID, "<br>",
-                   "logFC:", round(logFC, digits = 2), "<br>",
-                   "p-val:", format(BH.adj.P.Val, digits = 3, scientific = TRUE))) +
-  geom_point(size=2) +
-  geom_hline(yintercept = -log10(adj.P.thresh), 
-             linetype="longdash", 
-             colour="grey", 
-             size=1) + 
-  geom_vline(xintercept = lfc.thresh, 
-             linetype="longdash", 
-             colour="#BE684D", 
-             size=1) +
-  geom_vline(xintercept = -lfc.thresh, 
-             linetype="longdash", 
-             colour="#2C467A", 
-             size=1) +
-  labs(title = paste0('Pairwise Comparison: ',
-                      gsub('-',
-                           ' vs ',
-                           comparison[2])),
-       subtitle = paste0("grey line: p = ",
-                         adj.P.thresh, "; colored lines: log-fold change = ", lfc.thresh),
-       color = "GeneIDs") +
-  theme_Publication() 
-vplot2
-
-y<- 2
-tS<- targetStage[y,][targetStage[y,]!=""]
-cS<- contrastStage[y,][contrastStage[y,]!=""]
-
-n_num_cols <- length(tS)*3 + length(cS)*3 + 5
-LS.datatable <- list.myTopHits.df[[y]] %>%
-  DT::datatable(rownames = FALSE,
-                caption = htmltools::tags$caption(
-                  style = 'caption-side: top; text-align: left; color: black',
-                  htmltools::tags$b('Differentially Expressed Genes in', 
-                                    htmltools::tags$em('S. stercoralis'), 
-                                    gsub('-',' vs ',comparison[y])),
-                  htmltools::tags$br(),
-                  "Threshold: p < ",
-                  adj.P.thresh, "; log-fold change > ",
-                  lfc.thresh,
-                  htmltools::tags$br(),
-                  'Values = log2 counts per million'),
-                options = list(autoWidth = TRUE,
-                               scrollX = TRUE,
-                               scrollY = '300px',
-                               scrollCollapse = TRUE,
-                               order = list(n_num_cols-1, 
-                                            'desc'),
-                               searchHighlight = TRUE, 
-                               pageLength = 25, 
-                               lengthMenu = c("5",
-                                              "10",
-                                              "25",
-                                              "50",
-                                              "100"),
-                               columnDefs = list(
-                                 list(
-                                   targets = ((n_num_cols + 
-                                                 1)),
-                                   render = JS(
-                                     "function(data, row) {",
-                                     "data.toExponential(1);",
-                                     "}")
-                                 ),
-                                 list(
-                                   targets = ((n_num_cols + 
-                                                 4):(n_num_cols + 
-                                                       5)),
-                                   render = JS(
-                                     "function(data, type, row, meta) {",
-                                     "return type === 'display' && data.length > 20 ?",
-                                     "'<span title=\"' + data + '\">' + data.substr(0, 20) + '...</span>' : data;",
-                                     "}")
-                                 ),
-                                 list(targets = "_all",
-                                      class="dt-right")
-                               )
-                               
-                )) 
-LS.datatable <- LS.datatable %>%
-  DT::formatRound(columns=c(3:n_num_cols), 
-                  digits=3)
-
-LS.datatable <- LS.datatable %>%
-  DT::formatRound(columns=c(n_num_cols+2, 
-                            n_num_cols+8), 
-                  digits=2)
-
-LS.datatable <- LS.datatable %>%
-  DT::formatSignif(columns=c(n_num_cols+1), 
-                   digits=3)
-
-LS.datatable
 ```
 
 
@@ -715,47 +617,43 @@ module.color <- module.color[as.vector(module.assign)]
 # diffGenes.AVG <- avearrays(diffGenes.thresh)
 
 # plot the hclust results as a heatmap, grouping the life stages together
-# diffGenes.heatmap <- heatmap.2(diffGenes.thresh, 
-#                                srtCol = 0, adjCol= c(0.5,0.5),
-#                                Rowv=as.dendrogram(clustRows),
-#                                Colv=as.dendrogram(clustColumns),
-#                                key.title = NA,
-#                                main = paste0("DEG Heatmap (by life stage): "),
-#                                sub = paste0("Genes pass threshold in >= 1 comparison. Threshold: p < ",
-#                                             adj.P.thresh, "; log-fold change > ",
-#                                             lfc.thresh),
-#                                RowSideColors=module.color,
-#                                col=rev(myheatcolors), scale='row', labRow=NA,
-#                                density.info="none", trace="none",  
-#                                cexRow=1, cexCol=1) 
+diffGenes.heatmap <- heatmap.2(diffGenes.thresh,
+                               srtCol = 0, adjCol= c(0.5,0.5),
+                               Rowv=as.dendrogram(clustRows),
+                               Colv=as.dendrogram(clustColumns),
+                               key.title = NA,
+                               main = paste0("DEG Heatmap (by life stage): "),
+                               sub = paste0("Genes pass threshold in >= 1 comparison. Threshold: p < ",
+                                            adj.P.thresh, "; log-fold change > ",
+                                            lfc.thresh),
+                               RowSideColors=module.color,
+                               col=rev(myheatcolors), scale='row', labRow=NA,
+                               density.info="none", trace="none",
+                               cexRow=1, cexCol=1)
 
 ## GGPlots version
-gg.diffGenes.heatmap<-ggheatmap_local(diffGenes.thresh,
-                   colors = rev(myheatcolors),
-                   Rowv= ladderize(as.dendrogram(clustRows)),
-                   Colv=ladderize(as.dendrogram(clustColumns)),
-                   key.title = "Log2CPM",
-                   branches_lwd = 0.2,
-                   showticklabels = c(TRUE, FALSE),
-                   scale='row',
-                   cexRow=1, cexCol=1)
+# gg.diffGenes.heatmap<-ggheatmap_local(diffGenes.thresh,
+#                    colors = rev(myheatcolors),
+#                    Rowv= ladderize(as.dendrogram(clustRows)),
+#                    Colv=ladderize(as.dendrogram(clustColumns)),
+#                    key.title = "Log2CPM",
+#                    branches_lwd = 0.2,
+#                    showticklabels = c(TRUE, FALSE),
+#                    scale='row',
+#                    cexRow=1, cexCol=1)
 
 # ggsave("./heatmap.pdf", plot = gg.heatmap, width = 11, height = 8, units = "in", device = "pdf")
 # Make an interactive version
-interactive.diffGenes.heatmap <- heatmaply(diffGenes.thresh,
-                                 colors = rev(myheatcolors),
-                                 Rowv= ladderize(as.dendrogram(clustRows)),
-                                 Colv=ladderize(as.dendrogram(clustColumns)),
-                                 showticklabels = c(TRUE, FALSE),
-                                 scale='row',
-                                 plot_method = "ggplot",
-                                 branches_lwd = 0.2,
-                                 key.title = "Log2CPM",
-                                 cexRow=1, cexCol=1)
-
-
-
-
+# interactive.diffGenes.heatmap <- heatmaply(diffGenes.thresh,
+#                                  colors = rev(myheatcolors),
+#                                  Rowv= ladderize(as.dendrogram(clustRows)),
+#                                  Colv=ladderize(as.dendrogram(clustColumns)),
+#                                  showticklabels = c(TRUE, FALSE),
+#                                  scale='row',
+#                                  plot_method = "ggplot",
+#                                  branches_lwd = 0.2,
+#                                  key.title = "Log2CPM",
+#                                  cexRow=1, cexCol=1)
 
 ```
 
