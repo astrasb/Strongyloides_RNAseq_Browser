@@ -418,6 +418,39 @@ server <- function(input, output, session) {
         
     )
     
+    # GW: Save Excel Table with Gene Expression Data ----
+    output$downloadbuttonsGenes <- renderUI({
+        req(vals$genelist)
+        req(vals$genelist.Log2CPM)
+        
+        isolate({
+        vals$genelist.Log2CPM$sampleID <- rep(targets$sample, times =  nrow(vals$genelist))
+        
+        genelist.expression <- pivot_wider(vals$genelist.Log2CPM,
+                                           id_cols = geneID,
+                                           names_from = c(life_stage,sampleID),
+                                           names_sep = "-",
+                                           values_from = log2CPM) %>%
+            list("User-selected Genes" = . )
+        })
+        
+        output$heatmap_data_download <- generate_excel_report(c("User-selected Genes"), 
+                              genelist.expression,
+                              name = "S. stercoralis RNAseq Gene Expression",
+                              subtitle_prefix = "Log2CPM Expression:")
+        
+        tagList(
+    downloadButton("downloadGenePlot",
+                   "Download Plot as PDF",
+                   class = "btn-primary"),
+    
+    downloadButton("heatmap_data_download",
+                   "Download Expression Data",
+                   class = "btn-primary")
+        )
+    
+     })
+    
     ## GW: Clear Comparison Selections ----
     observeEvent(input$resetGW,{
         updateSelectInput(session, "selectContrast_GW", selected = "")
