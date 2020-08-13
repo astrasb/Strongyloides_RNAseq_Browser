@@ -280,7 +280,7 @@ server <- function(input, output, session) {
                                               method="pearson")), 
                                 method="complete") 
             par(cex.main=1.2)
-            
+            vals$HeatmapOrder <- order.dendrogram(ladderize(as.dendrogram(clustRows)))
             hovertext <- as.data.frame(subset.diffGenes) %>%
                 round(digits = 2)
             
@@ -349,7 +349,7 @@ server <- function(input, output, session) {
                 ui = tagList(div(id = "CPMdiv",
                                  withSpinner(plotOutput('CPM'),
                                              color = "#2C3E50")
-                                 ))
+                ))
             )
             removeUI(
                 selector = "#CPMPlotlydiv"
@@ -363,7 +363,7 @@ server <- function(input, output, session) {
             paste(input$displayedGene, '_',Sys.Date(),'.pdf', sep='')
         },
         content = function(file){
-           
+            
             
             if (input$displayedGene == "All Genes") {
                 
@@ -422,34 +422,45 @@ server <- function(input, output, session) {
     output$downloadbuttonsGenes <- renderUI({
         req(vals$genelist)
         req(vals$genelist.Log2CPM)
+        req(vals$HeatmapOrder)
         
         isolate({
-        vals$genelist.Log2CPM$sampleID <- rep(targets$sample, times =  nrow(vals$genelist))
-        
-        genelist.expression <- pivot_wider(vals$genelist.Log2CPM,
-                                           id_cols = geneID,
-                                           names_from = c(life_stage,sampleID),
-                                           names_sep = "-",
-                                           values_from = log2CPM) %>%
-            list("User-selected Genes" = . )
+            vals$genelist.Log2CPM$sampleID <- rep(as.character(v.DEGList.filtered.norm$targets$samples), 
+                                                  times =  nrow(vals$genelist))
+            
+            map.order <- tibble(OldOrder = vals$HeatmapOrder,
+                                NewOrder = seq_along(vals$HeatmapOrder)) %>%
+                dplyr::arrange(-desc(OldOrder))
+            
+            genelist.expression <-  vals$genelist.Log2CPM %>%
+                left_join(vals$genelist, .,by = "geneID") %>%
+                pivot_wider(id_cols = geneID,
+                            names_from = c(life_stage,sampleID),
+                            names_sep = "-",
+                            values_from = log2CPM) %>%
+                add_column(NewOrder = map.order$NewOrder, .before = "geneID") %>%
+                dplyr::arrange(-desc(NewOrder)) %>%
+                dplyr::select(-NewOrder) %>%
+                list("User-selected Genes" = . )
+            
         })
         
         output$heatmap_data_download <- generate_excel_report(c("User-selected Genes"), 
-                              genelist.expression,
-                              name = "S. stercoralis RNAseq Gene Expression",
-                              subtitle_prefix = "Log2CPM Expression:")
+                                                              genelist.expression,
+                                                              name = "S. stercoralis RNAseq Gene Expression",
+                                                              subtitle_prefix = "Log2CPM Expression:")
         
         tagList(
-    downloadButton("downloadGenePlot",
-                   "Download Plot as PDF",
-                   class = "btn-primary"),
-    
-    downloadButton("heatmap_data_download",
-                   "Download Expression Data",
-                   class = "btn-primary")
+            downloadButton("downloadGenePlot",
+                           "Download Plot as PDF",
+                           class = "btn-primary"),
+            
+            downloadButton("heatmap_data_download",
+                           "Download Expression Data",
+                           class = "btn-primary")
         )
-    
-     })
+        
+    })
     
     ## GW: Clear Comparison Selections ----
     observeEvent(input$resetGW,{
@@ -939,39 +950,39 @@ server <- function(input, output, session) {
         req(vals$displayedComparison_LS)
         pointer.df <- vals$list.highlight.tbl_LS[[vals$displayedComparison_LS]] %>%
             dplyr::mutate(log10.adj.P.Val = -log10(BH.adj.P.Val))
-
+        
         hover <- input$plot_hover_LS
         point <- nearPoints(pointer.df, hover,
                             xvar = "logFC",
                             yvar = "log10.adj.P.Val",
                             threshold = 5, maxpoints = 1, addDist = TRUE)
         if (nrow(point) == 0) return(NULL)
-         
-    # calculate point position INSIDE the image as percent of total dimensions
-    # from left (horizontal) and from top (vertical)
-    left_pct <- (hover$x - hover$domain$left) / (hover$domain$right - hover$domain$left)
-    top_pct <- (hover$domain$top - hover$y) / (hover$domain$top - hover$domain$bottom)
-    
-    # calculate distance from left and bottom side of the picture in pixels
-    left_px <- hover$range$left + left_pct * (hover$range$right - hover$range$left)
-    top_px <- hover$coords_img$y - top_pct * (hover$range$bottom - hover$range$top)
-    
-    left_px <- (hover$coords_img$x + left_pct)/ hover$img_css_ratio$x 
-    #top_px <- (hover$coords_img$y - top_pct) / hover$imge_css_ratio$y
-    
-    #left_px <- hover$coords_img$x + hover$x
-    #top_px <- hover$coords_img$y + hover$y
-    
-    # create style property fot tooltip
-    # background color is set so tooltip is a bit transparent
-    # z-index is set so we are sure are tooltip will be on top
-    style <- paste0("position:absolute; z-index:100; background-color: rgba(245, 245, 245, 0.85); ",
-                    #"right:", hover$x + 10, "px; top:", hover$y + 10, "px;")
-                    #"left:", hover$range$left, "px; bottom:", hover$range$bottom , "px;")
-                    "left:", left_px + 50, "px; bottom:", top_px + 5, "px;")
-
-    
-
+        
+        # calculate point position INSIDE the image as percent of total dimensions
+        # from left (horizontal) and from top (vertical)
+        left_pct <- (hover$x - hover$domain$left) / (hover$domain$right - hover$domain$left)
+        top_pct <- (hover$domain$top - hover$y) / (hover$domain$top - hover$domain$bottom)
+        
+        # calculate distance from left and bottom side of the picture in pixels
+        left_px <- hover$range$left + left_pct * (hover$range$right - hover$range$left)
+        top_px <- hover$coords_img$y - top_pct * (hover$range$bottom - hover$range$top)
+        
+        left_px <- (hover$coords_img$x + left_pct)/ hover$img_css_ratio$x 
+        #top_px <- (hover$coords_img$y - top_pct) / hover$imge_css_ratio$y
+        
+        #left_px <- hover$coords_img$x + hover$x
+        #top_px <- hover$coords_img$y + hover$y
+        
+        # create style property fot tooltip
+        # background color is set so tooltip is a bit transparent
+        # z-index is set so we are sure are tooltip will be on top
+        style <- paste0("position:absolute; z-index:100; background-color: rgba(245, 245, 245, 0.85); ",
+                        #"right:", hover$x + 10, "px; top:", hover$y + 10, "px;")
+                        #"left:", hover$range$left, "px; bottom:", hover$range$bottom , "px;")
+                        "left:", left_px + 50, "px; bottom:", top_px + 5, "px;")
+        
+        
+        
         # actual tooltip created as wellPanel
         wellPanel(
             style = style,
