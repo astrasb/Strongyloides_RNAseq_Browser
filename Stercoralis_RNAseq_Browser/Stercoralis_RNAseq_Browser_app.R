@@ -195,6 +195,7 @@ server <- function(input, output, session) {
                 file <- input$loadfile
                 ext <- tools::file_ext(file$datapath)
                 validate(need(ext == "csv", "Please upload a csv file"))
+                suppressWarnings(
                 genelist <- read.csv(file$datapath, 
                                      header = FALSE, 
                                      colClasses = "character", 
@@ -203,6 +204,7 @@ server <- function(input, output, session) {
                     pivot_longer(cols = everything(), 
                                  values_to = "geneID") %>%
                     dplyr::select(geneID)
+                )
             } 
             
             # Remove genes from the list that aren't part of Log2CPM
@@ -280,12 +282,20 @@ server <- function(input, output, session) {
                                               method="pearson")), 
                                 method="complete") 
             par(cex.main=1.2)
-            vals$HeatmapOrder <- order.dendrogram(ladderize(as.dendrogram(clustRows)))
+            vals$HeatmapRowOrder <- order.dendrogram(ladderize(as.dendrogram(clustRows)))
+            vals$HeatmapColOrder <- order.dendrogram(ladderize(seriate_dendrogram(as.dendrogram(clustColumns),
+                                                                        as.dist(1-cor(diffGenes, method="spearman")))))
+            
             hovertext <- as.data.frame(subset.diffGenes) %>%
                 round(digits = 2)
+            colnames(hovertext) <- v.DEGList.filtered.norm$targets$samples
             
-            hovertext[] <- lapply(hovertext, function(x){
-                paste0("Log2CPM: ", x)
+            hovertext[] <- lapply(seq_along(hovertext), function(x){
+                
+                paste0("Log2CPM: ", hovertext[,x], "<br>",
+                       "Life Stage: ", v.DEGList.filtered.norm$targets$group[x],
+                       "<br>",
+                       "Sample: ", colnames(hovertext)[x])
             })
             
             showticklabels <- if(length(vals$gene_of_interest)<20){c(TRUE,TRUE)} else {c(TRUE,FALSE)}
@@ -293,16 +303,18 @@ server <- function(input, output, session) {
                            colors = rev(myheatcolors),
                            Rowv= ladderize(as.dendrogram(clustRows)),
                            Colv=ladderize(as.dendrogram(clustColumns)),
-                           show_dendrogram = c(FALSE, TRUE),
+                           show_dendrogram = c(TRUE, TRUE),
                            showticklabels = showticklabels,
                            scale='row', #rows are scaled to have mean zero and standard deviation one. 
-                           plot_method = "ggplot",
+                           plot_method = "plotly",
                            branches_lwd = 0.2,
                            key.title = "Row Z Score",
                            cexRow=1.2, cexCol=1.2,
                            xlab = "Note: column clustering performed across entire RNAseq dataset",
                            margins = c(100, 50, 10, 0),
-                           #main = ("Log2 Counts Per Million (CPM) Expression Across Life Stages"),
+                           colorbar_len = 0.5,
+                           colorbar_ypos = 0.5,
+                           colorbar_xpos = 1,
                            custom_hovertext = hovertext)
         }
     })
@@ -363,7 +375,7 @@ server <- function(input, output, session) {
             paste(input$displayedGene, '_',Sys.Date(),'.pdf', sep='')
         },
         content = function(file){
-            
+            withProgress ({
             
             if (input$displayedGene == "All Genes") {
                 
@@ -379,7 +391,7 @@ server <- function(input, output, session) {
                 subset.diffGenes<- diffGenes[vals$gene_of_interest,]
                 colnames(subset.diffGenes) <- paste0(v.DEGList.filtered.norm$targets$group, 
                                                      "_", 
-                                                     rep(1:3,7))
+                                                     v.DEGList.filtered.norm$targets$samples)
                 clustRows <- hclust(as.dist(1-cor(t(subset.diffGenes), 
                                                   method="pearson")), 
                                     method="complete") 
@@ -390,7 +402,7 @@ server <- function(input, output, session) {
                                    colors = rev(myheatcolors),
                                    Rowv= ladderize(as.dendrogram(clustRows)),
                                    Colv=ladderize(as.dendrogram(clustColumns)),
-                                   show_dendrogram = c(FALSE, TRUE),
+                                   show_dendrogram = c(TRUE, TRUE),
                                    key.title = "Row Z Score",
                                    branches_lwd = 0.5,
                                    showticklabels = showticklabels,
@@ -414,6 +426,8 @@ server <- function(input, output, session) {
                        device = "pdf", 
                        useDingbats=FALSE)
             }
+            },
+            message = "Saving Plots")
         }
         
     )
@@ -422,16 +436,20 @@ server <- function(input, output, session) {
     output$downloadbuttonsGenes <- renderUI({
         req(vals$genelist)
         req(vals$genelist.Log2CPM)
-        req(vals$HeatmapOrder)
+        req(vals$HeatmapRowOrder)
         
         isolate({
 
             vals$genelist.Log2CPM$sampleID <- rep(as.character(v.DEGList.filtered.norm$targets$samples), 
                                                   times =  nrow(vals$genelist))
-   
-            map.order <- tibble(OldOrder = vals$HeatmapOrder,
-                                NewOrder = seq_along(vals$HeatmapOrder)) %>%
+
+            row.order <- tibble(OldOrder = vals$HeatmapRowOrder,
+                                NewOrder = seq_along(vals$HeatmapRowOrder)) %>%
                 dplyr::arrange(-desc(OldOrder))
+            
+            col.order <- tibble(OldOrder = vals$HeatmapColOrder,
+                                NewOrder = seq_along(vals$HeatmapColOrder)) %>%
+                dplyr::arrange(desc(NewOrder))
             
             genelist.expression <-  vals$genelist.Log2CPM %>%
                 left_join(vals$genelist, .,by = "geneID") %>%
@@ -439,9 +457,10 @@ server <- function(input, output, session) {
                             names_from = c(life_stage,sampleID),
                             names_sep = "-",
                             values_from = log2CPM) %>%
-                add_column(NewOrder = map.order$NewOrder, .before = "geneID") %>%
+                add_column(NewOrder = row.order$NewOrder, .before = "geneID") %>%
                 dplyr::arrange(-desc(NewOrder)) %>%
                 dplyr::select(-NewOrder) %>%
+               .[c(1, col.order$OldOrder+1)] %>%
                 list("User-selected Genes" = . )
             
         })
@@ -641,8 +660,11 @@ server <- function(input, output, session) {
             paste(vals$comparison_GW[vals$displayedComparison_GW], '_',Sys.Date(),'.pdf', sep='')
         },
         content = function(file){
+            withProgress({
             pull_DEGs_GW()
             ggsave(file,width = 11, height = 8, units = "in", device = "pdf", useDingbats=FALSE)
+            },
+            message = "Saving Plot")
         }
     )
     
