@@ -659,7 +659,186 @@ diffGenes.heatmap <- heatmap.2(diffGenes.thresh,
 
 # Functional Enrichment Analysis ---
 ```{r functionalEnrichment}
+# Load packages ----
+library(tidyverse)
+library(limma)
+library(openxlsx)
+library(gplots) #for heatmaps
+library(DT) #interactive and searchable tables of our GSEA results
+library(GSEABase) #functions and methods for Gene Set Enrichment Analysis
+library(Biobase) #base functions for bioconductor; required by GSEABase
+library(GSVA) #Gene Set Variation Analysis, a non-parametric and unsupervised method for estimating variation of gene set enrichment across samples.
+library(gprofiler2) #tools for accessing the GO enrichment results using g:Profiler web resources
+library(clusterProfiler) # provides a suite of tools for functional enrichment analysis
+library(msigdbr) # access to msigdb collections directly within R
+library(enrichplot) # great for making the standard GSEA enrichment plots
 
+# Pick a pairwise comparison
+yy <- 1
+
+# Carry out GO enrichment using gProfiler2 ----
+# GO enrichment requires a pre-selected set of genes. Can use multiple criteria to do that initial selection.
+# The GO terms I'm accessing using the gost are from Hunt et al 2016, I believe.
+
+# # PC1 TopTable Results
+# enriched.set.pos <-list.myTopHits.df[[yy]] %>% 
+#     slice_max(logFC, prop = .1) # get top 10% of genes
+# 
+# enriched.set.neg <- list.myTopHits.df[[yy]] %>% 
+#     slice_min(logFC, prop = .1) # get top 10% of genes
+# 
+# gost.res.pos <- gost(list(Target_Upregulated = enriched.set.pos$geneID), organism = "ststerprjeb528", correction_method = "fdr")
+# gostplot(gost.res.pos, interactive = T, capped = T)
+# 
+# gost.res.neg <- gost(list(Target_Downregulated_Genes = enriched.set.neg$geneID), organism = "ststerprjeb528", correction_method = "fdr")
+# gostplot(gost.res.neg, interactive = T, capped = T)
+
+# Perform GSEA using clusterProfiler ----
+# Which library to use for implementation? As per https://academic.oup.com/bib/advance-article/doi/10.1093/bib/bbz158/5722384: "For expression-based EA on the full expression matrix...When given raw read counts, we recommend to apply a VST such as voom [39] to arrive at library-size normalized logCPMs."
+# For testing self-contained null hypothesis (test for association of any gene in the set with the phenotype), use ROAST
+# For testing competitive null hypothesis (test for excess of differential expression in a gene set relative to genes outside the set) - **their recommendation**, use PADOG or SAFE?
+# 
+# Ability to do this depends on the availability of gene sets. Major databases (e.g. msigdb don't seem to have stercoralis information. They do have C. elegans gene sets, but I'm not convinced the homology information is good enough for the comparison to be unbiased/meaningful. 
+# 
+# Although the Lok lab did GSEA in Ramanathan *et al* 2011 (PMID: 21572524), using C. elegans homologs are two manually compiled gene sets: 
+# 1) 31 genes with products known to be immunoreactive in *S. stercoralis*-infected humans
+# 2) 42 putatively identified heat shock proteins
+# Of course, this is before the genome was sequenced, so these genes don't have associated SSTP numbers. 
+# 
+# In Hunt et al 2016, there is an Ensembl Compara protein family set
+# Note that this uses specific transcript information, which I throw out. 
+# (e.g. SSTP_0001137400.2 is recoded as SSTP_0001137400)
+ensComp.geneIDs <- read.xlsx ("Data/41588_2016_BFng3495_MOESM219_ESM.xlsx", 
+                              sheet = 1) %>%
+    as_tibble() %>%
+    dplyr::select(-Family.members) %>%
+    pivot_longer(cols = -Compara.family.id, values_to = "geneID") %>%
+    dplyr::select(-name) %>%
+    dplyr::filter(grepl("SSTP_", geneID))
+
+ensComp.geneIDs$geneID <- str_remove_all(ensComp.geneIDs$geneID, ".[0-9]$")
+
+# Compare these genes to the list of genes in our filtered, normalized list ----
+# 
+compara.exclusive <- unique(ensComp.geneIDs$geneID) %>%
+    as_tibble_col(column_name = "geneID") %>%
+    dplyr::anti_join(diffGenes.df, by = "geneID")
+nrow(compara.exclusive)
+
+compara.absent <- unique(ensComp.geneIDs$geneID) %>%
+    as_tibble_col(column_name = "geneID") %>%
+    dplyr::anti_join(diffGenes.df,., by = "geneID") %>%
+    dplyr::select(geneID)
+nrow(compara.absent)
+
+# How many genes have associated GO terms? ----
+GO.present <- list.myTopHits.df[[yy]]$GO_term %>%
+    gsub("NA", NA,.) %>%
+    as_tibble_col(column_name = "GO_Term") %>%
+    tibble(geneID = list.myTopHits.df[[yy]]$geneID,.) %>%
+    dplyr::filter(!is.na(GO_Term))
+nrow(GO.present)
+    
+# Are any of these genes part of those not found in the compara dataset? ---- 
+GO.present.Compara.absent <- dplyr::semi_join(GO.present, compara.absent, by = "geneID")
+nrow(GO.present.Compara.absent)
+
+# Make a list of genes
+
+ensComp.familyIDs <- read.xlsx ("Data/41588_2016_BFng3495_MOESM219_ESM.xlsx", 
+                                sheet = 2,
+                                cols = c(1,4:6)) %>%
+    as_tibble() %>%
+    dplyr::mutate(Family_Description = dplyr::coalesce(.$Description, 
+                                                       .$`Top.product.(members.with.hit)`, 
+                                                       .$`Interpro.top.hit.(members.with.hit)`)
+    ) %>%
+    dplyr::select(Compara.family.id, Family_Description)
+
+ensComp <- left_join(ensComp.geneIDs, ensComp.familyIDs, by = "Compara.family.id") %>%
+    dplyr::select(-Compara.family.id) %>%
+    dplyr::rename(gs_name = Family_Description, gene_symbol = geneID) %>%
+    dplyr::relocate(gs_name, gene_symbol)
+    
+rm(ensComp.geneIDs, ensComp.familyIDs)
+
+# Generate rank ordered list of genes
+mydata.df.sub <- dplyr::select(list.myTopHits.df[[yy]], geneID, logFC)
+mydata.gsea <- mydata.df.sub$logFC
+names(mydata.gsea) <- as.character(mydata.df.sub$geneID)
+mydata.gsea <- sort(mydata.gsea, decreasing = TRUE)
+
+# run GSEA using the 'GSEA' function from clusterProfiler
+# Given a priori defined set of gene S (e.g., genes shareing the same DO category), the goal of GSEA is to determine whether the members of S are randomly distributed throughout the ranked gene list (L) or primarily found at the top or bottom.
+# There are three key elements of the GSEA method:
+# **Calculation of an Enrichment Score.**
+# The enrichment score (ES) represent the degree to which a set S is over-represented at the top or bottom of the ranked list L. The score is calculated by walking down the list L, increasing a running-sum statistic when we encounter a gene in S and decreasing when it is not. The magnitude of the increment depends on the gene statistics (e.g., correlation of the gene with phenotype). The ES is the maximum deviation from zero encountered in the random walk; it corresponds to a weighted Kolmogorov-Smirnov-like statistic (Subramanian et al. 2005).
+# **Esimation of Significance Level of ES.**
+# The p-value of the ES is calculated using permutation test. Specifically, we permute the gene labels of the gene list L and recompute the ES of the gene set for the permutated data, which generate a null distribution for the ES. The p-value of the observed ES is then calculated relative to this null distribution.
+# **Adjustment for Multiple Hypothesis Testing.**
+# When the entire gene sets were evaluated, DOSE adjust the estimated significance level to account for multiple hypothesis testing and also q-values were calculated for FDR control.
+myGSEA.res <- GSEA(mydata.gsea, TERM2GENE=ensComp, verbose=FALSE)
+myGSEA.df <- as_tibble(myGSEA.res@result)
+
+myGSEA.tbl<-as_tibble(myGSEA.res@result) %>%
+    dplyr::select(-c(Description, pvalue, enrichmentScore)) %>%
+    dplyr::rename(normalized_EnrichmentScore = NES)
+
+# view results as an interactive table
+enrichment.DT <- datatable(myGSEA.tbl, 
+          rownames = TRUE,
+          caption =  htmltools::tags$caption(
+              style = 'caption-side: top; text-align: left; color: black',
+              htmltools::tags$b('Gene Families Enriched in iL3 vs FLF')),
+          options = list(
+                         autoWidth = TRUE,
+                         scrollX = TRUE,
+                         scrollY = '800px',
+                         scrollCollapse = TRUE,
+                         searchHighlight = TRUE, 
+                         order = list(3, 'desc'),
+                         pageLength = 25, 
+                         lengthMenu = c("5",
+                                        "10",
+                                        "25",
+                                        "50",
+                                        "100"),
+                         columnDefs = list(
+                             # list(
+                             #     targets = ((7)),
+                             #     render = JS(
+                             #         "function(data, row) {",
+                             #         "data.toExponential(1);",
+                             #         "}")
+                             # ),
+                             list(targets = "_all",
+                                  class="dt-right")))) %>%
+    formatRound(columns=c(3,5:6), digits=2) %>%
+    formatRound(columns=c(4), digits=4)
+enrichment.DT
+
+# create enrichment plots using the enrichplot package
+# gseaplot2(myGSEA.res, 
+#           geneSetID = 3, #can choose multiple signatures to overlay in this plot
+#           pvalue_table = FALSE, #can set this to FALSE for a cleaner plot
+#           title = "SCP/TAP Gene Set") #can also turn off this title
+
+# add a variable to this result that matches enrichment direction with phenotype
+myGSEA.df <- myGSEA.df %>%
+    mutate(phenotype = case_when(
+        NES > 0 ~ "iL3",
+        NES < 0 ~ "FLF"))
+
+myGSEA.df$ID <- myGSEA.df$ID %>%
+    word(sep = ',') %>%
+    #word(sep = '/') %>%
+    word(sep = ' and')
+
+# create 'bubble plot' to summarize y signatures across x phenotypes
+ggplot(myGSEA.df, aes(x=phenotype, y=ID)) + 
+    geom_point(aes(size=setSize, color = NES, alpha=-log10(p.adjust))) +
+    scale_color_gradient(low="blue", high="red") +
+    theme_bw()
 ```
 
 
