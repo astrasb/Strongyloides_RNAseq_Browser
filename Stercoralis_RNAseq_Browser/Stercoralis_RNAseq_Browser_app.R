@@ -129,6 +129,11 @@ ui <- fluidPage(
     height: 40px;
     }
     
+    #CPMPlotlydiv {
+    text-align: center;
+    color: black;
+    }
+    
     
                   
                     "))
@@ -200,6 +205,11 @@ server <- function(input, output, session) {
                     dplyr::select(geneID)
             } 
             
+            # Remove genes from the list that aren't part of Log2CPM
+            # Ideally, this would trigger a notification to the user.
+            genelist <- genelist %>%
+                dplyr::filter(geneID %in% Log2CPM$geneID)
+            
             vals$genelist <- genelist
             vals$genelist.Log2CPM <- Log2CPM %>%
                 dplyr::filter(geneID %in% genelist$geneID)
@@ -239,7 +249,6 @@ server <- function(input, output, session) {
             } else vals$gene_of_interest <- input$displayedGene
         } else {vals$gene_of_interest <- vals$genelist[[1,1]]}
         
-        
         if (length(vals$gene_of_interest) == 1) {
             # Plot Log2CPM values for an individual gene
             gene_vals <- vals$genelist.Log2CPM %>%
@@ -258,7 +267,6 @@ server <- function(input, output, session) {
         } else {
             # Make a heatmap for all the genes using the Log2CPM values
             myheatcolors <- RdBu(75)
-            
             diffGenes <- diffGenes.df %>%
                 dplyr::select(-geneID) %>%
                 as.matrix()
@@ -266,7 +274,7 @@ server <- function(input, output, session) {
             clustColumns <- hclust(as.dist(1-cor(diffGenes, method="spearman")), method="complete")
             subset.diffGenes<- diffGenes[vals$gene_of_interest,]
             colnames(subset.diffGenes) <- paste0(v.DEGList.filtered.norm$targets$group, 
-                                                 "_", 
+                                                 ".", 
                                                  rep(1:3,7))
             clustRows <- hclust(as.dist(1-cor(t(subset.diffGenes), 
                                               method="pearson")), 
@@ -281,7 +289,6 @@ server <- function(input, output, session) {
             })
             
             showticklabels <- if(length(vals$gene_of_interest)<20){c(TRUE,TRUE)} else {c(TRUE,FALSE)}
-            
             p <- heatmaply(subset.diffGenes,
                            colors = rev(myheatcolors),
                            Rowv= ladderize(as.dendrogram(clustRows)),
@@ -291,9 +298,9 @@ server <- function(input, output, session) {
                            scale='row', #rows are scaled to have mean zero and standard deviation one. 
                            plot_method = "ggplot",
                            branches_lwd = 0.2,
-                           key.title = "Z-Score",
+                           key.title = "Row Z Score",
                            cexRow=1.2, cexCol=1.2,
-                           main = paste0("Log2 Counts Per Million (CPM) Expression Across Life Stages"),
+                           #main = ("Log2 Counts Per Million (CPM) Expression Across Life Stages"),
                            custom_hovertext = hovertext)
         }
     })
@@ -318,9 +325,10 @@ server <- function(input, output, session) {
                 selector = "#CPMPlotlydiv"
             )
             insertUI(
-                selector = '#test',
+                selector = '#GenePlotDiv',
                 where = "afterBegin",
                 ui = tagList(div(id = "CPMPlotlydiv",
+                                 h5("Log2 Counts Per Million (CPM) Expression Across Life Stages"),
                                  withSpinner(plotlyOutput('CPMPlotly'),
                                              color = "#2C3E50")
                 ))
@@ -334,7 +342,7 @@ server <- function(input, output, session) {
                 selector = "#CPMdiv"
             )
             insertUI(
-                selector = '#test',
+                selector = '#GenePlotDiv',
                 where = "afterBegin",
                 ui = tagList(div(id = "CPMdiv",
                                  withSpinner(plotOutput('CPM'),
@@ -381,7 +389,7 @@ server <- function(input, output, session) {
                                    Rowv= ladderize(as.dendrogram(clustRows)),
                                    Colv=ladderize(as.dendrogram(clustColumns)),
                                    show_dendrogram = c(FALSE, TRUE),
-                                   key.title = "Z-Score",
+                                   key.title = "Row Z Score",
                                    branches_lwd = 0.5,
                                    showticklabels = showticklabels,
                                    scale='row',
@@ -591,6 +599,7 @@ server <- function(input, output, session) {
         }
     )
     
+    ## GW: Volcano Hover Info ----
     output$hover_info <- renderUI({
         req(vals$displayedComparison_GW)
         
@@ -612,13 +621,21 @@ server <- function(input, output, session) {
         
         # calculate distance from left and bottom side of the picture in pixels
         left_px <- hover$range$left + left_pct * (hover$range$right - hover$range$left)
-        top_px <- hover$range$top + top_pct * (hover$range$bottom - hover$range$top)
+        top_px <- hover$coords_img$y - top_pct * (hover$range$bottom - hover$range$top)
+        
+        left_px <- (hover$coords_img$x + left_pct)/ hover$img_css_ratio$x 
+        #top_px <- (hover$coords_img$y - top_pct) / hover$imge_css_ratio$y
+        
+        #left_px <- hover$coords_img$x + hover$x
+        #top_px <- hover$coords_img$y + hover$y
         
         # create style property fot tooltip
         # background color is set so tooltip is a bit transparent
         # z-index is set so we are sure are tooltip will be on top
         style <- paste0("position:absolute; z-index:100; background-color: rgba(245, 245, 245, 0.85); ",
-                        "left:", left_px - 200 , "px; top:", top_px - 200, "px;")
+                        #"right:", hover$x + 10, "px; top:", hover$y + 10, "px;")
+                        #"left:", hover$range$left, "px; bottom:", hover$range$bottom , "px;")
+                        "left:", left_px + 50, "px; bottom:", top_px + 5, "px;")
         
         # actual tooltip created as wellPanel
         wellPanel(
@@ -857,7 +874,7 @@ server <- function(input, output, session) {
                                      ' vs ',
                                      vals$comparison_LS[vals$displayedComparison_LS])),
                  subtitle = paste0("grey line: p = ",
-                                   adj.P.thresh, "; colored lines: log-fold change =", lfc.thresh),
+                                   adj.P.thresh, "; colored lines: log-fold change = ", lfc.thresh),
                  color = "GeneIDs") +
             theme_Publication() +
             theme(aspect.ratio=1/3)
@@ -871,7 +888,7 @@ server <- function(input, output, session) {
         pull_DEGs_LS()
     })
     
-    ## LS: Save Volcano Plot
+    ## LS: Save Volcano Plot ----
     output$downloadVolcano_LS <- downloadHandler(
         filename = function(){
             paste(vals$comparison_LS[vals$displayedComparison_LS], '_',Sys.Date(),'.pdf', sep='')
@@ -882,47 +899,57 @@ server <- function(input, output, session) {
         }
     )
     
-    # output$hover_info_LS <- renderUI({
-    #     req(vals$displayedComparison)
-    #     pointer.df <- vals$list.highlight.df[[vals$displayedComparison]] %>%
-    #         dplyr::mutate(log10.adj.P.Val = -log10(BH.adj.P.Val))
-    #     
-    #     hover <- input$plot_hover_LS
-    #     point <- nearPoints(pointer.df, hover, 
-    #                         xvar = "logFC",
-    #                         yvar = "log10.adj.P.Val",
-    #                         threshold = 5, maxpoints = 1, addDist = TRUE)
-    #     if (nrow(point) == 0) return(NULL)
-    #     
-    #     
-    #     # calculate point position INSIDE the image as percent of total dimensions
-    #     # from left (horizontal) and from top (vertical)
-    #     left_pct <- (hover$x - hover$domain$left) / (hover$domain$right - hover$domain$left)
-    #     top_pct <- (hover$domain$top - hover$y) / (hover$domain$top - hover$domain$bottom)
-    #     
-    #     # calculate distance from left and bottom side of the picture in pixels
-    #     left_px <- hover$range$left + left_pct * (hover$range$right - hover$range$left)
-    #     top_px <- hover$range$top + top_pct * (hover$range$bottom - hover$range$top)
-    #     
-    #     # create style property fot tooltip
-    #     # background color is set so tooltip is a bit transparent
-    #     # z-index is set so we are sure are tooltip will be on top
-    #     style <- paste0("position:absolute; z-index:100; background-color: rgba(245, 245, 245, 0.85); ",
-    #                     "left:", left_px - 200 , "px; top:", top_px - 200, "px;")
-    #     
-    #     # actual tooltip created as wellPanel
-    #     wellPanel(
-    #         style = style,
-    #         p(HTML(paste0("<b> GeneID: </b>", 
-    #                       point$geneID, 
-    #                       "<br/>", 
-    #                       "<b> Log FC: </b>",
-    #                       round(point$logFC,digits = 2),
-    #                       "<br/>",
-    #                       "<b> p-value: </b>",
-    #                       format(point$BH.adj.P.Val, digits = 3, scientific = TRUE))))
-    #     )
-    # })
+    ## LS: Volcano Hover Info ----
+    output$hover_info_LS <- renderUI({
+        req(vals$displayedComparison_LS)
+        pointer.df <- vals$list.highlight.tbl_LS[[vals$displayedComparison_LS]] %>%
+            dplyr::mutate(log10.adj.P.Val = -log10(BH.adj.P.Val))
+
+        hover <- input$plot_hover_LS
+        point <- nearPoints(pointer.df, hover,
+                            xvar = "logFC",
+                            yvar = "log10.adj.P.Val",
+                            threshold = 5, maxpoints = 1, addDist = TRUE)
+        if (nrow(point) == 0) return(NULL)
+         
+    # calculate point position INSIDE the image as percent of total dimensions
+    # from left (horizontal) and from top (vertical)
+    left_pct <- (hover$x - hover$domain$left) / (hover$domain$right - hover$domain$left)
+    top_pct <- (hover$domain$top - hover$y) / (hover$domain$top - hover$domain$bottom)
+    
+    # calculate distance from left and bottom side of the picture in pixels
+    left_px <- hover$range$left + left_pct * (hover$range$right - hover$range$left)
+    top_px <- hover$coords_img$y - top_pct * (hover$range$bottom - hover$range$top)
+    
+    left_px <- (hover$coords_img$x + left_pct)/ hover$img_css_ratio$x 
+    #top_px <- (hover$coords_img$y - top_pct) / hover$imge_css_ratio$y
+    
+    #left_px <- hover$coords_img$x + hover$x
+    #top_px <- hover$coords_img$y + hover$y
+    
+    # create style property fot tooltip
+    # background color is set so tooltip is a bit transparent
+    # z-index is set so we are sure are tooltip will be on top
+    style <- paste0("position:absolute; z-index:100; background-color: rgba(245, 245, 245, 0.85); ",
+                    #"right:", hover$x + 10, "px; top:", hover$y + 10, "px;")
+                    #"left:", hover$range$left, "px; bottom:", hover$range$bottom , "px;")
+                    "left:", left_px + 50, "px; bottom:", top_px + 5, "px;")
+
+    
+
+        # actual tooltip created as wellPanel
+        wellPanel(
+            style = style,
+            p(HTML(paste0("<b> GeneID: </b>",
+                          point$geneID,
+                          "<br/>",
+                          "<b> Log FC: </b>",
+                          round(point$logFC,digits = 2),
+                          "<br/>",
+                          "<b> p-value: </b>",
+                          format(point$BH.adj.P.Val, digits = 3, scientific = TRUE))))
+        )
+    })
     
     #### LS: Data Table of Differentially Expressed Genes ----
     assemble_DEGs_LS <- reactive({
