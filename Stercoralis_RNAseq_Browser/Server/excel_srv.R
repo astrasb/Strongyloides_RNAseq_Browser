@@ -1,7 +1,9 @@
-generate_excel_report <- function(comparison, tbl){
-
+generate_excel_report <- function(comparison, tbl,
+                                  name = "S. stercoralis RNAseq Differential Gene Expression",
+                                  subtitle_prefix = "Contrast:"){
+   
 temp <- downloadHandler(
-    
+  
     filename = function(){
         paste("Stercoralis_RNAseq_Data_",Sys.Date(),".xlsx",sep = "")
     },
@@ -25,8 +27,8 @@ temp <- downloadHandler(
                 to_download,
                 sheet = y,
                 x = c(
-                    paste0("S. stercoralis RNAseq Differential Gene Expression"),
-                    paste0("Contrast: ", comparison[[y]]),
+                    name,
+                    paste(subtitle_prefix, comparison[[y]]),
                     paste0("Report generated on ", format(Sys.Date(), "%B %d, %Y"))
                 )
             )

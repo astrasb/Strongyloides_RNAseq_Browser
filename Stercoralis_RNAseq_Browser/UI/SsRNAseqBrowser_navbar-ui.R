@@ -44,9 +44,7 @@ navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                                                          "Gene Expression Across Life Stages")),
                                                     status = "primary",
                                                     tagList(div(id = "GenePlotDiv",
-                                                    downloadButton("downloadGenePlot",
-                                                                   "Download Plot as PDF",
-                                                                   class = "btn-primary")
+                                                    uiOutput("downloadbuttonsGenes")
                                                     ))
                                                 )
                                )
