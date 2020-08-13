@@ -317,7 +317,9 @@ navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                     tags$a(
                                         href = "https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29", 
                                         '(Law et al 2014)'),
-                                    '.')
+                                    '.'),
+                                    tags$h5('Data Visualization', class = 'text-danger'),
+                                    p('For heatmaps of Log2 Counts per Million gene expression values, columns (life stages) were ordered using Spearman clustering of expression in all genes (not just the user-defined subset). Rows were ordered using Pearson clustering of expression of the user-selected gene subset. Only the life stage dendrogram is displayed for clarity.')
                                     
                                     
                                     

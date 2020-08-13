@@ -300,6 +300,8 @@ server <- function(input, output, session) {
                            branches_lwd = 0.2,
                            key.title = "Row Z Score",
                            cexRow=1.2, cexCol=1.2,
+                           xlab = "Note: column clustering performed across entire RNAseq dataset",
+                           margins = c(100, 50, 10, 0),
                            #main = ("Log2 Counts Per Million (CPM) Expression Across Life Stages"),
                            custom_hovertext = hovertext)
         }
