@@ -336,6 +336,8 @@ p3
 # Source for TMM sample normalization here: https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-3-r25
 myDGEList.filtered.norm <- calcNormFactors(myDGEList.filtered, method = "TMM")
 
+log2.cpm.filtered.norm <- cpm(myDGEList.filtered.norm, log=TRUE) 
+
 log2.cpm.filtered.norm.df<- cpm(myDGEList.filtered.norm, log=TRUE) %>%
   as_tibble(rownames = "geneID") %>%
   setNames(nm = c("geneID", targets$sample))
@@ -377,7 +379,7 @@ p4
 ```
 
 # Save Filtered Data and Annotations ---
-```{r saveBaseData, eval = FALSE}
+```{r saveBaseData, eval = TRUE}
 # This data is required for downstream analyses in this file. 
 # It enables users to not have to re-import and re-align raw read files every time the code is run.
 # 
@@ -392,7 +394,7 @@ save(SsRNAseq.preprocessed.data,
 ```
 
 # Compute and Save Variance-Stabilized DGEList Object
-```{r vDEGList, echo=TRUE, message=FALSE, eval=FALSE}
+```{r vDEGList, echo=TRUE, message=FALSE, eval=TRUE}
 # Introduction to this chunk ----
 # This chunk uses a DGEList of filtered and normalized abundance data
 # It will fit data to a linear model for responsively detecting differentially expressed genes (DEGs)

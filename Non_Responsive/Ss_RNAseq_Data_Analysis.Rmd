@@ -436,7 +436,8 @@ list.myTopHits.df <- sapply(seq_along(comparison), function(y){
     left_join(list.myTopHits.df[[y]],., by = "geneID") %>%
     left_join(dplyr::select(diffDesc,geneID,comparison[y]), by = "geneID") %>%
     dplyr::rename(DEG_Desc=comparison[y]) %>%
-    dplyr::relocate(DEG_Desc)
+    dplyr::relocate(DEG_Desc) %>%
+    dplyr::relocate(logFC:percent_homology, .after = last_col())
   
 },
 simplify = FALSE)
@@ -660,6 +661,7 @@ diffGenes.heatmap <- heatmap.2(diffGenes.thresh,
 # Functional Enrichment Analysis ---
 ```{r functionalEnrichment}
 # Load packages ----
+suppressPackageStartupMessages({
 library(tidyverse)
 library(limma)
 library(openxlsx)
@@ -672,7 +674,7 @@ library(gprofiler2) #tools for accessing the GO enrichment results using g:Profi
 library(clusterProfiler) # provides a suite of tools for functional enrichment analysis
 library(msigdbr) # access to msigdb collections directly within R
 library(enrichplot) # great for making the standard GSEA enrichment plots
-
+})
 # Pick a pairwise comparison
 yy <- 1
 
@@ -708,58 +710,58 @@ yy <- 1
 # In Hunt et al 2016, there is an Ensembl Compara protein family set
 # Note that this uses specific transcript information, which I throw out. 
 # (e.g. SSTP_0001137400.2 is recoded as SSTP_0001137400)
-ensComp.geneIDs <- read.xlsx ("Data/41588_2016_BFng3495_MOESM219_ESM.xlsx", 
+ensComp.geneIDs <- read.xlsx ("../Data/Hunt_Parasite_Ensembl_Compara.xlsx", 
                               sheet = 1) %>%
-    as_tibble() %>%
-    dplyr::select(-Family.members) %>%
-    pivot_longer(cols = -Compara.family.id, values_to = "geneID") %>%
-    dplyr::select(-name) %>%
-    dplyr::filter(grepl("SSTP_", geneID))
+  as_tibble() %>%
+  dplyr::select(-Family.members) %>%
+  pivot_longer(cols = -Compara.family.id, values_to = "geneID") %>%
+  dplyr::select(-name) %>%
+  dplyr::filter(grepl("SSTP_", geneID))
 
 ensComp.geneIDs$geneID <- str_remove_all(ensComp.geneIDs$geneID, ".[0-9]$")
 
 # Compare these genes to the list of genes in our filtered, normalized list ----
 # 
 compara.exclusive <- unique(ensComp.geneIDs$geneID) %>%
-    as_tibble_col(column_name = "geneID") %>%
-    dplyr::anti_join(diffGenes.df, by = "geneID")
+  as_tibble_col(column_name = "geneID") %>%
+  dplyr::anti_join(diffGenes.df, by = "geneID")
 nrow(compara.exclusive)
 
 compara.absent <- unique(ensComp.geneIDs$geneID) %>%
-    as_tibble_col(column_name = "geneID") %>%
-    dplyr::anti_join(diffGenes.df,., by = "geneID") %>%
-    dplyr::select(geneID)
+  as_tibble_col(column_name = "geneID") %>%
+  dplyr::anti_join(diffGenes.df,., by = "geneID") %>%
+  dplyr::select(geneID)
 nrow(compara.absent)
 
 # How many genes have associated GO terms? ----
 GO.present <- list.myTopHits.df[[yy]]$GO_term %>%
-    gsub("NA", NA,.) %>%
-    as_tibble_col(column_name = "GO_Term") %>%
-    tibble(geneID = list.myTopHits.df[[yy]]$geneID,.) %>%
-    dplyr::filter(!is.na(GO_Term))
+  gsub("NA", NA,.) %>%
+  as_tibble_col(column_name = "GO_Term") %>%
+  tibble(geneID = list.myTopHits.df[[yy]]$geneID,.) %>%
+  dplyr::filter(!is.na(GO_Term))
 nrow(GO.present)
-    
+
 # Are any of these genes part of those not found in the compara dataset? ---- 
 GO.present.Compara.absent <- dplyr::semi_join(GO.present, compara.absent, by = "geneID")
 nrow(GO.present.Compara.absent)
 
 # Make a list of genes
 
-ensComp.familyIDs <- read.xlsx ("Data/41588_2016_BFng3495_MOESM219_ESM.xlsx", 
+ensComp.familyIDs <- read.xlsx ("../Data/Hunt_Parasite_Ensembl_Compara.xlsx", 
                                 sheet = 2,
                                 cols = c(1,4:6)) %>%
-    as_tibble() %>%
-    dplyr::mutate(Family_Description = dplyr::coalesce(.$Description, 
-                                                       .$`Top.product.(members.with.hit)`, 
-                                                       .$`Interpro.top.hit.(members.with.hit)`)
-    ) %>%
-    dplyr::select(Compara.family.id, Family_Description)
+  as_tibble() %>%
+  dplyr::mutate(Family_Description = dplyr::coalesce(.$Description, 
+                                                     .$`Top.product.(members.with.hit)`, 
+                                                     .$`Interpro.top.hit.(members.with.hit)`)
+  ) %>%
+  dplyr::select(Compara.family.id, Family_Description)
 
 ensComp <- left_join(ensComp.geneIDs, ensComp.familyIDs, by = "Compara.family.id") %>%
-    dplyr::select(-Compara.family.id) %>%
-    dplyr::rename(gs_name = Family_Description, gene_symbol = geneID) %>%
-    dplyr::relocate(gs_name, gene_symbol)
-    
+  dplyr::select(-Compara.family.id) %>%
+  dplyr::rename(gs_name = Family_Description, gene_symbol = geneID) %>%
+  dplyr::relocate(gs_name, gene_symbol)
+
 rm(ensComp.geneIDs, ensComp.familyIDs)
 
 # Generate rank ordered list of genes
@@ -781,40 +783,40 @@ myGSEA.res <- GSEA(mydata.gsea, TERM2GENE=ensComp, verbose=FALSE)
 myGSEA.df <- as_tibble(myGSEA.res@result)
 
 myGSEA.tbl<-as_tibble(myGSEA.res@result) %>%
-    dplyr::select(-c(Description, pvalue, enrichmentScore)) %>%
-    dplyr::rename(normalized_EnrichmentScore = NES)
+  dplyr::select(-c(Description, pvalue, enrichmentScore)) %>%
+  dplyr::rename(normalized_EnrichmentScore = NES)
 
 # view results as an interactive table
 enrichment.DT <- datatable(myGSEA.tbl, 
-          rownames = TRUE,
-          caption =  htmltools::tags$caption(
-              style = 'caption-side: top; text-align: left; color: black',
-              htmltools::tags$b('Gene Families Enriched in iL3 vs FLF')),
-          options = list(
-                         autoWidth = TRUE,
-                         scrollX = TRUE,
-                         scrollY = '800px',
-                         scrollCollapse = TRUE,
-                         searchHighlight = TRUE, 
-                         order = list(3, 'desc'),
-                         pageLength = 25, 
-                         lengthMenu = c("5",
-                                        "10",
-                                        "25",
-                                        "50",
-                                        "100"),
-                         columnDefs = list(
-                             # list(
-                             #     targets = ((7)),
-                             #     render = JS(
-                             #         "function(data, row) {",
-                             #         "data.toExponential(1);",
-                             #         "}")
-                             # ),
-                             list(targets = "_all",
-                                  class="dt-right")))) %>%
-    formatRound(columns=c(3,5:6), digits=2) %>%
-    formatRound(columns=c(4), digits=4)
+                           rownames = TRUE,
+                           caption =  htmltools::tags$caption(
+                             style = 'caption-side: top; text-align: left; color: black',
+                             htmltools::tags$b('Gene Families Enriched in iL3 vs FLF')),
+                           options = list(
+                             autoWidth = TRUE,
+                             scrollX = TRUE,
+                             scrollY = '800px',
+                             scrollCollapse = TRUE,
+                             searchHighlight = TRUE, 
+                             order = list(3, 'desc'),
+                             pageLength = 25, 
+                             lengthMenu = c("5",
+                                            "10",
+                                            "25",
+                                            "50",
+                                            "100"),
+                             columnDefs = list(
+                               # list(
+                               #     targets = ((7)),
+                               #     render = JS(
+                               #         "function(data, row) {",
+                               #         "data.toExponential(1);",
+                               #         "}")
+                               # ),
+                               list(targets = "_all",
+                                    class="dt-right")))) %>%
+  formatRound(columns=c(3,5:6), digits=2) %>%
+  formatRound(columns=c(4), digits=4)
 enrichment.DT
 
 # create enrichment plots using the enrichplot package
@@ -825,20 +827,21 @@ enrichment.DT
 
 # add a variable to this result that matches enrichment direction with phenotype
 myGSEA.df <- myGSEA.df %>%
-    mutate(phenotype = case_when(
-        NES > 0 ~ "iL3",
-        NES < 0 ~ "FLF"))
+  mutate(phenotype = case_when(
+    NES > 0 ~ "iL3",
+    NES < 0 ~ "FLF"))
 
 myGSEA.df$ID <- myGSEA.df$ID %>%
-    word(sep = ',') %>%
-    #word(sep = '/') %>%
-    word(sep = ' and')
+  word(sep = ',') %>%
+  #word(sep = '/') %>%
+  word(sep = ' and')
 
 # create 'bubble plot' to summarize y signatures across x phenotypes
 ggplot(myGSEA.df, aes(x=phenotype, y=ID)) + 
-    geom_point(aes(size=setSize, color = NES, alpha=-log10(p.adjust))) +
-    scale_color_gradient(low="blue", high="red") +
-    theme_bw()
+  geom_point(aes(size=setSize, color = NES, alpha=-log10(p.adjust))) +
+  scale_color_gradient(low="blue", high="red") +
+  coord_fixed(1/2) +
+  theme_bw()
 ```
 
 
