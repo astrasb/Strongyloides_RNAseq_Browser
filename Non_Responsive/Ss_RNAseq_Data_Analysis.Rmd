@@ -662,18 +662,18 @@ diffGenes.heatmap <- heatmap.2(diffGenes.thresh,
 ```{r functionalEnrichment}
 # Load packages ----
 suppressPackageStartupMessages({
-library(tidyverse)
-library(limma)
-library(openxlsx)
-library(gplots) #for heatmaps
-library(DT) #interactive and searchable tables of our GSEA results
-library(GSEABase) #functions and methods for Gene Set Enrichment Analysis
-library(Biobase) #base functions for bioconductor; required by GSEABase
-library(GSVA) #Gene Set Variation Analysis, a non-parametric and unsupervised method for estimating variation of gene set enrichment across samples.
-library(gprofiler2) #tools for accessing the GO enrichment results using g:Profiler web resources
-library(clusterProfiler) # provides a suite of tools for functional enrichment analysis
-library(msigdbr) # access to msigdb collections directly within R
-library(enrichplot) # great for making the standard GSEA enrichment plots
+  library(tidyverse)
+  library(limma)
+  library(openxlsx)
+  library(gplots) #for heatmaps
+  library(DT) #interactive and searchable tables of our GSEA results
+  library(GSEABase) #functions and methods for Gene Set Enrichment Analysis
+  library(Biobase) #base functions for bioconductor; required by GSEABase
+  library(GSVA) #Gene Set Variation Analysis, a non-parametric and unsupervised method for estimating variation of gene set enrichment across samples.
+  library(gprofiler2) #tools for accessing the GO enrichment results using g:Profiler web resources
+  library(clusterProfiler) # provides a suite of tools for functional enrichment analysis
+  library(msigdbr) # access to msigdb collections directly within R
+  library(enrichplot) # great for making the standard GSEA enrichment plots
 })
 # Pick a pairwise comparison
 yy <- 1
@@ -764,7 +764,21 @@ ensComp <- left_join(ensComp.geneIDs, ensComp.familyIDs, by = "Compara.family.id
 
 rm(ensComp.geneIDs, ensComp.familyIDs)
 
-# Generate rank ordered list of genes
+# Save database of parasite Gene Sets for import into Shiny App. ----
+
+# Filter out genes that aren't part of our RNAseq dataset
+genelist <- v.DEGList.filtered.norm$genes %>%
+  rownames_to_column(var = "geneID") %>%
+  dplyr::select(geneID)
+ensComp<- ensComp %>%
+  dplyr::rename(geneID = gene_symbol) %>%
+  left_join(genelist, ., by = "geneID") %>%
+  dplyr::relocate(gs_name, geneID)
+
+save(ensComp,
+     file = "../Outputs/parasiteGeneSets")
+
+# Generate rank ordered list of genes ----
 mydata.df.sub <- dplyr::select(list.myTopHits.df[[yy]], geneID, logFC)
 mydata.gsea <- mydata.df.sub$logFC
 names(mydata.gsea) <- as.character(mydata.df.sub$geneID)

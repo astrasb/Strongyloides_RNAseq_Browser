@@ -18,7 +18,7 @@ navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                    ### GeneID (text box)
                                    h5('Pick Genes', class = 'text-danger'),
                                    textAreaInput('idtext',
-                                                 (h6('Gene Stable IDs or Wormbase Parasite Description Term',
+                                                 (h6('Gene Stable IDs or Keyword',
                                                  tags$em('(comma separated)', style = "color: #7b8a8b"))),
                                                  rows = 10, 
                                                  resize = "vertical"),
