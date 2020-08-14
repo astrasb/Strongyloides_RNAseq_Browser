@@ -20,7 +20,7 @@ temp <- downloadHandler(
         sapply(seq_along(comparison), function(y){
             
             # Create Tab
-            addWorksheet(wb = to_download, sheetName = comparison[[y]])
+            addWorksheet(wb = to_download, sheetName = paste0("Sheet_",y))
             
             ## Sheet header
             writeData(

@@ -308,10 +308,9 @@ server <- function(input, output, session) {
             hovertext <- as.data.frame(subset.diffGenes) %>%
                 round(digits = 2)
             colnames(hovertext) <- v.DEGList.filtered.norm$targets$samples
-            
             hovertext[] <- lapply(seq_along(hovertext), function(x){
-                
-                paste0("Log2CPM: ", hovertext[,x], "<br>",
+                paste0("GeneID: ", rownames(hovertext), "<br>",
+                    "Log2CPM: ", hovertext[,x], "<br>",
                        "Life Stage: ", v.DEGList.filtered.norm$targets$group[x],
                        "<br>",
                        "Sample: ", colnames(hovertext)[x])
