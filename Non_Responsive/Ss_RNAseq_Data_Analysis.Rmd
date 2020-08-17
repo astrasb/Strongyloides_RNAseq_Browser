@@ -809,7 +809,7 @@ enrichment.DT <- datatable(myGSEA.tbl,
                            options = list(
                              autoWidth = TRUE,
                              scrollX = TRUE,
-                             scrollY = '800px',
+                             #scrollY = '800px',
                              scrollCollapse = TRUE,
                              searchHighlight = TRUE, 
                              order = list(3, 'desc'),
@@ -841,7 +841,7 @@ enrichment.DT
 
 # add a variable to this result that matches enrichment direction with phenotype
 myGSEA.df <- myGSEA.df %>%
-  mutate(phenotype = case_when(
+  mutate(life_stage = case_when(
     NES > 0 ~ "iL3",
     NES < 0 ~ "FLF"))
 
@@ -851,7 +851,7 @@ myGSEA.df$ID <- myGSEA.df$ID %>%
   word(sep = ' and')
 
 # create 'bubble plot' to summarize y signatures across x phenotypes
-ggplot(myGSEA.df, aes(x=phenotype, y=ID)) + 
+ggplot(myGSEA.df, aes(x=life_stage, y=ID)) + 
   geom_point(aes(size=setSize, color = NES, alpha=-log10(p.adjust))) +
   scale_color_gradient(low="blue", high="red") +
   coord_fixed(1/2) +

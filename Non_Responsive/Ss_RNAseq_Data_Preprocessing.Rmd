@@ -1,5 +1,5 @@
 ---
-title: Re-analysis of Strongyloides stercoralis bulk RNAseq via an alignment-free
+title: Pre-processing of Strongyloides stercoralis bulk RNAseq via an alignment-free
   analysis pipeline
 output:
   html_document:
@@ -221,6 +221,7 @@ suppressPackageStartupMessages({
   library(cowplot)
   library(ggthemes)
   library(RColorBrewer)
+  library(gprofiler2)
 })
 
 # Generate and plot summary stats for the data ----
@@ -332,6 +333,54 @@ p3 <- ggplot(log2.cpm.filtered.df.pivot) +
   coord_flip()
 p3
 
+
+# Look at the genes excluded by the filtering step ----
+# just to check that there aren't any with high expression that are in few samples
+# Discarded genes
+myDGEList.discarded <- myDGEList[!keepers,]
+dim(myDGEList.discarded)
+
+
+ids.discarded <- rep(cbind(targets$group), 
+                    times = nrow(myDGEList.discarded)) %>%
+    as_factor()
+
+log2.cpm.discarded.df.pivot <- cpm(myDGEList.discarded, log=F) %>%
+    as_tibble(rownames = "geneID") %>%
+    setNames(nm = c("geneID", targets$sample)) %>%
+    pivot_longer(cols = -geneID,
+                 names_to = "samples",
+                 values_to = "expression") %>%
+    add_column(life_stage = ids.discarded)
+
+
+p.discarded <- ggplot(log2.cpm.discarded.df.pivot) +
+    aes(x=samples, y=expression, color=life_stage) +
+    #geom_violin(trim = FALSE, show.legend = T, alpha= 0.7) +
+    geom_jitter(alpha = 0.3, show.legend = T)+
+    stat_summary(fun = "median", 
+                 geom = "point", 
+                 shape = 20, 
+                 size = 2, 
+                 color = "black", 
+                 show.legend = FALSE) +
+    labs(y="expression", x = "sample",
+         title="Counts per Million (CPM)",
+         subtitle="genes excluded by low count filtering step, non-normalized",
+         caption=paste0("produced on ", Sys.time())) +
+    theme_bw() +
+    scale_color_brewer(palette = "Dark2") +
+    coord_flip()
+p.discarded
+# Carry out GO enrichment of discarded gene set using gProfiler2 ----
+discarded.geneID <- unique(log2.cpm.discarded.df.pivot$geneID)
+gost.res <- gost(list(Discarded_genes = discarded.geneID), organism = "ststerprjeb528", correction_method = "fdr")
+gostplot(gost.res, interactive = T, capped = T)
+
+# Genes that are above 1 cpm
+log2.cpm.discarded.df.pivot %>%
+  dplyr::filter(expression > 1)
+
 # Normalize the data using a between samples normalization ----
 # Source for TMM sample normalization here: https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-3-r25
 myDGEList.filtered.norm <- calcNormFactors(myDGEList.filtered, method = "TMM")
@@ -365,16 +414,6 @@ p4 <- ggplot(log2.cpm.filtered.norm.df.pivot) +
   scale_fill_brewer(palette = "Dark2") +
   coord_flip()
 p4
-
-# Plot all the plots on a grid
-#p5 <- plot_grid(p1, p2, p3, p4, labels = c('A', 'B', 'C', 'D'), label_size = 12)
-# ggsave("Strongyloides stercoralis RNAseq Counts.pdf", 
-#        plot = p5, 
-#        device = "pdf",
-#        height = 8.5,
-#        width = 11,
-#        path = '../Outputs/')
-# 
 
 ```
 
