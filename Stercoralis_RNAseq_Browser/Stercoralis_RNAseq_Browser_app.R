@@ -24,7 +24,6 @@ suppressPackageStartupMessages({
     library(egg)
     library(dendextend)
     library(clusterProfiler) # provides a suite of tools for functional enrichment analysis
-    library(enrichplot) # great for making the standard GSEA enrichment plots
     source("Server/ggheatmap_local.R")
     source("Server/calc_DEG_tbl.R")
     source("Server/theme_Publication.R")
