@@ -137,7 +137,7 @@ navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                 conditionalPanel(condition = "input.goLifeStage_GW != 0",
                                                  id = "diffPlotPanel",
                                                  panel(
-                                                     heading = tagList(h4(shiny::icon("fas fa-chart-area"),
+                                                     heading = tagList(h4(shiny::icon("fas fa-mountain"),
                                                                           "Pairwise Differential Gene Expression: Volcano Plot")),
                                                      status = "primary",
                                                      withSpinner(plotOutput('volcano_GW',
@@ -250,7 +250,7 @@ navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
                         column(8,
                                 conditionalPanel(condition = "input.goLS != 0",
                                                  panel(
-                                                     heading = tagList(h4(shiny::icon("fas fa-chart-area"),
+                                                     heading = tagList(h4(shiny::icon("fas fa-mountain"),
                                                                           "Pairwise Differential Gene Expression: Volcano Plot")),
                                                      status = "primary",
                                                      withSpinner(plotOutput('volcano_LS',
@@ -273,6 +273,7 @@ navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
                         column(2,
                                uiOutput('contrastDisplaySelection_LS')
                         ),
+                        
                         column(10,
                                conditionalPanel(condition = "input.goLS != 0",
                                                 panel(
@@ -285,6 +286,33 @@ navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                                 )
                                )
                         )
+                        
+                    ),
+                    fluidRow(
+                        
+                        column(6,
+                               conditionalPanel(condition = "input.goLS != 0",
+                                                panel(
+                                                    heading = tagList(h4(shiny::icon("fas fa-braille"),
+                                                                         "Gene Set Enrichment Analysis: Plot")),
+                                                    status = "primary",
+                                                    withSpinner(plotOutput('GSEAPlot_LS'),
+                                                                color = "#2C3E50"),
+                                                    downloadButton("downloadGSEAPlot_LS",
+                                                                   "Download Plot as PDF",
+                                                                   class = "btn-primary")
+                                                ))
+                               ),
+                        column(6,
+                               conditionalPanel(condition = "input.goLS != 0",
+                                                panel(
+                                                    heading = tagList(h4(shiny::icon("fas fa-table"),
+                                                                         "Gene Set Enrichment Analysis: Data Table")),
+                                                    status = "primary",
+                                                    withSpinner(DTOutput('GSEATbl_LS'),
+                                                                color = "#2C3E50"),
+                                                    uiOutput("downloadGSEAtbl_LS")
+                                                )))
                     )
            ),
            

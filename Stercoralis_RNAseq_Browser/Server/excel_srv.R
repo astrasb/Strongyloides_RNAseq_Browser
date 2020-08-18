@@ -1,11 +1,12 @@
 generate_excel_report <- function(comparison, tbl,
                                   name = "S. stercoralis RNAseq Differential Gene Expression",
+                                  filename_prefix = "Stercoralis_RNAseq_Data_",
                                   subtitle_prefix = "Contrast:"){
    
 temp <- downloadHandler(
   
     filename = function(){
-        paste("Stercoralis_RNAseq_Data_",Sys.Date(),".xlsx",sep = "")
+        paste(filename_prefix,Sys.Date(),".xlsx",sep = "")
     },
     
     content = function(file){
