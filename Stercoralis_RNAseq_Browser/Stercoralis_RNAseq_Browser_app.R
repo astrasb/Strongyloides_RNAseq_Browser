@@ -3,6 +3,7 @@
 # ---- Libraries ----
 suppressPackageStartupMessages({
     library(shiny)
+    library(shinyjs)
     library(shinyWidgets)
     library(htmltools)
     library(shinythemes)
@@ -194,18 +195,19 @@ server <- function(input, output, session) {
                 if (any(grepl('SSTP', input$idtext, ignore.case = TRUE))){
                     # Text input matches SSTP values
                     genelist <- input$idtext %>%
-                        gsub(" ", "", ., fixed = TRUE) %>%
+                        gsub("\\s+", "", .) %>% #remove any number of whitespace
                         str_split(pattern = ",") %>%
                         unlist() %>%
                         as_tibble_col(column_name = "geneID")
                 } else {
+                    
                     # Assume the values here are keywords, search Description terms
                     terms <- input$idtext %>%
                         str_split(pattern = ",") %>%
                         unlist()
                     
                     geneindex<-sapply(terms, function(y) {
-                        grepl(gsub("$ |^ ","",y), 
+                        grepl(gsub("^\\s+|\\s+$","",y), #remove any number of whitespace from start of end
                               v.DEGList.filtered.norm$genes$Description,
                               ignore.case = TRUE)
                     }) %>%
@@ -213,7 +215,7 @@ server <- function(input, output, session) {
                         as.logical()
                     
                     geneindex.ensembl<-sapply(terms, function(y) {
-                        gsub("$ |^ ","",y) %>%
+                        gsub("^\\s+|\\s+$","",y) %>%
                             paste0("\\<",.,"\\>") %>%
                             grepl(., 
                                   ensComp$gs_name,
@@ -246,6 +248,11 @@ server <- function(input, output, session) {
                         dplyr::select(geneID)
                 )
             } 
+            
+            if (nrow(genelist) == 0){
+                disable("goLifeStage_GW")
+            } else {enable("goLifeStage_GW")}
+            
             # Produces error message if genelist is empty
             validate(
                 need(nrow(genelist) != 0, "No genes found, please try a new search")
@@ -555,6 +562,83 @@ server <- function(input, output, session) {
     })
     
     ## GW: Pairwise Comparisons Across Life Stage ----
+    
+    ### Generate UI for 
+    
+    # output$lifestageInputPanel_GW <- renderUI({
+    #     req(vals$genelist)
+    #     tagList(id = "lifeStageInputPanel",
+    #             panel(
+    #                 ## Select Life Stage Comparisons ----
+    #                 heading = tagList(h4(shiny::icon("fas fa-sliders-h"), 
+    #                                      "Step 2: Pick Life Stage Comparisons")),
+    #                 status = "primary",
+    #                 # Select Target Life Stage
+    #                 h5('A: Single Comparison', class = 'text-danger'),
+    #                 
+    #                 selectInput("selectTarget_GW",
+    #                             h6("Select Target"),
+    #                             choices = c('Choose one or more' = ''
+    #                                         ,list("FLF",
+    #                                               "PF",
+    #                                               "iL3",
+    #                                               "iL3a",
+    #                                               "ppL1",
+    #                                               "ppL3",
+    #                                               "pfL1")),
+    #                             selectize = TRUE,
+    #                             multiple = TRUE),
+    #                 # Select Contrast Life Stage
+    #                 selectInput("selectContrast_GW",
+    #                             h6("Select Contrast"),
+    #                             choices = c('Choose one or more' = '',
+    #                                         list("FLF",
+    #                                              "PF",
+    #                                              "iL3",
+    #                                              "iL3a",
+    #                                              "ppL1",
+    #                                              "ppL3",
+    #                                              "pfL1")),
+    #                             selectize = TRUE,
+    #                             multiple = TRUE),
+    #                 
+    #                 tags$hr(style="border-color: #2C3E50;"),
+    #                 h5('B: Multiple Comparisons', class = 'text-danger'),
+    #                 
+    #                 # Text Input for Multiple Contrasts
+    #                 textAreaInput('multiContrasts_GW',
+    #                               (h6('Type comma-separated comparisons using format: (Target)-(Contrast)',
+    #                                   tags$br(),tags$em('e.g. iL3-PF, (iL3+iL3a)-(PF+FLF)', style = "color: #7b8a8b"))),
+    #                               
+    #                               rows = 5, 
+    #                               resize = "vertical"),
+    #                 
+    #                 h6("Correct for Multiple Comparisons?"),
+    #                 switchInput(
+    #                     inputId = "multipleContrastsYN_GW",
+    #                     onLabel = "Yes",
+    #                     offLabel = "No",
+    #                     size = "small",
+    #                     onStatus = "success"
+    #                 ),
+    #                 
+    #                 tags$hr(style="border-color: #2C3E50;"),
+    #                 
+    #                 ### Action Button
+    #                 actionButton('goLifeStage_GW',
+    #                              'Process',
+    #                              #width = '50%',
+    #                              icon = icon("fas fa-share"),
+    #                              class = "btn-primary"),
+    #                 
+    #                 actionButton('resetGW', 'Clear',
+    #                              icon = icon("far fa-trash-alt"))
+    #             )
+    #         )
+    # })
+    # 
+    
+    
     
     ### Parse the inputs
     parse_contrasts_GW <- eventReactive(input$goLifeStage_GW,{

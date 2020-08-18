@@ -12,7 +12,7 @@ navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
            tabPanel(h4("Browse By Gene"),
                     value = "GW",
                     fluidRow(
-                        
+                        useShinyjs(),
                         column(2,
                                
                                ## Select Genes to Browse ----
@@ -130,7 +130,8 @@ navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                                     
                                                     actionButton('resetGW', 'Clear',
                                                                  icon = icon("far fa-trash-alt"))
-                                                ))
+                                                )
+                                                )
                         ),
                         
                         column(8,
