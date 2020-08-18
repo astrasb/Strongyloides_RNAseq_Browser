@@ -746,7 +746,6 @@ GO.present.Compara.absent <- dplyr::semi_join(GO.present, compara.absent, by = "
 nrow(GO.present.Compara.absent)
 
 # Make a list of genes
-
 ensComp.familyIDs <- read.xlsx ("../Data/Hunt_Parasite_Ensembl_Compara.xlsx", 
                                 sheet = 2,
                                 cols = c(1,4:6)) %>%
@@ -805,7 +804,10 @@ enrichment.DT <- datatable(myGSEA.tbl,
                            rownames = TRUE,
                            caption =  htmltools::tags$caption(
                              style = 'caption-side: top; text-align: left; color: black',
-                             htmltools::tags$b('Gene Families Enriched in iL3 vs FLF')),
+                             htmltools::tags$b('Gene Families Enriched in ', 
+                                               gsub('-',' vs ',
+                                                    names(list.myTopHits.df)[[yy]]))
+                           ),
                            options = list(
                              autoWidth = TRUE,
                              scrollX = TRUE,
@@ -820,13 +822,6 @@ enrichment.DT <- datatable(myGSEA.tbl,
                                             "50",
                                             "100"),
                              columnDefs = list(
-                               # list(
-                               #     targets = ((7)),
-                               #     render = JS(
-                               #         "function(data, row) {",
-                               #         "data.toExponential(1);",
-                               #         "}")
-                               # ),
                                list(targets = "_all",
                                     class="dt-right")))) %>%
   formatRound(columns=c(3,5:6), digits=2) %>%
@@ -842,8 +837,8 @@ enrichment.DT
 # add a variable to this result that matches enrichment direction with phenotype
 myGSEA.df <- myGSEA.df %>%
   mutate(life_stage = case_when(
-    NES > 0 ~ "iL3",
-    NES < 0 ~ "FLF"))
+    NES > 0 ~ str_split(names(list.myTopHits.df)[[yy]],'-',simplify = T)[1,1],
+    NES < 0 ~ str_split(names(list.myTopHits.df)[[yy]],'-',simplify = T)[1,2]))
 
 myGSEA.df$ID <- myGSEA.df$ID %>%
   word(sep = ',') %>%
@@ -854,8 +849,23 @@ myGSEA.df$ID <- myGSEA.df$ID %>%
 ggplot(myGSEA.df, aes(x=life_stage, y=ID)) + 
   geom_point(aes(size=setSize, color = NES, alpha=-log10(p.adjust))) +
   scale_color_gradient(low="blue", high="red") +
-  coord_fixed(1/2) +
-  theme_bw()
+  labs(title = paste0('Gene Families Enriched in ', 
+                      gsub('-',' vs ',
+                           names(list.myTopHits.df)[[yy]])),
+       subtitle = 'NES = Normalized Enrichment Score; Gene family assignments 
+             from Ensembl Compara dataset defined in Hunt et al 2016',
+       x = "Life Stage",
+       y = "Family ID") +
+  #coord_fixed(1/2) +
+  theme_bw() +
+  theme(plot.title.position = "plot",
+        plot.caption.position = "plot",
+        plot.title = element_text(face = "bold",
+                                  size = 13, hjust = 0),
+        axis.title = element_text(face = "bold",size = 10.4),
+         legend.title = element_text(face="bold",size = 10.4),
+        aspect.ratio = 3/1)
+
 ```
 
 
