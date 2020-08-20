@@ -2,13 +2,13 @@
 # 
 # Import a variance-stabilized DEGList created by voom transformation command.
 # Outputs: E = normalized CPMexpression values on the log2 scale
-load(file = "./vDEGList")
+load(file = "./Data/vDEGList")
 
 # Import a tidy dataframe containing an Ensembl Compara protein family set
 # Origin: Hunt et al 2016
 # Note that this uses specific transcript information, which I throw out. 
 # (e.g. SSTP_0001137400.2 is recoded as SSTP_0001137400)
-load(file = "./parasiteGeneSets")
+load(file = "./Data/parasiteGeneSets")
 
 
 # Parse vDEGList into a tibble containing Log2CPM information

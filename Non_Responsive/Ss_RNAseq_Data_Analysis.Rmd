@@ -1,6 +1,5 @@
 ---
-title: Re-analysis of Strongyloides stercoralis bulk RNAseq via an alignment-free
-  analysis pipeline
+title: Offline Data Analysis of Strongyloides ratti bulk RNAseq data
 output:
   html_document:
     df_print: paged
@@ -10,15 +9,10 @@ output:
 ---
 
 # Introduction ---
-The human parasitic nematode *Strongyloides stercoralis* is estimated to infect approximately 610 million people (Buonfrate *et al* 2020). Similar to other intestinal parasitic nematodes, *S. stercoralis* has a complex life cycle in which distinct developmental stages navigate starkly different environments via life-stage specific behavioral preferences ( [Castelletto *et al* 2014](https://journals.plos.org/plospathogens/article?id=10.1371/journal.ppat.1004305), [Bryant and Hallem 2018a](https://www.sciencedirect.com/science/article/pii/S2211320718301118?via%3Dihub) ). Across nematode species, ethological and behavioral differences are often reflected in the temporal regulation of gene expression. For *S. stercoralis*, several studies have utilized bulk RNA sequencing to probe the genomic basis of parasitism by identifying gene families that are uniquely upregulated in parasitic life stages ( [Stolzfus *et al* 2012](https://journals.plos.org/plosntds/article?id=10.1371/journal.pntd.0001854), [Hunt *et al* 2016](https://www.nature.com/articles/ng.3495), [Hunt *et al* 2018](https://www.nature.com/articles/s41598-018-23514-z)). These efforts highlight a feature of modern bioinformatics - the secondary analysis of publically avaliable datasets. Here, an original dataset featuring bulk RNA sequencing of seven *S. stercoralis* developmental stages was initially aligned to genomic contigs (6 December 2011 draft, [Stolzfus *et al* 2012](https://journals.plos.org/plosntds/article?id=10.1371/journal.pntd.0001854) ). Subsequently, a subset of this dataset was re-analyzed coincident with the release of a high-quality draft assembly ( [Hunt *et al* 2016](https://www.nature.com/articles/ng.3495) ); this re-analysis focused on the differences between three life stages: free-living adults that navigate the environment, parasitic adults located within the host intestine, and infective third-stage larvae that actively engage in host-seeking behaviors. As genome assembly and RNA sequencing of additional parasitic nematode species continues, the publically-avaliable *S. stercoralis* RNAseq dataset continues to be utilized for cross-species and cross-life stage comparisons ( [Hunt *et al* 2016](https://www.nature.com/articles/ng.3495), [Hunt *et al* 2018](https://www.nature.com/articles/s41598-018-23514-z) ). Furthermore, several helminth RNA-seq datasets, including *S. stercoralis* were realigned to their reference genomes and integrated into WormBase Parasite, where they are accessible to the field at large in the form of genome-aligned RNA-seq expression tracks ( [Howe *et al* 2017](https://www.sciencedirect.com/science/article/pii/S0166685116301608?via%3Dihub) ).
-
-As research into the genomic basis of parasitism in helminths continues, access to quantitative gene expression levels will greatly enhance studies into the functional role of specific genes and gene families. Differential gene expression results have been published as supplemental data ( [Hunt *et al* 2016](https://www.nature.com/articles/ng.3495) ), however these analyses only included pairwise comparisons between three life stages. Quantitative comparisons that utilize the full seven avaliable life stages have not yet been published. 
-
 ### Data Pre-Processing    
-A description of Kallisto alignment and data filtering/normalization steps can be found in `Ss_RNAseq_Data_Processing.rmd`. 
+A full inforuction to the project and a description of Kallisto alignment and data filtering/normalization steps can be found in `Ss_RNAseq_Data_Processing.rmd`. 
 
 ### Data Analysis   
-**Code included in this section is not (yet) available as part of the Shiny Web App**  
 Principal component analysis applied to filtered and TMM-normalized expression data identified two developmental clusters that account for 42.6% and 28.9% of expression variability between *S. stercoralis* developmental stages. The top 10% of genes contributing to PC1 and PC2 are identified and printed as a DataTable.
 
 The limma package ( [Ritchie *et al* 2015](https://pubmed.ncbi.nlm.nih.gov/25605792/), [Phipson *et al* 2016](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5373812/)) is used to conduct pairwise differential gene expression analyses between life stages. Here, all unique pairwise comparisons between life stages are displayed as interactive volcano plots and DataTables. In this analysis, genes included in DataTables are corrected for multiple life-stage comparisons. An additional code chunk identifies all genes that are differentially expressed in any way across groups (i.e. an ANOVA analysis across life stages). This set of genes is passed into a clustering analysis that generates a heatmap of differential gene expression across life stages.
@@ -34,7 +28,7 @@ myDGEList.filtered.norm <-SsRNAseq.preprocessed.data$myDGEList.filtered.norm
 
 rm(SsRNAseq.preprocessed.data)
 
-load(file = "../Outputs/vDEGList")
+load(file = "../Outputs/Ss_vDEGList")
 
 ```
 

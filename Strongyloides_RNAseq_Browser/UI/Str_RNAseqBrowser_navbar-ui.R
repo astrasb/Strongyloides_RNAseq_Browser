@@ -2,7 +2,7 @@
 
 # Header ----
 navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
-           windowTitle = "Str-RNAseq Browser",
+           windowTitle = "St-RNAseq Browser",
            theme = shinytheme("flatly"), 
            collapsible = TRUE,
            id = "tab",
@@ -329,23 +329,36 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                      
                                      status = "primary",
                                      
-                                     p('This Shiny app enables users to browse a bioinformatics dataset featuring bulk RNA sequencing of seven *S. stercoralis* developmental stages ',
+                                     p('This Shiny app enables users to browse a bioinformatics dataset featuring bulk RNA sequencing of seven ', tags$em('S. stercoralis'), ' developmental stages ',
                                        tags$a(
                                            href = 'https://journals.plos.org/plosntds/article?id=10.1371/journal.pntd.0001854', 
-                                           "(Stolzfus et al 2012)"), '.', br()),
-                                     tags$h5('Data Preprocessing', class = 'text-danger'),
-                                     p('Offline, Kallisto and custom R scripts were used to perform ultra-fast read mapping of raw reads to the *S. stercoalis* reference transcriptome (PRJEB528.WBPS14.mRNA_transcripts, downloaded from ',
+                                           "(Stolzfus et al 2012)."), br()),
+                                     tags$h5(tags$em('S. stercoralis'), 'Data Preprocessing', class = 'text-danger'),
+                                     p('Offline, Kallisto and custom R scripts were used to perform ultra-fast read mapping of raw reads to the ', tags$em('S. stercoralis'), ' reference transcriptome (PRJEB528.WBPS14.mRNA_transcripts, downloaded from ',
                                        tags$a(
                                            href = "https://parasite.wormbase.org/Strongyloides_stercoralis_prjeb528/Info/Index/", 
                                            'WormBase Parasite'),
                                        'on 16 June 2020).',
                                        tags$br(),
-                                       'Raw reads were quantified as counts per million using the EdgeR package, then filtered to remove transcripts with low counts (less than 1 count-per-million in at least 3 samples), and normalized using the trimmed mean of M-values method (TMM, ',
+                                       'Raw reads were quantified as counts per million using the EdgeR package, then filtered to remove transcripts with low counts (less than 1 count-per-million in at least 3 samples). This process excluded 717 genes from the final dataset.', tags$br(),
+                                       tags$a(href="SsRNAseq_discardedGene_counts.csv", 
+                                              "Download the list of excluded genes and their expression across life stages here.", 
+                                              download="SsRNAseq_discardedGene_counts.csv", target="blank"), tags$br(),
+                                    
+                                       'Finally, CPM values were normalized using the trimmed mean of M-values method (TMM, ',
                                        tags$a(
                                            href = "https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-3-r25", 
                                            'Robinson and Oshlack)'),
-                                       'to permit between-samples comparisons.', br(),
-                                       'The limma package',
+                                       'to permit between-samples comparisons.', 
+                                       
+                                       tags$br(),
+                                       tags$a(href="SsRNAseq_discardedGene_counts.csv", 
+                                              "Download the database of filtered and TMM-normalized log2 CPM gene expression values.", 
+                                              download="SsRNAseq_log2cpm_filtered_norm.csv", target="blank"), tags$br()
+                                       ),
+                                       
+                                     tags$h5('On-demand Differential Expression Analysis', class = 'text-danger'),
+                                       p('Here, the limma package',
                                        tags$a(
                                            href = "https://pubmed.ncbi.nlm.nih.gov/25605792/", 
                                            '(Ritchie et al 2015'),
@@ -356,13 +369,13 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                        'is used to conduct pairwise differential gene expression analyses between life stages. The mean-variance relationship is modeled using a precision weights approach',
                                        tags$a(
                                            href = "https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29", 
-                                           '(Law et al 2014)'),
-                                       '.'),
-                                     tags$h5('Data Visualization', class = 'text-danger'),
-                                     p('For heatmaps of Log2 Counts per Million gene expression values, columns (life stages) were ordered using Spearman clustering of expression in all genes (not just the user-defined subset). Rows were ordered using Pearson clustering of expression of the user-selected gene subset. Only the life stage dendrogram is displayed for clarity.'),
+                                           '(Law et al 2014).')),
+                                     
                                      tags$h5('Functional Enrichment Analysis', class = 'text-danger'),
                                      p('Here, we perform gene set enrichment analysis using the GSEA function from the clusterProfiler R package. Given a priori defined set of gene XX, the goal of GSEA is to determine whether the members of XX are randomly distributed throughout the ranked gene list (L) or primarily found at the top or bottom. Thus, GSEA depends on the availability of gene sets. Here, we use a Ensembl Compara protein family set list defined in Hunt', tags$em('et al'), '2016. (Note that this uses specific transcript information, which are discarded). The list was preprocessed to remove genes that are not found in the preprocessed list of genes for which we have RNASeq data. For a selected pairwise comparison, the gene list (L) is constructed by rank ordering by LogFC.'),
-                                     p('GSEA analysis returns a plot of enriched gene families as well as a table containing normalized gene enrichment scores. These scores represent the degree to which the elements of the gene set are over-represented at the edges of the ranked gene list. Sccores are normalized based on the number of genes within the gene set.')
+                                     p('GSEA analysis returns a plot of enriched gene families as well as a table containing normalized gene enrichment scores. These scores represent the degree to which the elements of the gene set are over-represented at the edges of the ranked gene list. Sccores are normalized based on the number of genes within the gene set.'), 
+                                     tags$h5('Data Visualization', class = 'text-danger'),
+                                     p('For heatmaps of Log2 Counts per Million gene expression values, columns (life stages) were ordered using Spearman clustering of expression in all genes (not just the user-defined subset). Rows were ordered using Pearson clustering of expression of the user-selected gene subset. Only the life stage dendrogram is displayed for clarity.')
                                      
                                      ),
                                      
