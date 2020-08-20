@@ -1,8 +1,8 @@
 
 
 # Header ----
-navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
-           windowTitle = "Ss-RNAseq Browser",
+navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
+           windowTitle = "Str-RNAseq Browser",
            theme = shinytheme("flatly"), 
            collapsible = TRUE,
            id = "tab",
@@ -17,14 +17,16 @@ navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                
                                ## Select Genes to Browse ----
                                panel(
+                                   id = "GeneInputBox",
                                    heading = tagList(h4(shiny::icon("fas fa-dna"), "Step 1: Input Genes / Keywords")),
                                    status = "primary",
                                    ### GeneID (text box)
-                                   h5('Pick Genes', class = 'text-danger'),
+                                   h5('Pick Genes', class = 'text-danger', style = "margin: 0px 0px 5px 0px"),
+                                   p(tags$em('Users may type gene stable IDs or keywords that will be matched against Wormbase Parasite Gene Descriptions and an Ensembl Compara database of gene families. Please separate search terms by a comma. Users may also upload a .csv file containing comma-separated gene stable IDs.', style = "color: #7b8a8b")),
+                                   p(tags$em(tags$b('Note: Please hit the Clear button between successive searches.', style = "color: #F39C12"))),
                                    textAreaInput('idtext',
-                                                 (h6('Gene Stable IDs or Keyword',
-                                                     tags$em('(comma separated)', style = "color: #7b8a8b"))),
-                                                 rows = 10, 
+                                                 h6('Gene Stable IDs or Keyword'),
+                                                 rows = 5, 
                                                  resize = "vertical"),
                                    
                                    ### Upload list of GeneIDs
@@ -63,7 +65,7 @@ navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
                     ),
                     fluidRow(
                         column(2,
-                               conditionalPanel(condition = "input.goGW != 0",
+                               conditionalPanel(condition = "output.downloadbuttonsGenes || output.contrastDisplaySelection_GW",
                                                 id = "lifeStageInputPanel",
                                                 panel(
                                                     ## Select Life Stage Comparisons ----
@@ -183,7 +185,7 @@ navbarPage(h3(em("Strongyloides stercoralis"), "RNAseq Browser"),
                                    heading = tagList(h4(shiny::icon("fas fa-sliders-h"), 
                                                         "Step 1: Pick Life Stage Comparisons")),
                                    status = "primary",
-                                   h5('A: Single Comparison', class = 'text-danger'),
+                                   h5('A: Single Comparison', class = 'text-danger', style = "margin: 0px 0px 10.5px 0px"),
                                    selectInput("selectTarget_LS",
                                                h6("Select Target"),
                                                choices = c('Pick one or more' = ''

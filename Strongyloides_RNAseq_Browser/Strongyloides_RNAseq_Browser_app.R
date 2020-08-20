@@ -1,0 +1,129 @@
+# Strongyloides RNAseq Browser Shiny App
+
+# ---- Libraries ----
+suppressPackageStartupMessages({
+    library(shiny)
+    library(shinyjs)
+    library(shinyWidgets)
+    library(htmltools)
+    library(shinythemes)
+    library(DT)
+    library(tidyverse)
+    library(limma) # differential gene expression using linear modeling
+    library(edgeR)
+    library(gt) 
+    library(plotly)
+    library(shinycssloaders)
+    library(magrittr)
+    library(ggthemes)
+    library(gplots)
+    library(svglite)
+    library(Cairo)
+    library(heatmaply)
+    library(RColorBrewer)
+    library(openxlsx)
+    library(egg)
+    library(dendextend)
+    library(clusterProfiler) # provides a suite of tools for functional enrichment analysis
+    source("Server/ggheatmap_local.R")
+    source("Server/calc_DEG_tbl.R")
+    source("Server/theme_Publication.R")
+    source('Server/limma_ranking.R')
+    source("Server/excel_srv.R")
+})
+
+# ---- Background ----
+source('Server/preprocess_data.R', local = T)
+
+# ---- UI ----
+
+ui <- fluidPage(
+    
+    source('UI/Str_RNAseqBrowser_navbar-ui.R', local = T)$value,
+    
+    source('UI/custom_css.R', local = T)
+    
+)
+
+
+# ---- Server  ----
+server <- function(input, output, session) {
+    vals<-reactiveValues()
+    
+    ## GW: Gene Expression Across Life Stage ----
+    
+    ## GW: Generate/Reset Gene File Upload
+    ## GW: Clear Genes
+    source('Server/reset_state.R', local = T)
+    
+    ## GW: Parse Gene Inputs
+    source('Server/parse_geneIDs_gw.R', local = T)
+    
+    ## GW: Generate Panel for Gene-wise Plots
+    ## GW: Generate Responsive Selection for Gene to Display
+    source('Server/generate_geneplot_UI_gw.R', local = T)
+    
+    
+    ## GW: Plots of Gene Expression
+    ## GW: Switch what type of GW Plot is produced
+    ## GW: Save Gene Plots
+    ## GW: Save Excel Table with Gene Expression Data
+    source('Server/plot_save_gene_expression_gw.R', local = T)
+    
+    
+    
+    
+    ## GW: Pairwise Comparisons Across Life Stage ----
+
+    ## GW: Clear Comparison Selections
+    ## GW: Parse the inputs
+    ## GW: Generate Responsive Selection for Life Stage to Display
+    source('Server/initialize_pairwiseComparisons_gw.R', local = T)
+    
+    
+    ## GW: Set Contrast Matrix and Fit the Linear Model
+    source('Server/set_linear_model_gw.R', local = T)
+    
+    
+    ## GW: Extract the Differentially Expressed Genes 
+    ## GW: Volcano Plot, Generate UI
+    ## GW: Save Volcano Plot
+    ## GW: Volcano Hover Info
+    ## GW: Data Table of Differentially Expressed Genes from User Subset
+    ## GW: Save Excel Tables with DEG Tables
+    source('Server/plot_save_DEGs_gw.R', local = T)
+    
+    ## GW: Pairwise Comparisons Across Life Stage ----
+    ## LS: Clear Comparison Selections
+    ## LS: Pairwise comparisons Across Life Stages
+    ## LS: Generate Responsive Selection for Life Stage to Display
+    source('Server/initialize_pairwiseComparisons_ls.R', local = T)
+    
+    ## LS: Set Contrast Matrix and Fit the Linear Model
+    source('Server/set_linear_model_ls.R', local = T)
+    
+    ## LS: Extract the Differentially Expressed Genes
+    ## LS: Volcano Plot, Generate UI
+    ## LS: Save Volcano Plot
+    ## LS: Volcano Hover Info
+    ## LS: Data Table of Differentially Expressed Genes
+    ## LS: Save Excel Tables with DEG Tables
+    source('Server/plot_save_DEGs_ls.R', local = T)
+    
+    ## GW: Functional Enrichment Analysis ----
+    ## LS: Run GSEA
+    ## LS: GSEA Plot
+    ## LS: Save Volcano Plot
+    ## LS: GSEA Data Table
+    ## LS: Save GSEA Datatable
+    source('Server/functional_enrichment_ls.R', local = T)
+    
+    ## Output Options ----
+    outputOptions(output, "downloadbuttonsGenes", suspendWhenHidden = FALSE)
+    outputOptions(output, "contrastDisplaySelection_GW", suspendWhenHidden = FALSE)
+    
+    session$onSessionEnded(stopApp)
+}
+
+# Run the application 
+shinyApp(ui = ui, server = server)
