@@ -12,7 +12,7 @@
 #' @examples
 #' ggheatmap(mtcars)
 #' @export
-ggheatmap_local <- function(...,  showticklabels = c(TRUE, TRUE), widths = NULL, heights = NULL, row_dend_left = FALSE) {
+ggheatmap_local <- function(...,  showticklabels = c(TRUE, TRUE), widths = NULL, heights = NULL, row_dend_left = FALSE, main = NULL) {
     plots <- heatmaply(
         ..., 
         row_dend_left = row_dend_left, 
@@ -24,7 +24,8 @@ ggheatmap_local <- function(...,  showticklabels = c(TRUE, TRUE), widths = NULL,
         widths = widths,
         heights = heights,
         row_dend_left = row_dend_left,
-        showticklabels = showticklabels
+        showticklabels = showticklabels,
+        main = main
     )
     
 }
@@ -53,21 +54,27 @@ arrange_plots <- function(
     widths = NULL, 
     heights = NULL, 
     row_dend_left = FALSE,
-    showticklabels = showticklabels) {
-    
+    showticklabels = showticklabels,
+    main = NULL) {
+   
     plots <- plots[!sapply(plots, is.null)]
     if (!row_dend_left) {
         plots$p <- plots$p + theme(legend.position = "left")
     }
-    plots <- lapply(plots, function(x) x + theme(plot.margin = unit(c(0, 0, 0, 0), "npc"))
-                    )
+    plots <- lapply(plots, function(x) {x + theme(plot.margin = unit(c(0, 0, 0, 0), "npc"))})
+   
+     plots$p <- plots$p + theme(axis.text.y = element_blank(), 
+                                axis.ticks.y = element_blank())
+     
+     plots$py <- plots$py + theme(plot.margin = unit(c(0.5,0,0,0),"cm"))
+     plots$px <- plots$px + theme(plot.margin = unit(c(0,0.5,0,0),"cm"))
     
     if (showticklabels[1] == FALSE) {
-        plots <- lapply(plots, function(x) x + theme(axis.text.x = element_blank())
+        plots <- lapply(plots, function(x) {x + theme(axis.text.x = element_blank())}
         )}
     
     if (showticklabels[2] == FALSE) {
-    plots <- lapply(plots, function(x) x + theme(axis.text.y = element_blank())
+    plots <- lapply(plots, function(x){ x + theme(axis.text.y = element_blank())}
     )}
     
     column_list <- list(plots$py, plots$pc, plots$p)
@@ -99,6 +106,7 @@ arrange_plots <- function(
     egg::ggarrange(
         plots = plotlist,
         ncol = ncols,
+        top = main,
         widths = widths %||% default_dims(plots$px, plots$pr),
         heights = heights %||% rev(default_dims(plots$py, plots$pc))
     )
