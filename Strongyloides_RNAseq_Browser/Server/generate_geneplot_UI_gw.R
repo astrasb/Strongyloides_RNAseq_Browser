@@ -36,6 +36,23 @@ output$geneDisplaySelection_GW <- renderUI({
                                 options = list(style = 'btn btn-primary'))
                 )
     ))
-    
-    
+})
+
+## GW: Generate Legend Explaining the Life Stages ----
+output$lifeStageLegend_GW <- renderTable({
+    lifestage_legend.df <- lifestage_legend %>%
+        dplyr::filter(group %in% unique(vals$genelist.Log2CPM$life_stage)) %>%
+        dplyr::rename(`Abbr.` = group, `Life Stage` = developmental_stage) %>%
+        dplyr::arrange(`Abbr.`)
+}, striped = T,
+spacing = "xs", align = "l", bordered = T)
+
+output$Legend_GW <- renderUI({
+    req(vals$genelist)
+    panel(
+        heading = tagList(h4(shiny::icon("fas fa-book-open"),
+                             "Sample ID Legend")),
+        status = "default",
+        tableOutput("lifeStageLegend_GW")
+    )
 })

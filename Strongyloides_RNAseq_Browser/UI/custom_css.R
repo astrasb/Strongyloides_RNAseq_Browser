@@ -77,6 +77,9 @@ tags$head(
     #geneSelection_conditionalPanel .shiny-output-error-validation {
     color: white;
     }
+    
+    #lifeStageLegend_GW .shiny-html-output{
+    font-size: 12px}
 
                     "))
     

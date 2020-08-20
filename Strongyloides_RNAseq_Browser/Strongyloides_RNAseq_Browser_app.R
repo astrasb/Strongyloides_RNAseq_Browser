@@ -61,6 +61,7 @@ server <- function(input, output, session) {
     
     ## GW: Generate Panel for Gene-wise Plots
     ## GW: Generate Responsive Selection for Gene to Display
+    ## GW: Generate Legend Explaining the Life Stages
     source('Server/generate_geneplot_UI_gw.R', local = T)
     
     

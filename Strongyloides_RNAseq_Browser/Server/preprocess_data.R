@@ -10,6 +10,10 @@ load(file = "./Data/vDEGList")
 # (e.g. SSTP_0001137400.2 is recoded as SSTP_0001137400)
 load(file = "./Data/parasiteGeneSets")
 
+# Import a file containing life stage legend terms
+lifestage_legend <- read_tsv("./Data/Life_stage_legend.txt",
+                             col_types = "cc",
+         na = c("", "NA", "na"))
 
 # Parse vDEGList into a tibble containing Log2CPM information
 Log2CPM<-v.DEGList.filtered.norm$E %>%

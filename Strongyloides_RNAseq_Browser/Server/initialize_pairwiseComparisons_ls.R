@@ -67,7 +67,7 @@ parse_contrasts_LS<-eventReactive(input$goLS,{
     vals$contrastStage_LS <- contrastStage
     vals$limmacontrast_LS <- comparison
     vals$comparison_LS <- gsub("/[0-9]*","", comparison)
-    
+    browser()
     
 })
 
@@ -83,5 +83,24 @@ output$contrastDisplaySelection_LS <- renderUI({
                     NULL, 
                     comparison,
                     options = list(style = 'btn btn-primary'))
+    )
+})
+
+## LS: Generate Legend Explaining the Life Stages ----
+output$lifeStageLegend_LS <- renderTable({
+    lifestage_legend.df <- lifestage_legend %>%
+        dplyr::filter(group %in% unique(v.DEGList.filtered.norm$targets$group)) %>%
+        dplyr::rename(`Abbr.` = group, `Life Stage` = developmental_stage) %>%
+        dplyr::arrange(`Abbr.`)
+}, striped = T,
+spacing = "xs", align = "l", bordered = T)
+
+output$Legend_LS <- renderUI({
+    req(vals$comparison_LS)
+    panel(
+        heading = tagList(h4(shiny::icon("fas fa-book-open"),
+                             "Life Stage Legend")),
+        status = "default",
+        tableOutput("lifeStageLegend_LS")
     )
 })
