@@ -359,11 +359,13 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                            '(Law et al 2014)'),
                                        '.'),
                                      tags$h5('Data Visualization', class = 'text-danger'),
-                                     p('For heatmaps of Log2 Counts per Million gene expression values, columns (life stages) were ordered using Spearman clustering of expression in all genes (not just the user-defined subset). Rows were ordered using Pearson clustering of expression of the user-selected gene subset. Only the life stage dendrogram is displayed for clarity.')
+                                     p('For heatmaps of Log2 Counts per Million gene expression values, columns (life stages) were ordered using Spearman clustering of expression in all genes (not just the user-defined subset). Rows were ordered using Pearson clustering of expression of the user-selected gene subset. Only the life stage dendrogram is displayed for clarity.'),
+                                     tags$h5('Functional Enrichment Analysis', class = 'text-danger'),
+                                     p('Here, we perform gene set enrichment analysis using the GSEA function from the clusterProfiler R package. Given a priori defined set of gene XX, the goal of GSEA is to determine whether the members of XX are randomly distributed throughout the ranked gene list (L) or primarily found at the top or bottom. Thus, GSEA depends on the availability of gene sets. Here, we use a Ensembl Compara protein family set list defined in Hunt', tags$em('et al'), '2016. (Note that this uses specific transcript information, which are discarded). The list was preprocessed to remove genes that are not found in the preprocessed list of genes for which we have RNASeq data. For a selected pairwise comparison, the gene list (L) is constructed by rank ordering by LogFC.'),
+                                     p('GSEA analysis returns a plot of enriched gene families as well as a table containing normalized gene enrichment scores. These scores represent the degree to which the elements of the gene set are over-represented at the edges of the ranked gene list. Sccores are normalized based on the number of genes within the gene set.')
                                      
+                                     ),
                                      
-                                     
-                               ),
                                # App Credits ----
                                panel( heading =  tagList(h4(shiny::icon("fas fa-poop"),
                                                             "Who is responsibe for this?")),

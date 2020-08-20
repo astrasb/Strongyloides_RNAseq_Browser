@@ -41,7 +41,7 @@ ui <- fluidPage(
     
     source('UI/Str_RNAseqBrowser_navbar-ui.R', local = T)$value,
     
-    source('UI/custom_css.R', local = T)
+    source('UI/custom_css.R', local = T)$value
     
 )
 
