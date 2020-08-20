@@ -61,7 +61,13 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                         column(2,
                                conditionalPanel(condition = "input.goGW !=0",
                                                 id = "geneSelection_conditionalPanel",
-                                                uiOutput("geneDisplaySelection_GW")))
+                                                uiOutput("geneDisplaySelection_GW")),
+                               
+                               conditionalPanel(condition = "input.goGW !=0 && output.geneDisplaySelection_GW",
+                                                id = "lifeStageLegend_GW",
+                                                uiOutput("Legend_GW"))
+                               
+                        )
                     ),
                     fluidRow(
                         column(2,
@@ -133,30 +139,30 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                                     actionButton('resetGW', 'Clear',
                                                                  icon = icon("far fa-trash-alt"))
                                                 )
-                                                )
+                               )
                         ),
                         
                         column(8,
-                                conditionalPanel(condition = "input.goLifeStage_GW != 0",
-                                                 id = "diffPlotPanel",
-                                                 panel(
-                                                     heading = tagList(h4(shiny::icon("fas fa-mountain"),
-                                                                          "Pairwise Differential Gene Expression: Volcano Plot")),
-                                                     status = "primary",
-                                                     withSpinner(plotOutput('volcano_GW',
-                                                                            hover = hoverOpts("plot_hover", 
-                                                                                              delay = 100, 
-                                                                                              delayType = "debounce")),
-                                                                 
-                                                                 color = "#2C3E50"),
-                                                     uiOutput("hover_info"),
-                                                     
-                                                     downloadButton("downloadVolcano_GW",
-                                                                    "Download Plot as PDF",
-                                                                    class = "btn-primary")
-                                                 )
-                                                 
-                                )
+                               conditionalPanel(condition = "input.goLifeStage_GW != 0",
+                                                id = "diffPlotPanel",
+                                                panel(
+                                                    heading = tagList(h4(shiny::icon("fas fa-mountain"),
+                                                                         "Pairwise Differential Gene Expression: Volcano Plot")),
+                                                    status = "primary",
+                                                    withSpinner(plotOutput('volcano_GW',
+                                                                           hover = hoverOpts("plot_hover", 
+                                                                                             delay = 100, 
+                                                                                             delayType = "debounce")),
+                                                                
+                                                                color = "#2C3E50"),
+                                                    uiOutput("hover_info"),
+                                                    
+                                                    downloadButton("downloadVolcano_GW",
+                                                                   "Download Plot as PDF",
+                                                                   class = "btn-primary")
+                                                )
+                                                
+                               )
                         ),
                         column(2,
                                uiOutput('contrastDisplaySelection_GW')
@@ -251,30 +257,33 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                         ),
                         
                         column(8,
-                                conditionalPanel(condition = "input.goLS != 0",
-                                                 panel(
-                                                     heading = tagList(h4(shiny::icon("fas fa-mountain"),
-                                                                          "Pairwise Differential Gene Expression: Volcano Plot")),
-                                                     status = "primary",
-                                                     withSpinner(plotOutput('volcano_LS',
-                                                                            hover = hoverOpts("plot_hover_LS",
-                                                                                              delay = 100,
-                                                                                              delayType = "debounce")),
-                                                                 color = "#2C3E50"),
-                                                     # withSpinner(plotOutput('volcano_LS'),
-                                                     #             color = "#2C3E50"),
-                                                     uiOutput("hover_info_LS"),
-                                                     
-                                                     downloadButton("downloadVolcano_LS",
-                                                                    "Download Plot as PDF",
-                                                                    class = "btn-primary")
-                                                 )
-                                                 
-                                                 
-                                )
+                               conditionalPanel(condition = "input.goLS != 0",
+                                                panel(
+                                                    heading = tagList(h4(shiny::icon("fas fa-mountain"),
+                                                                         "Pairwise Differential Gene Expression: Volcano Plot")),
+                                                    status = "primary",
+                                                    withSpinner(plotOutput('volcano_LS',
+                                                                           hover = hoverOpts("plot_hover_LS",
+                                                                                             delay = 100,
+                                                                                             delayType = "debounce")),
+                                                                color = "#2C3E50"),
+                                                    # withSpinner(plotOutput('volcano_LS'),
+                                                    #             color = "#2C3E50"),
+                                                    uiOutput("hover_info_LS"),
+                                                    
+                                                    downloadButton("downloadVolcano_LS",
+                                                                   "Download Plot as PDF",
+                                                                   class = "btn-primary")
+                                                )
+                                                
+                                                
+                               )
                         ),
                         column(2,
-                               uiOutput('contrastDisplaySelection_LS')
+                               uiOutput('contrastDisplaySelection_LS'),
+                               conditionalPanel(condition = "input.goLS !=0 && output.contrastDisplaySelection_LS",
+                                                id = "lifeStageLegend_LS",
+                                                uiOutput("Legend_LS"))
                         ),
                         
                         column(10,
@@ -305,7 +314,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                                                    "Download Plot as PDF",
                                                                    class = "btn-primary")
                                                 ))
-                               ),
+                        ),
                         column(6,
                                conditionalPanel(condition = "input.goLS != 0",
                                                 panel(
@@ -344,7 +353,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                        tags$a(href="SsRNAseq_discardedGene_counts.csv", 
                                               "Download the list of excluded genes and their expression across life stages here.", 
                                               download="SsRNAseq_discardedGene_counts.csv", target="blank"), tags$br(),
-                                    
+                                       
                                        'Finally, CPM values were normalized using the trimmed mean of M-values method (TMM, ',
                                        tags$a(
                                            href = "https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-3-r25", 
@@ -355,10 +364,10 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                        tags$a(href="SsRNAseq_discardedGene_counts.csv", 
                                               "Download the database of filtered and TMM-normalized log2 CPM gene expression values.", 
                                               download="SsRNAseq_log2cpm_filtered_norm.csv", target="blank"), tags$br()
-                                       ),
-                                       
+                                     ),
+                                     
                                      tags$h5('On-demand Differential Expression Analysis', class = 'text-danger'),
-                                       p('Here, the limma package',
+                                     p('Here, the limma package',
                                        tags$a(
                                            href = "https://pubmed.ncbi.nlm.nih.gov/25605792/", 
                                            '(Ritchie et al 2015'),
@@ -377,8 +386,8 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                      tags$h5('Data Visualization', class = 'text-danger'),
                                      p('For heatmaps of Log2 Counts per Million gene expression values, columns (life stages) were ordered using Spearman clustering of expression in all genes (not just the user-defined subset). Rows were ordered using Pearson clustering of expression of the user-selected gene subset. Only the life stage dendrogram is displayed for clarity.')
                                      
-                                     ),
-                                     
+                               ),
+                               
                                # App Credits ----
                                panel( heading =  tagList(h4(shiny::icon("fas fa-poop"),
                                                             "Who is responsibe for this?")),
