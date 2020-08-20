@@ -73,6 +73,10 @@ parse_ids <- eventReactive(input$goGW,{
         validate(
             need(nrow(genelist) != 0, "No genes found, please try a new search")
         )
+       
+        # Save record of original genelist before filtering, removing rows that contain the word 'gene'
+        vals$submitted.genelist <- genelist %>%
+            dplyr::filter(!grepl("gene", geneID, ignore.case = T))
         
         # Remove genes from the list that aren't part of Log2CPM
         # Ideally, this would trigger a notification to the user.

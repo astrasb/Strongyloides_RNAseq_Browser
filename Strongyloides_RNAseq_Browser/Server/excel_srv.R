@@ -45,7 +45,9 @@ temp <- downloadHandler(
                     textDecoration = "Bold",
                     halign = "center",
                     border = "bottom"
-                )
+                ),
+                keepNA = TRUE,
+                na.string = "NA"
             )
             
             # Styling

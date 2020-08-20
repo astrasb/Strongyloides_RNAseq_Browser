@@ -219,6 +219,15 @@ output$downloadbuttonsGenes <- renderUI({
             .[c(1, col.order$OldOrder+1)] %>%
             list("User-selected Genes" = . )
         
+        # Add back on genes that were submitted by the user but don't appear in the list of genes for which there is available data.
+        excluded.genes <- dplyr::anti_join(vals$submitted.genelist, 
+                                           vals$genelist,
+                                           by = "geneID")
+        
+        genelist.expression <-lapply(genelist.expression, function (x) {
+            dplyr::full_join(x,excluded.genes, by = "geneID")
+        })
+        
     })
     
     output$heatmap_data_download <- generate_excel_report(c("User-selected Genes"), 

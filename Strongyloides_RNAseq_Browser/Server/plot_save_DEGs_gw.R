@@ -138,8 +138,14 @@ assemble_DEGs_GW <- reactive({
                                ][vals$contrastStage_GW[vals$displayedComparison_GW,
                                                        ]!=""]
     
+    # Add back on genes that were submitted by the user but don't appear in the list of genes for which there is available data.
+    excluded.genes <- dplyr::anti_join(vals$submitted.genelist, 
+                                       vals$genelist,
+                                       by = "geneID")
+    
     n_num_cols <- length(tS)*3 + length(cS)*3 + 5
     highlight.datatable <- vals$list.highlight.tbl_GW[[vals$displayedComparison_GW]] %>%
+        dplyr::full_join(excluded.genes, by = "geneID") %>%
         DT::datatable(rownames = FALSE,
                       caption = htmltools::tags$caption(
                           style = 'caption-side: top; text-align: left; color: black',
@@ -214,8 +220,17 @@ output$downloadbuttonGW <- renderUI({
     req(input$goLifeStage_GW)
     req(vals$comparison_GW)
     
+    # Add back on genes that were submitted by the user but don't appear in the list of genes for which there is available data.
+    excluded.genes <- dplyr::anti_join(vals$submitted.genelist, 
+                                       vals$genelist,
+                                       by = "geneID")
+    
+    downloadablel.tbl_GW <-lapply(vals$list.highlight.tbl_GW, function (x) {
+        dplyr::full_join(x,excluded.genes, by = "geneID")
+    })
+    
     output$generate_excel_report_GW <- generate_excel_report(vals$comparison_GW, 
-                                                             vals$list.highlight.tbl_GW)
+                                                             downloadablel.tbl_GW)
     downloadButton("generate_excel_report_GW",
                    "Download DEG Tables",
                    class = "btn-primary")
