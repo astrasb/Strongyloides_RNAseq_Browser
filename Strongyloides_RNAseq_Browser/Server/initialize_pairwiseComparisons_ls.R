@@ -67,7 +67,6 @@ parse_contrasts_LS<-eventReactive(input$goLS,{
     vals$contrastStage_LS <- contrastStage
     vals$limmacontrast_LS <- comparison
     vals$comparison_LS <- gsub("/[0-9]*","", comparison)
-    browser()
     
 })
 
