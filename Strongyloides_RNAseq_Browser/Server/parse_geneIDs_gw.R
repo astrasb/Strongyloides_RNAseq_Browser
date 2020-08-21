@@ -40,7 +40,27 @@ parse_ids <- eventReactive(input$goGW,{
                     rowSums() %>%
                     as.logical()
                 
-                geneindex <- geneindex | geneindex.ensembl
+                geneindex.Cehomologs<-sapply(terms, function(y) {
+                    gsub("^\\s+|\\s+$","",y) %>%
+                        paste0("\\<",.,"\\>") %>%
+                        grepl(., 
+                              v.DEGList.filtered.norm$genes$Ce_geneID,
+                              ignore.case = TRUE)
+                }) %>%
+                    rowSums() %>%
+                    as.logical()
+                
+                geneindex.InterPro<-sapply(terms, function(y) {
+                    gsub("^\\s+|\\s+$","",y) %>%
+                        paste0("\\<",.,"\\>") %>%
+                        grepl(., 
+                              v.DEGList.filtered.norm$genes$InterPro,
+                              ignore.case = TRUE)
+                }) %>%
+                    rowSums() %>%
+                    as.logical()
+                
+                geneindex <- geneindex | geneindex.ensembl | geneindex.Cehomologs | geneindex.InterPro
                 
                 genelist <- v.DEGList.filtered.norm$genes %>%
                     rownames_to_column(var = "geneID") %>%
