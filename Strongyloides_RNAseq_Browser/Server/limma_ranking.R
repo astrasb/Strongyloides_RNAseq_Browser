@@ -42,7 +42,7 @@ limma_ranking <- function(comparison, targetStage, contrastStage, multipleCorrec
         calc_DEG_tbl(ebFit, y)}, 
         simplify = FALSE, 
         USE.NAMES = TRUE)
-    
+   
     #### Filter dataset looking for the genes on the list
     if (isTruthy(genelist)){
         list.highlight.df <- sapply(comparison, function(y){
@@ -50,7 +50,7 @@ limma_ranking <- function(comparison, targetStage, contrastStage, multipleCorrec
                 dplyr::filter(geneID %in% genelist[[1]]) %>%
                 dplyr::select(geneID, 
                               logFC, 
-                              BH.adj.P.Val:percent_homology)},
+                              BH.adj.P.Val:Ce_percent_homology)},
             simplify = FALSE, 
             USE.NAMES = TRUE)
     } else {
@@ -58,7 +58,7 @@ limma_ranking <- function(comparison, targetStage, contrastStage, multipleCorrec
             vals$list.myTopHits.df[[y]] %>%
                 dplyr::select(geneID, 
                               logFC, 
-                              BH.adj.P.Val:percent_homology)},
+                              BH.adj.P.Val:Ce_percent_homology)},
             simplify = FALSE, 
             USE.NAMES = TRUE)
     }
@@ -102,7 +102,7 @@ limma_ranking <- function(comparison, targetStage, contrastStage, multipleCorrec
             left_join(dplyr::select(diffDesc,geneID,comparison[y]), by = "geneID") %>%
             dplyr::rename(DEG_Desc=comparison[y]) %>%
             dplyr::relocate(DEG_Desc) %>%
-            dplyr::relocate(logFC:percent_homology, .after = last_col())
+            dplyr::relocate(logFC:Ce_percent_homology, .after = last_col())
         
     },
     simplify = FALSE)

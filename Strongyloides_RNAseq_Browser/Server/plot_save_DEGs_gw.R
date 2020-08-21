@@ -137,16 +137,15 @@ assemble_DEGs_GW <- reactive({
     cS<- vals$contrastStage_GW[vals$displayedComparison_GW,
                                ][vals$contrastStage_GW[vals$displayedComparison_GW,
                                                        ]!=""]
-    
     # Add back on genes that were submitted by the user but don't appear in the list of genes for which there is available data.
     excluded.genes <- dplyr::anti_join(vals$submitted.genelist, 
                                        vals$genelist,
-                                       by = "geneID")
-    
+                                       by = "geneID") %>%
+        left_join(annotations, by = "geneID") # Add gene annotations
     n_num_cols <- length(tS)*3 + length(cS)*3 + 5
     highlight.datatable <- vals$list.highlight.tbl_GW[[vals$displayedComparison_GW]] %>%
-        dplyr::full_join(excluded.genes, by = "geneID") %>%
-        DT::datatable(rownames = FALSE,
+        {suppressMessages(dplyr::full_join(.,excluded.genes))} %>%
+       DT::datatable(rownames = FALSE,
                       caption = htmltools::tags$caption(
                           style = 'caption-side: top; text-align: left; color: black',
                           htmltools::tags$b('Differentially Expressed Genes in', 
@@ -188,7 +187,17 @@ assemble_DEGs_GW <- reactive({
                                          ),
                                          list(targets = "_all",
                                               class="dt-right")
-                                     )
+                                     ),
+                                     rowCallback = JS(c(
+                                         "function(row, data){",
+                                         "  for(var i=0; i<data.length; i++){",
+                                         "    if(data[i] === null){",
+                                         "      $('td:eq('+i+')', row).html('NA')",
+                                         "        .css({'color': 'rgb(151,151,151)', 'font-style': 'italic'});",
+                                         "    }",
+                                         "  }",
+                                         "}"  
+                                     ))
                                      
                       )) 
     
@@ -198,7 +207,8 @@ assemble_DEGs_GW <- reactive({
     
     highlight.datatable <- highlight.datatable %>%
         DT::formatRound(columns=c(n_num_cols+2, 
-                                  n_num_cols+8), 
+                                  n_num_cols+9,
+                                  n_num_cols+11), 
                         digits=2)
     
     highlight.datatable <- highlight.datatable %>%
@@ -223,10 +233,12 @@ output$downloadbuttonGW <- renderUI({
     # Add back on genes that were submitted by the user but don't appear in the list of genes for which there is available data.
     excluded.genes <- dplyr::anti_join(vals$submitted.genelist, 
                                        vals$genelist,
-                                       by = "geneID")
+                                       by = "geneID") %>%
+        left_join(annotations, by = "geneID") # Add gene annotations
     
+ 
     downloadablel.tbl_GW <-lapply(vals$list.highlight.tbl_GW, function (x) {
-        dplyr::full_join(x,excluded.genes, by = "geneID")
+        suppressMessages(dplyr::full_join(x,excluded.genes))
     })
     
     output$generate_excel_report_GW <- generate_excel_report(vals$comparison_GW, 

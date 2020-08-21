@@ -2,13 +2,17 @@
 # 
 # Import a variance-stabilized DEGList created by voom transformation command.
 # Outputs: E = normalized CPMexpression values on the log2 scale
-load(file = "./Data/vDEGList")
+load(file = "./Data/Ss_vDEGList")
 
 # Import a tidy dataframe containing an Ensembl Compara protein family set
 # Origin: Hunt et al 2016
 # Note that this uses specific transcript information, which I throw out. 
 # (e.g. SSTP_0001137400.2 is recoded as SSTP_0001137400)
 load(file = "./Data/parasiteGeneSets")
+
+# Import a tidy dataframe containing gene annotations for all genes in the genome (including those that are excluded from this database.)
+load(file = "./Data/Ss_geneAnnotations")
+annotations <- as_tibble(annotations, rownames = "geneID")
 
 # Import a file containing life stage legend terms
 lifestage_legend <- read_tsv("./Data/Life_stage_legend.txt",
