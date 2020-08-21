@@ -229,6 +229,14 @@ output$downloadbuttonsGenes <- renderUI({
             dplyr::full_join(x,excluded.genes, by = "geneID")
         })
         
+       
+        # Add gene annotations
+        genelist.expression <-lapply(genelist.expression, function (x) {
+            annotations %>%
+            dplyr::relocate(UniProtKB, Description, InterPro, GO_term, Sr_geneID, Sr_WBgeneID, Sr_percent_homology, Ce_geneID, Ce_percent_homology, .after = geneID) %>%
+            dplyr::left_join(x,., by = "geneID") 
+                  
+        })
     })
     
     output$heatmap_data_download <- generate_excel_report(c("User-selected Genes"), 

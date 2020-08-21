@@ -177,7 +177,8 @@ assemble_DEGs_LS <- reactive({
     
     LS.datatable <- LS.datatable %>%
         DT::formatRound(columns=c(n_num_cols+2, 
-                                  n_num_cols+8), 
+                                  n_num_cols+9,
+                                  n_num_cols+11), 
                         digits=2)
     
     LS.datatable <- LS.datatable %>%
