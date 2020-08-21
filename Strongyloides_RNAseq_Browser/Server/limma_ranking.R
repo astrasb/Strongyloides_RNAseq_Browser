@@ -2,10 +2,7 @@
 # Use Empirical Bayes Statistics to rank genes in order of evidence for differential expression
 # Adjust for Multiple Comparisons if necessary
 limma_ranking <- function(comparison, targetStage, contrastStage, multipleCorrection, genelist, vals, fit, v.DEGList.filtered.norm, adj.P.thresh, diffGenes.df){
-    if (targetStage == contrastStage) {
-        stop("Pick two different life stages.")
-    }
-    
+
     contrast.matrix <- makeContrasts(contrasts = comparison,
                                      levels = v.DEGList.filtered.norm$design)
     
