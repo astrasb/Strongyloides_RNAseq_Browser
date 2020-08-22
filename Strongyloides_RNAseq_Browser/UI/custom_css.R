@@ -24,6 +24,7 @@ tags$head(
     h5 {
     font-size: 13px;
     font-weight: bold;
+    margin: 5px 0px;
     }
     
     h6 {

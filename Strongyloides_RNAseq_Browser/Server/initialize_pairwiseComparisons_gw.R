@@ -76,7 +76,7 @@ parse_contrasts_GW <- eventReactive(input$goLifeStage_GW,{
 output$contrastDisplaySelection_GW <- renderUI({
     comparison <- parse_contrasts_GW()
     panel(
-        heading = tagList(h4(shiny::icon("fas fa-filter"),
+        heading = tagList(h5(shiny::icon("fas fa-filter"),
                              "Pick Contrast to Display")),
         status = "default",
         pickerInput("displayedComparison_GW",
