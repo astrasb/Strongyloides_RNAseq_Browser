@@ -2,7 +2,7 @@
 
 # Header ----
 navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
-           windowTitle = "St-RNAseq Browser",
+           windowTitle = "Str-RNAseq Browser",
            theme = shinytheme("flatly"), 
            collapsible = TRUE,
            id = "tab",
@@ -18,7 +18,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                ## Select Genes to Browse ----
                                panel(
                                    id = "GeneInputBox",
-                                   heading = tagList(h4(shiny::icon("fas fa-dna"), "Step 1: Input Genes / Keywords")),
+                                   heading = tagList(h5(shiny::icon("fas fa-dna"), "Step 1: Input Genes / Keywords")),
                                    status = "primary",
                                    ### GeneID (text box)
                                    h5('Pick Genes', class = 'text-danger', style = "margin: 0px 0px 5px 0px"),
@@ -49,7 +49,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                                 uiOutput("genePlotPanel_GW")
                                                 ## Display Selected Gene Expression ----
                                                 # panel(
-                                                #     heading = tagList(h4(shiny::icon("fas fa-chart-bar"),
+                                                #     heading = tagList(h5(shiny::icon("fas fa-chart-bar"),
                                                 #                          "Gene Expression Across Life Stages")),
                                                 #     status = "primary",
                                                 #     tagList(div(id = "GenePlotDiv",
@@ -75,7 +75,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                                 id = "lifeStageInputPanel",
                                                 panel(
                                                     ## Select Life Stage Comparisons ----
-                                                    heading = tagList(h4(shiny::icon("fas fa-sliders-h"), 
+                                                    heading = tagList(h5(shiny::icon("fas fa-sliders-h"), 
                                                                          "Step 2: Pick Life Stage Comparisons")),
                                                     status = "primary",
                                                     # Select Target Life Stage
@@ -146,7 +146,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                conditionalPanel(condition = "input.goLifeStage_GW != 0",
                                                 id = "diffPlotPanel",
                                                 panel(
-                                                    heading = tagList(h4(shiny::icon("fas fa-mountain"),
+                                                    heading = tagList(h5(shiny::icon("fas fa-mountain"),
                                                                          "Pairwise Differential Gene Expression: Volcano Plot")),
                                                     status = "primary",
                                                     withSpinner(plotOutput('volcano_GW',
@@ -170,7 +170,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                         column(10,
                                conditionalPanel(condition = "input.goLifeStage_GW != 0",
                                                 panel(
-                                                    heading = tagList(h4(shiny::icon("fas fa-table"),
+                                                    heading = tagList(h5(shiny::icon("fas fa-table"),
                                                                          "Pairwise Differential Gene Expression: Table")),
                                                     status = "primary",
                                                     withSpinner(DTOutput('highlight.df'),
@@ -188,7 +188,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                     fluidRow(
                         column(2,
                                panel(
-                                   heading = tagList(h4(shiny::icon("fas fa-sliders-h"), 
+                                   heading = tagList(h5(shiny::icon("fas fa-sliders-h"), 
                                                         "Step 1: Pick Life Stage Comparisons")),
                                    status = "primary",
                                    h5('A: Single Comparison', class = 'text-danger', style = "margin: 0px 0px 10.5px 0px"),
@@ -259,7 +259,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                         column(8,
                                conditionalPanel(condition = "input.goLS != 0",
                                                 panel(
-                                                    heading = tagList(h4(shiny::icon("fas fa-mountain"),
+                                                    heading = tagList(h5(shiny::icon("fas fa-mountain"),
                                                                          "Pairwise Differential Gene Expression: Volcano Plot")),
                                                     status = "primary",
                                                     withSpinner(plotOutput('volcano_LS',
@@ -289,7 +289,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                         column(10,
                                conditionalPanel(condition = "input.goLS != 0",
                                                 panel(
-                                                    heading = tagList(h4(shiny::icon("fas fa-table"),
+                                                    heading = tagList(h5(shiny::icon("fas fa-table"),
                                                                          "Pairwise Differential Gene Expression: Table")),
                                                     status = "primary",
                                                     withSpinner(DTOutput('tbl_LS'),
@@ -305,7 +305,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                         column(6,
                                conditionalPanel(condition = "input.goLS != 0",
                                                 panel(
-                                                    heading = tagList(h4(shiny::icon("fas fa-braille"),
+                                                    heading = tagList(h5(shiny::icon("fas fa-braille"),
                                                                          "Gene Set Enrichment Analysis: Plot")),
                                                     status = "primary",
                                                     withSpinner(plotOutput('GSEAPlot_LS'),
@@ -318,7 +318,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                         column(6,
                                conditionalPanel(condition = "input.goLS != 0",
                                                 panel(
-                                                    heading = tagList(h4(shiny::icon("fas fa-table"),
+                                                    heading = tagList(h5(shiny::icon("fas fa-table"),
                                                                          "Gene Set Enrichment Analysis: Data Table")),
                                                     status = "primary",
                                                     withSpinner(DTOutput('GSEATbl_LS'),
@@ -333,7 +333,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                     fluidRow(
                         column(12,
                                # About this app ----
-                               panel(heading =  tagList(h4(shiny::icon("fas fa-question-circle"),
+                               panel(heading =  tagList(h5(shiny::icon("fas fa-question-circle"),
                                                            "About this App")),
                                      
                                      status = "primary",
@@ -389,7 +389,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                ),
                                
                                # App Credits ----
-                               panel( heading =  tagList(h4(shiny::icon("fas fa-poop"),
+                               panel( heading =  tagList(h5(shiny::icon("fas fa-poop"),
                                                             "Who is responsibe for this?")),
                                       status = "primary",
                                       p('This app was created by', 

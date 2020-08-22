@@ -97,7 +97,7 @@ spacing = "xs", align = "l", bordered = T)
 output$Legend_LS <- renderUI({
     req(vals$comparison_LS)
     panel(
-        heading = tagList(h4(shiny::icon("fas fa-book-open"),
+        heading = tagList(h5(shiny::icon("fas fa-book-open"),
                              "Life Stage Legend")),
         status = "default",
         tableOutput("lifeStageLegend_LS")
