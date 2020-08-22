@@ -22,7 +22,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                    status = "primary",
                                    ### GeneID (text box)
                                    h5('Pick Genes', class = 'text-danger', style = "margin: 0px 0px 5px 0px"),
-                                   p(tags$em('Users may type gene stable IDs or keywords that will be matched against Wormbase Parasite Gene Descriptions and an Ensembl Compara database of gene families. Please separate search terms by a comma. Users may also upload a .csv file containing comma-separated gene stable IDs.', style = "color: #7b8a8b")),
+                                   p(tags$em('Users may type gene stable IDs or keywords that will be matched against Wormbase Parasite Gene Descriptions, known C. elegans homologs, InterPro terms, and an Ensembl Compara database of gene families. Please separate search terms by a comma. Users may also upload a .csv file containing comma-separated gene stable IDs.', style = "color: #7b8a8b")),
                                    p(tags$em(tags$b('Note: Please hit the Clear button between successive searches.', style = "color: #F39C12"))),
                                    textAreaInput('idtext',
                                                  h6('Gene Stable IDs or Keyword'),

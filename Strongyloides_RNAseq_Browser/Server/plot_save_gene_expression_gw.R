@@ -5,10 +5,9 @@ generateGenePlot <- reactive({
     req(vals$genelist.Log2CPM)
     
     # Set gene to display
-    if (input$displayedGene == "All Genes"){
+    if (input$displayedGene == "All Genes" | input$displayedGene == "Data Table"){
         vals$gene_of_interest <- vals$genelist$geneID
     } else vals$gene_of_interest <- input$displayedGene
-    
     
     if (length(vals$gene_of_interest) == 1) {
         # Plot Log2CPM values for an individual gene
@@ -25,6 +24,79 @@ generateGenePlot <- reactive({
             theme_Publication() + 
             theme(aspect.ratio=2/3) 
         p 
+    } else if (input$displayedGene == "Data Table") {
+        
+        
+        excluded.genes <- dplyr::anti_join(vals$submitted.genelist, 
+                                           vals$genelist,
+                                           by = "geneID") %>%
+            left_join(annotations, by = "geneID") # Add gene annotations
+        
+        gene_vals <- vals$genelist.Log2CPM %>%
+            dplyr::filter(geneID %in% vals$gene_of_interest) %>%
+            dplyr::summarize(mean = mean(log2CPM), .groups = "drop_last") %>%
+            pivot_wider(names_from = life_stage,
+                        id_cols = geneID,
+                        values_from = mean) %>%
+            left_join(annotations, by = "geneID") %>%
+            {suppressMessages(dplyr::full_join(.,excluded.genes))} 
+        n_num_cols <- ncol(gene_vals)
+            #browser()
+        gene_vals.datatable <- gene_vals %>%
+            DT::datatable(rownames = FALSE,
+                          # caption = htmltools::tags$caption(
+                          #     style = 'caption-side: top; text-align: left; color: black',
+                          #     htmltools::tags$b('Log2CPM Expression')),
+                           options = list(autoWidth = TRUE,
+                                          scrollX = TRUE,
+                                          scrollY = '300px',
+                                          scrollCollapse = TRUE,
+                                          searchHighlight = TRUE, 
+                                          pageLength = 25, 
+                                          lengthMenu = c("5",
+                                                         "10",
+                                                         "25",
+                                                         "50",
+                                                         "100"),
+                                          initComplete = htmlwidgets::JS(
+                                              "function(settings, json) {",
+                                              paste0("$(this.api().table().container()).css({'font-size': '", "10pt", "'});"),
+                                              "}"),
+                                          columnDefs = list(
+                                              list(
+                                                  targets = ((n_num_cols -
+                                                                  2):(n_num_cols-1)),
+                                                  render = JS(
+                                                      "function(data, type, row, meta) {",
+                                                      "return type === 'display' && data.length > 20 ?",
+                                                      "'<span title=\"' + data + '\">' + data.substr(0, 20) + '...</span>' : data;",
+                                                      "}")
+                                              ),
+                                              list(targets = "_all",
+                                                   class="dt-right")
+                                          ),
+                                         rowCallback = JS(c(
+                                             "function(row, data){",
+                                             "  for(var i=0; i<data.length; i++){",
+                                             "    if(data[i] === null){",
+                                             "      $('td:eq('+i+')', row).html('NA')",
+                                             "        .css({'color': 'rgb(151,151,151)', 'font-style': 'italic'});",
+                                             "    }",
+                                             "  }",
+                                             "}"
+                                         ))
+
+                           )
+                          )
+        gene_vals.datatable <-  gene_vals.datatable %>%
+            DT::formatRound(columns=c(2:8), 
+                            digits=3)
+        
+        gene_vals.datatable <-  gene_vals.datatable %>%
+            DT::formatRound(columns=c(n_num_cols-4, 
+                                      n_num_cols-6), 
+                            digits=2)
+        
     } else {
         # Make a heatmap for all the genes using the Log2CPM values
         myheatcolors <- RdBu(75)
@@ -81,6 +153,12 @@ generateGenePlot <- reactive({
 ## GW: Switch what type of GW Plot is produced ----
 output$CPM <- renderPlot({
     req(input$displayedGene != "All Genes")
+    req(input$displayedGene != "Data Table")
+    generateGenePlot()
+})
+
+output$CPM.datatable <- renderDT({
+    req(input$displayedGene == "Data Table")
     generateGenePlot()
 })
 
@@ -108,6 +186,31 @@ observeEvent(input$displayedGene,{
             selector = "#CPMdiv"
         )
         
+        removeUI(
+            selector = "#CPMTablediv"
+        )
+        
+    }else if(input$displayedGene == "Data Table"){
+        removeUI(
+            selector = "#CPMTablediv"
+        )
+        insertUI(
+            selector = '#GenePlotDiv',
+            where = "beforeBegin",
+            ui = tagList(div(id = "CPMTablediv",
+                             h5("Mean Log2 Counts Per Million (CPM) Expression Across Life Stages"),
+                             withSpinner(DTOutput('CPM.datatable'),
+                                         color = "#2C3E50")
+            ))
+        )
+        removeUI(
+            selector = "#CPMdiv"
+        )
+        
+        removeUI(
+            selector = "#CPMPlotlydiv"
+        )
+        
     }else{
         removeUI(
             selector = "#CPMdiv"
@@ -123,6 +226,10 @@ observeEvent(input$displayedGene,{
         removeUI(
             selector = "#CPMPlotlydiv"
         )
+        
+        removeUI(
+            selector = "#CPMTablediv"
+        )
     }
 },ignoreNULL = FALSE)
 
@@ -134,7 +241,7 @@ output$downloadGenePlot <- downloadHandler(
     content = function(file){
         withProgress ({
             
-            if (input$displayedGene == "All Genes") {
+            if (input$displayedGene == "All Genes" | input$displayedGene == "Data Table") {
                 
                 # Make a heatmap for all the genes using the Log2CPM values
                 myheatcolors <- RdBu(75)

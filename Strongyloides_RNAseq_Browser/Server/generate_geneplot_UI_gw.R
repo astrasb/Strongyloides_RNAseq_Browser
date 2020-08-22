@@ -22,7 +22,7 @@ output$genePlotPanel_GW <- renderUI({
 output$geneDisplaySelection_GW <- renderUI({
     parse_ids()
     if (length(vals$genelist$geneID)>1) {
-        choices <- c("All Genes", vals$genelist$geneID)
+        choices <- c("All Genes", "Data Table", vals$genelist$geneID)
         selected <- "All Genes"
     } else choices <- vals$genelist$geneID
     tagList(div(id = "geneDisplaySelectionPanel",
