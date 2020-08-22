@@ -401,7 +401,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                         'The underlying code is avaliable on Github:', 
                                         tags$a(
                                             href = "Stercoralis RNAseq Browser App  Repository", 
-                                            'https://github.com/astrasb/Strongyloides_Bioinformatics/tree/master/Stercoralis_RNAseq_Browser'))
+                                            'https://github.com/astrasb/Strongyloides_Bioinformatics/tree/master/Strongyloides_RNAseq_Browser'))
                                )
                         )
                     )
