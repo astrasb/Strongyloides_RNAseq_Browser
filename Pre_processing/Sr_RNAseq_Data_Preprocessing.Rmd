@@ -1,0 +1,524 @@
+---
+title: Pre-processing of Strongyloides ratti bulk RNAseq via an alignment-free
+  analysis pipeline
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+  html_notebook:
+    toc: yes
+---
+
+# Introduction ---
+The goal of this file is to pre-process the *Strongyloides ratti* RNAseq dataset originally published by [Hunt *et al* 2016](https://www.nature.com/articles/ng.3495). 
+
+### Data Pre-Processing
+Raw reads are aligned to the *S. ratti* reference transcription (PRJEB125.WBPS14.mRNA_transcripts, downloaded from [WormBase Parasite](https://parasite.wormbase.org/Strongyloides_ratti_prjeb125/Info/Index) on 17 August 2020), using Kallisto. Kallisto alignments are imported into the R environment and annotated with information imported via the Wormbase ParaSite BioMaRT. Annotation information includes: *C. elegans* homologs/percent homology, *S. stercoralis* homologs/percent homology, UniProtKB number, Interpro terms, GO terms, and general Description information. Annotation information is saved as an R object that is passed to a Shiny Web App for downstream browsing and on-demand analysis. Note: Raw count data could be saved as a digitial gene expression list if desired (not currently done).   
+
+Raw reads were quantified as counts per million using the EdgeR package, then filtered to remove transcripts with low counts (less than 1 count-per-million in at least 1 sample). A list of discarded genes and their expression values across life stages is saved. Non-discarded gene values are normalized using the trimmed mean of M-values method (TMM, [Robinson and Oshlack](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-3-r25) ) to permit between-samples comparisons. The mean-variance relationship was modeled using a precision weights approach [Law *et al* 2014](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29). This dataset includes technical replicates; after voom modeling, data are condensed by replacing within-experiment technical replicates with their average, using the `limma:avearrays` function.  
+
+A variance-stabilized, condensed DGEList object is saved; this file is passed to a Shiny Web App for downstream browsing and on-demand analysis.  
+
+Note: samples included in this database were collected in two separate experiments, with FLM and iL3s in one, and FLF and PF in another. Due to the lack of sample overlap between the experiments, it is not possible to correct for batch effects.   
+
+
+# Kallisto read mapping ---
+```{bash KallistoMapping, eval=FALSE}
+# This script checks the qualitiy of the fastq files and performs an alignment to the Strongyloides ratti cDNA transcriptome reference with Kallisto.
+# To run this 'shell script' you will need to open your terminal and navigate to the directory where this script resides on your computer.
+# This should be the same directory where you fastq files and reference fasta file are found.
+# Change permissions on your computer so that you can run a shell script by typing: 'chmod u+x readMapping_sratti.sh' (without the quotes) at the terminal prompt 
+# Then type './readMapping_sratti.sh' (without the quotes) at the prompt.  
+# This will begin the process of running each line of code in the shell script.
+
+# first use fastqc to check the quality of the fastq files:
+fastqc *.gz -t 14
+
+# build index from the reference fasta file 
+kallisto index -i strongyloides_ratti.PRJEB125.WBPS14.mRNA_transcripts.index strongyloides_ratti.PRJEB125.WBPS14.mRNA_transcripts.fa
+
+# map reads to the indexed reference host transcriptome
+
+# Parasitic Females: Biological Replicates A-C, Technical replicate set 1
+kallisto quant -i strongyloides_ratti.PRJEB125.WBPS14.mRNA_transcripts.index -o ERR299168 -t 14 ERR299168_1.fastq.gz ERR299168_2.fastq.gz&> ERR299168.log
+kallisto quant -i strongyloides_ratti.PRJEB125.WBPS14.mRNA_transcripts.index -o ERR299169 -t 14 ERR299169_1.fastq.gz ERR299169_2.fastq.gz&> ERR299169.log
+kallisto quant -i strongyloides_ratti.PRJEB125.WBPS14.mRNA_transcripts.index -o ERR299170 -t 14 ERR299170_1.fastq.gz ERR299170_2.fastq.gz&> ERR299170.log
+
+# Free-living Females: Biological Replicates A-C, Technical replicate set 1
+kallisto quant -i strongyloides_ratti.PRJEB125.WBPS14.mRNA_transcripts.index -o ERR299171 -t 14 ERR299171_1.fastq.gz ERR299171_2.fastq.gz&> ERR299171.log
+kallisto quant -i strongyloides_ratti.PRJEB125.WBPS14.mRNA_transcripts.index -o ERR299172 -t 14 ERR299172_1.fastq.gz ERR299172_2.fastq.gz&> ERR299172.log
+kallisto quant -i strongyloides_ratti.PRJEB125.WBPS14.mRNA_transcripts.index -o ERR299173 -t 14 ERR299173_1.fastq.gz ERR299173_2.fastq.gz&> ERR299173.log
+
+# Parasitic Females: Biological Replicates A-C, Technical replicate set 2
+kallisto quant -i strongyloides_ratti.PRJEB125.WBPS14.mRNA_transcripts.index -o ERR299174 -t 14 ERR299174_1.fastq.gz ERR299174_2.fastq.gz&> ERR299174.log
+kallisto quant -i strongyloides_ratti.PRJEB125.WBPS14.mRNA_transcripts.index -o ERR299175 -t 14 ERR299175_1.fastq.gz ERR299175_2.fastq.gz&> ERR299175.log
+kallisto quant -i strongyloides_ratti.PRJEB125.WBPS14.mRNA_transcripts.index -o ERR299176 -t 14 ERR299176_1.fastq.gz ERR299176_2.fastq.gz&> ERR299176.log
+
+# Free-living Females: Biological Replicates A-C, Technical replicate set 2
+kallisto quant -i strongyloides_ratti.PRJEB125.WBPS14.mRNA_transcripts.index -o ERR299177 -t 14 ERR299177_1.fastq.gz ERR299177_2.fastq.gz&> ERR299177.log
+kallisto quant -i strongyloides_ratti.PRJEB125.WBPS14.mRNA_transcripts.index -o ERR299178 -t 14 ERR299178_1.fastq.gz ERR299178_2.fastq.gz&> ERR299178.log
+kallisto quant -i strongyloides_ratti.PRJEB125.WBPS14.mRNA_transcripts.index -o ERR299179 -t 14 ERR299179_1.fastq.gz ERR299179_2.fastq.gz&> ERR299179.log
+
+# Free-living Males
+kallisto quant -i strongyloides_ratti.PRJEB125.WBPS14.mRNA_transcripts.index -o ERR225783 -t 14 ERR225783_1.fastq.gz ERR225783_2.fastq.gz&> ERR225783.log
+
+# iL3s
+kallisto quant -i strongyloides_ratti.PRJEB125.WBPS14.mRNA_transcripts.index -o ERR225784 -t 14 ERR225784_1.fastq.gz ERR225784_2.fastq.gz&> ERR225784.log
+
+# summarize fastqc and kallisto mapping results using MultiQC
+multiqc -d . 
+
+echo "Finished"
+```
+
+# Import Kallisto reads into R ---
+```{r txImport, eval=TRUE, message=FALSE, warning=FALSE}
+# load packages ----
+suppressPackageStartupMessages({
+  library(tidyverse) 
+  library(tximport)
+  library(ensembldb)
+  library(biomaRt)
+  library(magrittr)
+})
+# read in the study design ----
+targets <- read_tsv("../Data/S_ratti/Study_Design/SrattiRNAseq_study_design.txt",
+                    na = c("", "NA", "na"))
+# create file paths to the abundance files generated by Kallisto using the 'file.path' function
+path <- file.path("../Data/S_ratti/Reads",targets$sample, "abundance.tsv")
+# check to make sure this path is correct by seeing if the files exist
+#all(file.exists(path)) 
+
+# get annotations using organism-specific package ----
+Tx.Sr <- getBM(attributes=c('wbps_transcript_id',
+                            'wbps_gene_id'),
+               # grab the ensembl annotations for Wormbase Parasite genes
+               mart = useMart(biomart="parasite_mart", 
+                              dataset = "wbps_gene", 
+                              host="https://parasite.wormbase.org", 
+                              port = 443),
+               filters = c('species_id_1010'),
+               value = list('strattprjeb125')) %>%
+  as_tibble() %>%
+  #we need to rename the columns retreived from biomart
+  dplyr::rename(target_id = wbps_transcript_id,
+                WB_geneID = wbps_gene_id) %>%
+  dplyr::mutate(gene_name = str_remove_all(target_id, "\\.[0-9]$")) %>%
+  dplyr::mutate(gene_name = str_remove_all(gene_name, "[a-c]$")) %>%
+  dplyr::select(!WB_geneID)
+
+
+# import Kallisto transcript counts into R using Tximport ----
+# copy the abundance files to the working directory and rename so that each sample has a unique name
+Txi_gene <- tximport(path, 
+                     type = "kallisto", 
+                     tx2gene = Tx.Sr[,1:2], 
+                     txOut = FALSE, #How does the result change if this =FALSE vs =TRUE?
+                     countsFromAbundance = "lengthScaledTPM",
+                     ignoreTxVersion = FALSE)
+
+```
+# Gene Annotation ---
+```{r geneAnnotation, message=FALSE, eval=TRUE}
+# Introduction to this chunk -----------
+# This chunk imports gene annotation information for S. ratti genes, including:
+# C. elegans homologs/percent homology,  S. stercoralis homologs/percent homology, UniProtKB number, Interpro terms, GO terms, and general Description information using biomart.
+# It will save a table
+
+# Load packages ------
+library(biomaRt) # annotate genes using bioMart
+#library(biomartr) # extending biomart annotation language
+
+
+# Get C. elegans homologs for S. ratti genes from BioMart and filter -----
+Annt.import <- getBM(attributes=c('wbps_transcript_id', 
+                                  'wbps_gene_id',
+                                  'ststerprjeb528_gene',
+                                  'ststerprjeb528_homolog_perc_id_r1',
+                                  'caelegprjna13758_gene_name',
+                                  'caelegprjna13758_homolog_perc_id_r1',
+                                  'description',
+                                  'interpro_short_description',
+                                  'go_name_1006',
+                                  'uniprot_sptrembl'),
+                     # grab the ensembl annotations for Wormbase Parasite genes
+                     mart = useMart(biomart="parasite_mart", 
+                                    dataset = "wbps_gene", 
+                                    host="https://parasite.wormbase.org", 
+                                    port = 443),
+                     filters = c('species_id_1010'),
+                     value = list('strattprjeb125')) %>%
+  as_tibble() %>%
+  #rename columns 
+  dplyr::rename(geneID = wbps_transcript_id,
+                WBgeneID = wbps_gene_id,
+                Str_geneID = ststerprjeb528_gene,
+                Str_percent_homology= ststerprjeb528_homolog_perc_id_r1,
+                Ce_geneID = caelegprjna13758_gene_name,
+                Ce_percent_homology = caelegprjna13758_homolog_perc_id_r1,
+                Description = description,
+                GO_term = go_name_1006,
+                UniProtKB = uniprot_sptrembl
+  ) %>%
+  dplyr::group_by(geneID)
+
+Annt.import$geneID <- str_remove_all(Annt.import$geneID, "\\.[0-9]$")
+Annt.import$geneID <- str_remove_all(Annt.import$geneID, "[a-z]$")
+
+# Replace empty string values (mostly in Ce_geneID column) with NAs
+Annt.import[Annt.import == ""]<-NA
+
+# Remove any duplications in the possible C. elegans gene homolog matches. Select based on highest % homology.
+Annt.import$Ce_percent_homology[is.na(Annt.import$Ce_percent_homology)] <- 1000 #Give fake value here to make sure genes without a Ce homolog aren't filtered out
+Annt.import$Str_percent_homology[is.na(Annt.import$Str_percent_homology)] <- 1000
+
+Annt.logs <-Annt.import %>%
+  dplyr::select(!c(interpro_short_description:GO_term))%>%
+  group_by(geneID) %>%
+  slice_max(n = 1, order_by = Ce_percent_homology, with_ties = FALSE) %>%
+  slice_max(n = 1, order_by = Str_percent_homology, with_ties = FALSE) %>%
+  group_by(geneID, Ce_geneID) 
+
+# Remove source code to shorten the description
+Annt.logs$Description<- Annt.logs$Description %>%
+  str_replace_all(string = ., pattern = "  \\[Source:.*\\]", replacement = "") %>%
+  cbind()
+
+Annt.logs$Ce_percent_homology[Annt.logs$Ce_percent_homology == 1000] <- NA
+Annt.logs$Str_percent_homology[Annt.logs$Str_percent_homology == 1000]<- NA
+
+# Clean up interprotKB terms, removing duplications and collapsing to one line
+Annt.interpro<-Annt.import %>%
+  dplyr::select(geneID, Ce_geneID, interpro_short_description) %>%
+  group_by(geneID, Ce_geneID) %>%
+  dplyr::distinct(interpro_short_description, .keep_all = TRUE) %>%
+  dplyr::summarise(InterPro = paste(interpro_short_description, 
+                                    collapse = ', ')) 
+# Clean up GO terms, removing duplications and collapsing to one line
+Annt.goterms<-Annt.import %>%
+  dplyr::select(geneID, Ce_geneID, GO_term) %>%
+  group_by(geneID, Ce_geneID) %>%
+  dplyr::distinct(GO_term, .keep_all = TRUE) %>%
+  dplyr::summarise(GO_term = paste(GO_term, collapse = ', '))
+
+annotations<-dplyr::left_join(Annt.logs, Annt.interpro) %>%
+  dplyr::left_join(.,Annt.goterms) %>%
+  ungroup() %>%
+  dplyr::relocate(WBgeneID, Str_geneID, Str_percent_homology, .after = geneID) %>%
+  column_to_rownames(var = "geneID")
+
+# List of S. ratti genes is longer than the number of genes in the RNAseq dataset. So subset the annotations by the geneIDs in Txi_gene
+annotations<-annotations[rownames(annotations) %in% rownames(Txi_gene$counts),]
+
+# Save full gene annotations
+  save(annotations, file = "../Strongyloides_RNAseq_Browser/Data/Sr_geneAnnotations")
+
+```
+
+
+```{r generateDGE, eval=TRUE, echo=TRUE, message=FALSE}
+# Goals of this chunk:
+# Generate and save a digitial gene expression list that can be easily shared/loaded for downstream filtering/normalization
+
+# Load packages -----
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(edgeR) 
+  library(matrixStats)
+  library(cowplot)
+  library(ggthemes)
+  library(RColorBrewer)
+  library(gprofiler2)
+})
+
+# Generate and plot summary stats for the data ----
+myTPM.stats <- transform(Txi_gene$abundance, 
+                         SD=rowSds(Txi_gene$abundance), 
+                         AVG=rowMeans(Txi_gene$abundance),
+                         MED=rowMedians(Txi_gene$abundance))
+
+# produce a scatter plot of the transformed data
+p1<-ggplot(myTPM.stats) + 
+  aes(x = SD, y = MED) +
+  geom_point(shape=16, size=2, alpha = 0.2) +
+  geom_smooth(method=lm) +
+  #geom_hex(show.legend = FALSE) +
+  labs(y="Median", x = "Standard deviation",
+       title="Transcripts per million (TPM)",
+       subtitle="unfiltered, non-normalized data",
+       caption="S. ratti RNAseq Dataset") +
+  theme_bw()
+p1
+
+# make a Digital Gene Expression list using the raw counts and plot ----
+myDGEList <- DGEList(Txi_gene$counts, 
+                     samples = data.frame(samples = targets$source, source = targets$sample),
+                     group = targets$group,
+                     genes = annotations)
+
+# Save DGEList of raw counts for import back into R----
+save(myDGEList,
+     file = "../Outputs/SrRNAseq_DGEList")
+
+```
+
+
+# Data Filtering and Normalization ---
+```{r dataWrangling, eval=TRUE, echo=TRUE, message=FALSE}
+# Goals of this chunk:
+# 1 - Filter and normalize data
+# 2 - use ggplot2 to visualize the impact of filtering and normalization on the data.
+
+# Notes:
+# recall that abundance data are TPM, while the counts are read counts mapping to each gene or transcript
+
+# Load packages -----
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(edgeR) 
+  library(matrixStats)
+  library(cowplot)
+  library(ggthemes)
+  library(RColorBrewer)
+  library(gprofiler2)
+})
+
+# Load digital gene expression list ----
+load(file = "../Outputs/SrRNAseq_DGEList")
+
+# If it's not available, read in the study design file ----
+if (!exists("targets")){
+  targets <- read_tsv("../Data/S_ratti/Study_Design/SrattiRNAseq_study_design.txt",
+                    na = c("", "NA", "na"))
+}
+
+# calculate and plot log2 counts per million ----
+
+# Generate life stage IDs
+ids <- rep(cbind(targets$group), 
+           times = nrow(myDGEList$counts)) %>%
+  as_factor()
+
+# use the 'cpm' function from EdgeR to get log2 counts per million
+# then coerce into a tibble
+# add sample names to the dataframe
+# tidy up the dataframe into a tibble
+log2.cpm.df.pivot <-cpm(myDGEList, log=TRUE) %>%
+  as_tibble(rownames = "geneID") %>%
+  setNames(nm = c("geneID", targets$sample)) %>%
+  pivot_longer(cols = -geneID, 
+               names_to = "samples", 
+               values_to = "expression") %>% 
+  add_column(life_stage = ids)
+
+
+# plot the pivoted data
+p2 <- ggplot(log2.cpm.df.pivot) +
+  aes(x=samples, y=expression, fill=life_stage) +
+  geom_violin(trim = FALSE, show.legend = T, alpha= 0.7) +
+  stat_summary(fun = "median", 
+               geom = "point", 
+               shape = 20, 
+               size = 2, 
+               color = "black", 
+               show.legend = FALSE) +
+  labs(y="log2 expression", x = "sample",
+       title="Log2 Counts per Million (CPM)",
+       subtitle="unfiltered, non-normalized",
+       caption=paste0("produced on ", Sys.time())) +
+  theme_bw() +
+  scale_fill_brewer(palette = "Dark2") +
+  coord_flip()
+p2
+
+# Filter the data ----
+# Take a look at how many genes or transcripts have no read counts in all of the samples
+#table(rowSums(myDGEList$counts==0)==nrow(targets))
+
+# now set some cut-off to get rid of genes/transcripts with low counts
+# again using rowSums to tally up the 'TRUE' results of a simple evaluation
+# how many genes had more than 1 CPM (TRUE) in at least n samples
+# The cutoff "n" should be adjusted for the number of samples in the smallest group of comparison.
+keepers <- cpm(myDGEList) %>%
+  rowSums(.>1)>=1
+
+# now use base R's simple subsetting method to filter the DGEList based on the logical produced above
+myDGEList.filtered <- myDGEList[keepers,]
+#dim(myDGEList.filtered)
+
+ids.filtered <- rep(cbind(targets$group), 
+                    times = nrow(myDGEList.filtered)) %>%
+  as_factor()
+
+log2.cpm.filtered.df.pivot <- cpm(myDGEList.filtered, log=TRUE) %>%
+  as_tibble(rownames = "geneID") %>%
+  setNames(nm = c("geneID", targets$sample)) %>%
+  pivot_longer(cols = -geneID,
+               names_to = "samples",
+               values_to = "expression") %>%
+  add_column(life_stage = ids.filtered)
+
+p3 <- ggplot(log2.cpm.filtered.df.pivot) +
+  aes(x=samples, y=expression, fill=life_stage) +
+  geom_violin(trim = FALSE, show.legend = T, alpha= 0.7) +
+  stat_summary(fun = "median", 
+               geom = "point", 
+               shape = 20, 
+               size = 2, 
+               color = "black", 
+               show.legend = FALSE) +
+  labs(y="log2 expression", x = "sample",
+       title="Log2 Counts per Million (CPM)",
+       subtitle="filtered, non-normalized",
+       caption=paste0("produced on ", Sys.time())) +
+  theme_bw() +
+  scale_fill_brewer(palette = "Dark2") +
+  coord_flip()
+p3
+
+
+# Look at the genes excluded by the filtering step ----
+# just to check that there aren't any with high expression that are in few samples
+# Discarded genes
+myDGEList.discarded <- myDGEList[!keepers,]
+dim(myDGEList.discarded)
+
+
+ids.discarded <- rep(cbind(targets$group), 
+                    times = nrow(myDGEList.discarded)) %>%
+    as_factor()
+
+log2.cpm.discarded.df.pivot <- cpm(myDGEList.discarded, log=F) %>%
+    as_tibble(rownames = "geneID") %>%
+    setNames(nm = c("geneID", targets$sample)) %>%
+    pivot_longer(cols = -geneID,
+                 names_to = "samples",
+                 values_to = "expression") %>%
+    add_column(life_stage = ids.discarded)
+
+
+p.discarded <- ggplot(log2.cpm.discarded.df.pivot) +
+    aes(x=samples, y=expression, color=life_stage) +
+    #geom_violin(trim = FALSE, show.legend = T, alpha= 0.7) +
+    geom_jitter(alpha = 0.3, show.legend = T)+
+    stat_summary(fun = "median", 
+                 geom = "point", 
+                 shape = 20, 
+                 size = 2, 
+                 color = "black", 
+                 show.legend = FALSE) +
+    labs(y="expression", x = "sample",
+         title="Counts per Million (CPM)",
+         subtitle="genes excluded by low count filtering step, non-normalized",
+         caption=paste0("produced on ", Sys.time())) +
+    theme_bw() +
+    scale_color_brewer(palette = "Dark2") +
+    coord_flip()
+p.discarded
+
+# Carry out GO enrichment of discarded gene set using gProfiler2 ----
+discarded.geneID <- unique(log2.cpm.discarded.df.pivot$geneID)
+gost.res <- gost(list(Discarded_genes = discarded.geneID), organism = "strattprjeb125", correction_method = "fdr")
+gostplot(gost.res, interactive = T, capped = T)
+
+# Save matrix of discarded genes and their raw counts ----
+log2.cpm.discarded.df.pivot %>%
+  pivot_wider(names_from = c(life_stage, samples), names_sep = "-", values_from = expression, id_cols = geneID) %>%
+  write.csv(file = "../Strongyloides_RNAseq_Browser/www/SrRNAseq_discardedGene_counts.csv")
+
+# Normalize the data using a between samples normalization ----
+# Source for TMM sample normalization here: https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-3-r25
+myDGEList.filtered.norm <- calcNormFactors(myDGEList.filtered, method = "TMM")
+
+log2.cpm.filtered.norm <- cpm(myDGEList.filtered.norm, log=TRUE) 
+
+log2.cpm.filtered.norm.df<- cpm(myDGEList.filtered.norm, log=TRUE) %>%
+  as_tibble(rownames = "geneID") %>%
+  setNames(nm = c("geneID", targets$sample))
+
+log2.cpm.filtered.norm.df.pivot<-log2.cpm.filtered.norm.df %>%
+  pivot_longer(cols = -geneID,
+               names_to = "samples",
+               values_to = "expression") %>%
+  add_column(life_stage = ids.filtered)
+
+p4 <- ggplot(log2.cpm.filtered.norm.df.pivot) +
+  aes(x=samples, y=expression, fill=life_stage) +
+  geom_violin(trim = FALSE, show.legend = T, alpha = 0.7) +
+  stat_summary(fun = "median", 
+               geom = "point", 
+               shape = 20, 
+               size = 2, 
+               color = "black", 
+               show.legend = FALSE) +
+  labs(y="log2 expression", x = "sample",
+       title="Log2 Counts per Million (CPM)",
+       subtitle="filtered, TMM normalized",
+       caption=paste0("produced on ", Sys.time())) +
+  theme_bw() +
+  scale_fill_brewer(palette = "Dark2") +
+  coord_flip()
+p4
+
+```
+
+# Save Filtered Data and Annotations ---
+```{r saveBaseData, eval = TRUE}
+# This data is required for downstream analyses in this file. 
+# It enables users to not have to re-import and re-align raw read files every time the code is run.
+# 
+SrRNAseq.preprocessed.data <- list(targets = targets,
+                                   annotations = annotations,
+                                   log2.cpm.filtered.norm = log2.cpm.filtered.norm,
+                                   myDGEList.filtered.norm = myDGEList.filtered.norm
+)
+save(SrRNAseq.preprocessed.data,
+     file = "../Outputs/SrRNAseq_data_preprocessed")
+
+# Save matrix of genes and their filtered, normalized counts ----
+colnames(log2.cpm.filtered.norm)<-paste(targets$group, targets$sample, sep = "-")
+write.csv(log2.cpm.filtered.norm, file = "../Strongyloides_RNAseq_Browser/www/SrRNAseq_log2cpm_filtered_norm.csv")
+
+```
+
+# Compute and Save Variance-Stabilized DGEList Object
+```{r vDEGList, echo=TRUE, message=FALSE, eval=TRUE}
+# Introduction to this chunk ----
+# This chunk uses a DGEList of filtered and normalized abundance data
+# It will fit data to a linear model for responsively detecting differentially expressed genes (DEGs)
+# 
+# It then saves that data as a DEGList object that can be imported into a Shiny data browsing/analysis app
+
+# Load packages ----
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(limma) # differential gene expression using linear modeling
+  library(edgeR)
+})
+
+# Set up the design matrix ----
+group <- factor(targets$group)
+biolrep <- factor(targets$source)
+#block <- factor(targets$block)
+# ideally, I would use a blocking design to handle possibility of batch effects between "PRJEB1376" and "PRJEB3187", comparisons across group. However, because there aren't any overlaping samples, between the two groups, I don't think I can use the (~block + group) setup for the model matrix. At this point, the batch is likely a confounding variable. 
+design <- model.matrix(~0 + group) 
+colnames(design) <- levels(group)
+
+# Model mean-variance trend and fit linear model to data ----
+colnames(myDGEList.filtered.norm$counts) <- targets$group
+
+v.DEGList.filtered.norm.withtechreplicates <- voom(counts = myDGEList.filtered.norm, 
+                                design = design,
+                                plot = T)
+colnames(v.DEGList.filtered.norm.withtechreplicates$E) <- targets$group
+
+# Condense data by replacing within-experiment technical replicates with their average
+v.DEGList.filtered.norm <- avearrays(v.DEGList.filtered.norm.withtechreplicates, biolrep)
+colnames(v.DEGList.filtered.norm$E) <- paste(v.DEGList.filtered.norm$targets$group, levels(biolrep),sep = '-')
+
+# Save v.DEGList ----
+# This file will be imported into Shiny App
+save(v.DEGList.filtered.norm,
+     file = "../Strongyloides_RNAseq_Browser/Data/Sr_vDEGList")
+
+```
