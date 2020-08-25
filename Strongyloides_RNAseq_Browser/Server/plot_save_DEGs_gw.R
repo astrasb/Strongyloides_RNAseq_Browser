@@ -141,7 +141,13 @@ assemble_DEGs_GW <- reactive({
                                        vals$genelist,
                                        by = "geneID") %>%
         left_join(annotations, by = "geneID") # Add gene annotations
-    n_num_cols <- length(tS)*3 + length(cS)*3 + 5
+    
+    sample.num.tS <- sapply(tS, function(x) {colSums(v.DEGList.filtered.norm$design)[[x]]}) %>% sum()
+    sample.num.cS <- sapply(cS, function(x) {colSums(v.DEGList.filtered.norm$design)[[x]]}) %>% sum()
+    
+    
+    n_num_cols <- sample.num.tS + sample.num.cS + 5
+   
     highlight.datatable <- vals$list.highlight.tbl_GW[[vals$displayedComparison_GW]] %>%
         {suppressMessages(dplyr::full_join(.,excluded.genes))} %>%
        DT::datatable(rownames = FALSE,

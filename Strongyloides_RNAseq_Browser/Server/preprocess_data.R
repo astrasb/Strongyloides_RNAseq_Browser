@@ -8,7 +8,7 @@ load(file = "./Data/Ss_vDEGList")
 # Origin: Hunt et al 2016
 # Note that this uses specific transcript information, which I throw out. 
 # (e.g. SSTP_0001137400.2 is recoded as SSTP_0001137400)
-load(file = "./Data/parasiteGeneSets")
+load(file = "./Data/Str_parasiteGeneSets")
 
 # Import a tidy dataframe containing gene annotations for all genes in the genome (including those that are excluded from this database.)
 load(file = "./Data/Ss_geneAnnotations")
