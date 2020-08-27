@@ -1,4 +1,4 @@
-## GW: Extract the Differentially Expressed Genes ----
+## GW: Assemble the Volcano Plot ----
 pull_DEGs_GW <- reactive({
     req(vals$comparison_GW)
     req(vals$list.myTopHits.df_GW)

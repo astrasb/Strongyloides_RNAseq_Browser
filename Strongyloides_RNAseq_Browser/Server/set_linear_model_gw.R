@@ -1,4 +1,4 @@
-## GW: Set Contrast Matrix and Fit the Linear Model ----
+## GW: Set Contrast Matrix, Fit the Linear Model, Extract the Differentially Expressed Genes ----
 set_linear_model_GW <- eventReactive(input$goLifeStage_GW,{
     req(vals$limmacontrast_GW)
     limma_ranking(vals$limmacontrast_GW, 

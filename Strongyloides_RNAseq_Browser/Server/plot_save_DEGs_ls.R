@@ -1,4 +1,4 @@
-## LS: Extract the Differentially Expressed Genes ----
+## LS: Assemble the Volcano Plot ----
 pull_DEGs_LS <- reactive({
     req(vals$comparison_LS)
     req(vals$list.highlight.tbl_LS)

@@ -26,8 +26,6 @@ generateGenePlot <- reactive({
             theme(aspect.ratio=2/3) 
         p 
     } else if (input$displayedGene == "Data Table") {
-        #browser()
-        
         excluded.genes <- dplyr::anti_join(vals$submitted.genelist, 
                                            vals$genelist,
                                            by = "geneID") %>%
@@ -114,6 +112,7 @@ generateGenePlot <- reactive({
         colnames(subset.diffGenes) <- paste0(vals$v.DEGList.filtered.norm$targets$group,
                                              ".",
                                              vals$v.DEGList.filtered.norm$targets$samples)
+        colnames(subset.diffGenes) <- vec_as_names(as.character(vals$v.DEGList.filtered.norm$targets$group), repair = "unique", quiet = T)
         clustRows <- hclust(as.dist(1-cor(t(subset.diffGenes), 
                                           method="pearson")), 
                             method="complete") 
@@ -250,7 +249,6 @@ output$downloadGenePlot <- downloadHandler(
         withProgress ({
             
             if (input$displayedGene == "All Genes" | input$displayedGene == "Data Table") {
-                
                 # Make a heatmap for all the genes using the Log2CPM values
                 myheatcolors <- RdBu(75)
                 
@@ -259,8 +257,8 @@ output$downloadGenePlot <- downloadHandler(
                     as.matrix()
                 rownames(diffGenes) <- rownames(vals$v.DEGList.filtered.norm$E)
                 colnames(diffGenes) <- as.character(vals$v.DEGList.filtered.norm$targets$group)
-                clustColumns <- hclust(as.dist(1-cor(vals$diffGenes, method="spearman")), method="complete")
-                subset.diffGenes<- diffGenes[vals$vals$gene_of_interest,]
+                clustColumns <- hclust(as.dist(1-cor(diffGenes, method="spearman")), method="complete")
+                subset.diffGenes<- diffGenes[vals$gene_of_interest,]
                 colnames(subset.diffGenes) <- paste0(vals$v.DEGList.filtered.norm$targets$group, 
                                                      "_", 
                                                      vals$v.DEGList.filtered.norm$targets$samples)
@@ -270,6 +268,7 @@ output$downloadGenePlot <- downloadHandler(
                 par(cex.main=1.2)
                 
                 showticklabels <- if(length(vals$gene_of_interest)<20){c(TRUE,TRUE)} else {c(TRUE,FALSE)}
+                
                 
                 p<-ggheatmap_local(subset.diffGenes,
                                    colors = rev(myheatcolors),
