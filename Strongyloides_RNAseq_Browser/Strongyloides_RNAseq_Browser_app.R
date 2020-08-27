@@ -58,11 +58,11 @@ server <- function(input, output, session) {
     ## GW: Gene Expression Across Life Stage ----
     
     ## GW: Generate/Reset Gene File Upload
-    ## GW: Generate Main Gene Input Panel
     ## GW: Clear Genes
     ## GW/LS: Reset Elements on Tab Change 
     source('Server/reset_state.R', local = T)
     
+    ## GW: Generate Main Gene Input Panel
     ## GW: Parse Gene Inputs
     source('Server/parse_geneIDs_gw.R', local = T)
     

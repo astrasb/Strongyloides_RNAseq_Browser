@@ -17,6 +17,7 @@ output$pairwiseSelector_GW<- renderUI({
             heading = tagList(h5(shiny::icon("fas fa-sliders-h"), 
                                  "Step 2: Pick Life Stage Comparisons")),
             status = "primary",
+            p(tags$em('Users may set up a single pairwise comparison for differential gene analysis using the selection menus below. Alternatively, users may also input multiple pairwise comparisons by typing a comma-separated list of contrasts into the textbox.', style = "color: #7b8a8b")),
             # Select Target Life Stage
             h5('A: Single Comparison', class = 'text-danger'),
             
@@ -37,11 +38,12 @@ output$pairwiseSelector_GW<- renderUI({
             
             tags$hr(style="border-color: #2C3E50;"),
             h5('B: Multiple Comparisons', class = 'text-danger'),
-            
+            p(tags$em('If using the textbox to type comma-separated contrasts, please use the format: (Target)-(Contrast). For example typing "iL3-PF, (iL3+iL3a)-(PF+FLF)" will run two pairwise comparisons: iL3 vs PF and iL3+iL3a vs PF+FLF. To correct for multiple, closely related pairwise comparisons, use the toggle switch below.', style = "color: #7b8a8b")),
             # Text Input for Multiple Contrasts
             textAreaInput('multiContrasts_GW',
-                          (h6('Type comma-separated comparisons using format: (Target)-(Contrast)',
-                              tags$br(),tags$em('e.g. iL3-PF, (iL3+iL3a)-(PF+FLF)', style = "color: #7b8a8b"))),
+                          NULL,
+                          # (h6('Type comma-separated comparisons using format: (Target)-(Contrast)',
+                          #     tags$br(),tags$em('e.g. iL3-PF, (iL3+iL3a)-(PF+FLF)', style = "color: #7b8a8b"))),
                           
                           rows = 5, 
                           resize = "vertical"),

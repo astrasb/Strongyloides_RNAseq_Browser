@@ -8,37 +8,6 @@ output$genefile_upload <- renderUI({
               multiple = FALSE)
 })
 
-## GW: Generate Main Gene Input Panel ----
-output$genePanelinputs <- renderUI({
-    tagList(
-        panel(
-            id = "GeneInputBox",
-            heading = tagList(h5(shiny::icon("fas fa-dna"), "Step 1: Input Genes / Keywords")),
-            status = "primary",
-            ### GeneID (text box)
-            h5('Pick Genes', class = 'text-danger', style = "margin: 0px 0px 5px 0px"),
-            p(tags$em('Users may type gene stable IDs or keywords that will be matched against Wormbase Parasite Gene Descriptions, known C. elegans homologs, InterPro terms, and an Ensembl Compara database of gene families. Please separate search terms by a comma. Users may also upload a .csv file containing comma-separated gene stable IDs.', style = "color: #7b8a8b")),
-            p(tags$em(tags$b('Note: Please hit the Clear button between successive searches.', style = "color: #F39C12"))),
-            textAreaInput('idtext',
-                          h6('Gene Stable IDs or Keyword'),
-                          rows = 5, 
-                          resize = "vertical"),
-            
-            ### Upload list of GeneIDs
-            uiOutput('genefile_upload'),
-            
-            ### Action Button
-            actionButton('goGW',
-                         'Submit',
-                         #width = '50%',
-                         icon = icon("fas fa-share"),
-                         class = "btn-primary"),
-            
-            actionButton('resetGenes', 'Clear',
-                         icon = icon("far fa-trash-alt"))
-        )
-    )
-})
 
 ## GW: Clear Genes with Reset Button ----
 observeEvent(input$resetGenes, {
