@@ -24,6 +24,7 @@ tags$head(
     h5 {
     font-size: 13px;
     font-weight: bold;
+    margin: 5px 0px;
     }
     
     h6 {
@@ -75,6 +76,14 @@ tags$head(
     }
     
     #geneSelection_conditionalPanel .shiny-output-error-validation {
+    color: white;
+    }
+    
+    #contrastDisplaySelectionPanel_LS .shiny-output-error-validation {
+    color: white;
+    }
+    
+    #contrastSelectionPanel_GW .shiny-output-error-validation {
     color: white;
     }
     

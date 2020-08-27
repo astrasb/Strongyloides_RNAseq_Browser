@@ -4,7 +4,7 @@ output$genePlotPanel_GW <- renderUI({
     isolate({
         tagList(div(id = "CPMPlotlydiv_parent",
                     panel(
-                        heading = tagList(h4(shiny::icon("fas fa-chart-bar"),
+                        heading = tagList(h5(shiny::icon("fas fa-chart-bar"),
                                              "Gene Expression Across Life Stages")),
                         status = "primary",
                         
@@ -22,12 +22,13 @@ output$genePlotPanel_GW <- renderUI({
 output$geneDisplaySelection_GW <- renderUI({
     parse_ids()
     if (length(vals$genelist$geneID)>1) {
-        choices <- c("All Genes", vals$genelist$geneID)
+        choices <- c("All Genes", "Data Table", vals$genelist$geneID)
         selected <- "All Genes"
-    } else choices <- vals$genelist$geneID
+    } else {
+        choices <- c(vals$genelist$geneID,"Data Table")}
     tagList(div(id = "geneDisplaySelectionPanel",
                 panel(
-                    heading = tagList(h4(shiny::icon("fas fa-filter"),
+                    heading = tagList(h5(shiny::icon("fas fa-filter"),
                                          "Pick Gene to Display")),
                     status = "default",
                     pickerInput("displayedGene",
@@ -50,7 +51,7 @@ spacing = "xs", align = "l", bordered = T)
 output$Legend_GW <- renderUI({
     req(vals$genelist)
     panel(
-        heading = tagList(h4(shiny::icon("fas fa-book-open"),
+        heading = tagList(h5(shiny::icon("fas fa-book-open"),
                              "Sample ID Legend")),
         status = "default",
         tableOutput("lifeStageLegend_GW")

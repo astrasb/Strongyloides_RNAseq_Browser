@@ -2,7 +2,7 @@
 
 # Header ----
 navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
-           windowTitle = "St-RNAseq Browser",
+           windowTitle = "Str-RNAseq Browser",
            theme = shinytheme("flatly"), 
            collapsible = TRUE,
            id = "tab",
@@ -11,51 +11,38 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
            # Gene-Wise Browser ----
            tabPanel(h4("Browse By Gene"),
                     value = "GW",
+                    useShinyjs(),
+                    div(id = "GW",
+                        
                     fluidRow(
-                        useShinyjs(),
+                        
                         column(2,
                                
-                               ## Select Genes to Browse ----
                                panel(
-                                   id = "GeneInputBox",
-                                   heading = tagList(h4(shiny::icon("fas fa-dna"), "Step 1: Input Genes / Keywords")),
+                                   heading = tagList(h5(shiny::icon("fas fa-sliders-h"),
+                                                         "Select Species")),
                                    status = "primary",
-                                   ### GeneID (text box)
-                                   h5('Pick Genes', class = 'text-danger', style = "margin: 0px 0px 5px 0px"),
-                                   p(tags$em('Users may type gene stable IDs or keywords that will be matched against Wormbase Parasite Gene Descriptions and an Ensembl Compara database of gene families. Please separate search terms by a comma. Users may also upload a .csv file containing comma-separated gene stable IDs.', style = "color: #7b8a8b")),
-                                   p(tags$em(tags$b('Note: Please hit the Clear button between successive searches.', style = "color: #F39C12"))),
-                                   textAreaInput('idtext',
-                                                 h6('Gene Stable IDs or Keyword'),
-                                                 rows = 5, 
-                                                 resize = "vertical"),
-                                   
-                                   ### Upload list of GeneIDs
-                                   uiOutput('genefile_upload'),
-                                   
-                                   ### Action Button
-                                   actionButton('goGW',
-                                                'Submit',
+                                   selectInput("selectSpecies_GW",
+                                               h6("Pick a species"),
+                                               choices = list("S. stercoralis",
+                                                              "S. ratti")),
+                                   actionButton('speciesGW',
+                                                'Initialize',
                                                 #width = '50%',
                                                 icon = icon("fas fa-share"),
-                                                class = "btn-primary"),
-                                   
-                                   actionButton('resetGenes', 'Clear',
-                                                icon = icon("far fa-trash-alt"))
+                                                class = "btn-primary")
+                               ),
+                               
+                               ## Select Genes to Browse ----
+                               conditionalPanel(condition = "input.speciesGW != 0",
+                                   uiOutput("genePanelinputs")
                                )),
                         
                         column(8,
                                conditionalPanel(condition = "input.goGW != 0",
                                                 id = "geneplot_conditionalPanel",
                                                 uiOutput("genePlotPanel_GW")
-                                                ## Display Selected Gene Expression ----
-                                                # panel(
-                                                #     heading = tagList(h4(shiny::icon("fas fa-chart-bar"),
-                                                #                          "Gene Expression Across Life Stages")),
-                                                #     status = "primary",
-                                                #     tagList(div(id = "GenePlotDiv",
-                                                #                 uiOutput("downloadbuttonsGenes")
-                                                #     ))
-                                                # )
+                                                
                                )
                         ),
                         column(2,
@@ -71,229 +58,96 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                     ),
                     fluidRow(
                         column(2,
-                               conditionalPanel(condition = "output.downloadbuttonsGenes || output.contrastDisplaySelection_GW",
+                               conditionalPanel(condition = "(output.downloadbuttonsGenes || output.volcano_GW)",
                                                 id = "lifeStageInputPanel",
-                                                panel(
-                                                    ## Select Life Stage Comparisons ----
-                                                    heading = tagList(h4(shiny::icon("fas fa-sliders-h"), 
-                                                                         "Step 2: Pick Life Stage Comparisons")),
-                                                    status = "primary",
-                                                    # Select Target Life Stage
-                                                    h5('A: Single Comparison', class = 'text-danger'),
-                                                    
-                                                    selectInput("selectTarget_GW",
-                                                                h6("Select Target"),
-                                                                choices = c('Choose one or more' = ''
-                                                                            ,list("FLF",
-                                                                                  "PF",
-                                                                                  "iL3",
-                                                                                  "iL3a",
-                                                                                  "ppL1",
-                                                                                  "ppL3",
-                                                                                  "pfL1")),
-                                                                selectize = TRUE,
-                                                                multiple = TRUE),
-                                                    # Select Contrast Life Stage
-                                                    selectInput("selectContrast_GW",
-                                                                h6("Select Contrast"),
-                                                                choices = c('Choose one or more' = '',
-                                                                            list("FLF",
-                                                                                 "PF",
-                                                                                 "iL3",
-                                                                                 "iL3a",
-                                                                                 "ppL1",
-                                                                                 "ppL3",
-                                                                                 "pfL1")),
-                                                                selectize = TRUE,
-                                                                multiple = TRUE),
-                                                    
-                                                    tags$hr(style="border-color: #2C3E50;"),
-                                                    h5('B: Multiple Comparisons', class = 'text-danger'),
-                                                    
-                                                    # Text Input for Multiple Contrasts
-                                                    textAreaInput('multiContrasts_GW',
-                                                                  (h6('Type comma-separated comparisons using format: (Target)-(Contrast)',
-                                                                      tags$br(),tags$em('e.g. iL3-PF, (iL3+iL3a)-(PF+FLF)', style = "color: #7b8a8b"))),
-                                                                  
-                                                                  rows = 5, 
-                                                                  resize = "vertical"),
-                                                    
-                                                    h6("Correct for Multiple Comparisons?"),
-                                                    switchInput(
-                                                        inputId = "multipleContrastsYN_GW",
-                                                        onLabel = "Yes",
-                                                        offLabel = "No",
-                                                        size = "small",
-                                                        onStatus = "success"
-                                                    ),
-                                                    
-                                                    tags$hr(style="border-color: #2C3E50;"),
-                                                    
-                                                    ### Action Button
-                                                    actionButton('goLifeStage_GW',
-                                                                 'Process',
-                                                                 #width = '50%',
-                                                                 icon = icon("fas fa-share"),
-                                                                 class = "btn-primary"),
-                                                    
-                                                    actionButton('resetGW', 'Clear',
-                                                                 icon = icon("far fa-trash-alt"))
-                                                )
+                                                uiOutput("pairwiseSelector_GW")
                                )
                         ),
                         
                         column(8,
-                               conditionalPanel(condition = "input.goLifeStage_GW != 0",
-                                                id = "diffPlotPanel",
-                                                panel(
-                                                    heading = tagList(h4(shiny::icon("fas fa-mountain"),
-                                                                         "Pairwise Differential Gene Expression: Volcano Plot")),
-                                                    status = "primary",
-                                                    withSpinner(plotOutput('volcano_GW',
-                                                                           hover = hoverOpts("plot_hover", 
-                                                                                             delay = 100, 
-                                                                                             delayType = "debounce")),
-                                                                
-                                                                color = "#2C3E50"),
-                                                    uiOutput("hover_info"),
-                                                    
-                                                    downloadButton("downloadVolcano_GW",
-                                                                   "Download Plot as PDF",
-                                                                   class = "btn-primary")
-                                                )
-                                                
+                               conditionalPanel(condition = "(output.downloadbuttonsGenes && input.goLifeStage_GW != 0)",
+                                                uiOutput("volcano_GW")
                                )
                         ),
                         column(2,
+                               conditionalPanel(condition = "output.downloadbuttonsGenes && input.goLifeStage_GW !=0",
+                               id = "contrastSelectionPanel_GW",
                                uiOutput('contrastDisplaySelection_GW')
+                               )
+      
                         ),
                         column(10,
-                               conditionalPanel(condition = "input.goLifeStage_GW != 0",
+                               conditionalPanel(condition = "output.downloadbuttonsGenes && input.goLifeStage_GW != 0 && output.contrastDisplaySelection_GW && output.volcano_GW",
                                                 panel(
-                                                    heading = tagList(h4(shiny::icon("fas fa-table"),
+                                                    heading = tagList(h5(shiny::icon("fas fa-table"),
                                                                          "Pairwise Differential Gene Expression: Table")),
                                                     status = "primary",
-                                                    withSpinner(DTOutput('highlight.df'),
-                                                                color = "#2C3E50"),
-                                                    uiOutput('downloadbuttonGW')
+                                                    
+                                                    tagList(withSpinner(DTOutput('highlight.df'),
+                                                                        color = "#2C3E50",
+                                                                        type = 7),
+                                                            
+                                                            uiOutput("downloadbuttonGW")        
+                                                    )
                                                 )
                                )
                         )
-                    )     
+                    ) 
+                    )
            ),
            
            # Life Stage Browser ----
            tabPanel(h4("Browse by Life Stage"),
                     value = "LS",
+                    useShinyjs(),
+                    div(id = "LS",
                     fluidRow(
                         column(2,
                                panel(
-                                   heading = tagList(h4(shiny::icon("fas fa-sliders-h"), 
-                                                        "Step 1: Pick Life Stage Comparisons")),
+                                   heading = tagList(h5(shiny::icon("fas fa-sliders-h"),
+                                                         "Select Species")),
                                    status = "primary",
-                                   h5('A: Single Comparison', class = 'text-danger', style = "margin: 0px 0px 10.5px 0px"),
-                                   selectInput("selectTarget_LS",
-                                               h6("Select Target"),
-                                               choices = c('Pick one or more' = ''
-                                                           ,list("FLF",
-                                                                 "PF",
-                                                                 "iL3",
-                                                                 "iL3a",
-                                                                 "ppL1",
-                                                                 "ppL3",
-                                                                 "pfL1")),
-                                               selectize = TRUE,
-                                               multiple = TRUE),
-                                   # Select Contrast Life Stage
-                                   selectInput("selectContrast_LS",
-                                               h6("Select Contrast"),
-                                               choices = c('Pick one or more' = ''
-                                                           ,list("FLF",
-                                                                 "PF",
-                                                                 "iL3",
-                                                                 "iL3a",
-                                                                 "ppL1",
-                                                                 "ppL3",
-                                                                 "pfL1")),
-                                               selectize = TRUE,
-                                               multiple = TRUE),
-                                   
-                                   tags$hr(style="border-color: black;"),
-                                   h5('B: Multiple Comparisons', class = 'text-danger'),
-                                   # Text Input for Multiple Contrasts
-                                   textAreaInput('multiContrasts_LS',
-                                                 (h6('Type comma-separated comparisons using format: (Target)-(Contrast)',
-                                                     tags$br(),tags$em('e.g. iL3-PF, (iL3+iL3a)-(PF+FLF)', style = "color: #7b8a8b"))),
-                                                 #label = ('Input At Least Two Comma-Separated Pairwise Comparisons'),
-                                                 #placeholder = ('e.g. iL3-FLF, iL3-PF, (iL3+iL3a)-(PF+FLF)'),
-                                                 rows = 5, 
-                                                 resize = "vertical"),
-                                   
-                                   
-                                   
-                                   
-                                   h6("Correct for Multiple Comparisons?"),
-                                   switchInput(
-                                       inputId = "multipleContrastsYN_LS",
-                                       onLabel = "Yes",
-                                       offLabel = "No",
-                                       size = "small",
-                                       onStatus = "success"
-                                   ),
-                                   
-                                   tags$hr(style="border-color: #2C3E50;"),
-                                   
-                                   ### Action Button
-                                   actionButton('goLS',
-                                                'Submit',
+                                   selectInput("selectSpecies_LS",
+                                               h6("Pick a species"),
+                                               choices = list("S. stercoralis",
+                                                              "S. ratti")),
+                                   actionButton('speciesLS',
+                                                'Initialize',
                                                 #width = '50%',
                                                 icon = icon("fas fa-share"),
-                                                class = "btn-primary"),
-                                   
-                                   actionButton('resetLS', 'Clear',
-                                                icon = icon("far fa-trash-alt"))
-                                   
-                               )
+                                                class = "btn-primary")
+                               ),
+                               
+                              
+                               conditionalPanel(condition = 'input.speciesLS != 0',
+                               uiOutput("pairwiseSelector_LS")
+                        )
                         ),
                         
                         column(8,
-                               conditionalPanel(condition = "input.goLS != 0",
-                                                panel(
-                                                    heading = tagList(h4(shiny::icon("fas fa-mountain"),
-                                                                         "Pairwise Differential Gene Expression: Volcano Plot")),
-                                                    status = "primary",
-                                                    withSpinner(plotOutput('volcano_LS',
-                                                                           hover = hoverOpts("plot_hover_LS",
-                                                                                             delay = 100,
-                                                                                             delayType = "debounce")),
-                                                                color = "#2C3E50"),
-                                                    # withSpinner(plotOutput('volcano_LS'),
-                                                    #             color = "#2C3E50"),
-                                                    uiOutput("hover_info_LS"),
-                                                    
-                                                    downloadButton("downloadVolcano_LS",
-                                                                   "Download Plot as PDF",
-                                                                   class = "btn-primary")
-                                                )
-                                                
-                                                
+                               conditionalPanel(condition = "output.pairwiseSelector_LS && input.goLS != 0",
+                                                uiOutput('volcano_LS')               
                                )
                         ),
                         column(2,
-                               uiOutput('contrastDisplaySelection_LS'),
+                               conditionalPanel(condition = "output.pairwiseSelector_LS && input.goLS !=0",
+                                                id = "contrastDisplaySelectionPanel_LS",
+                                                uiOutput('contrastDisplaySelection_LS')
+                               ),
                                conditionalPanel(condition = "input.goLS !=0 && output.contrastDisplaySelection_LS",
                                                 id = "lifeStageLegend_LS",
                                                 uiOutput("Legend_LS"))
                         ),
                         
                         column(10,
-                               conditionalPanel(condition = "input.goLS != 0",
+                               conditionalPanel(condition = "output.pairwiseSelector_LS && input.goLS != 0 && output.volcano_LS",
                                                 panel(
-                                                    heading = tagList(h4(shiny::icon("fas fa-table"),
+                                                    heading = tagList(h5(shiny::icon("fas fa-table"),
                                                                          "Pairwise Differential Gene Expression: Table")),
                                                     status = "primary",
                                                     withSpinner(DTOutput('tbl_LS'),
-                                                                color = "#2C3E50"),
+                                                                color = "#2C3E50",
+                                                                type = 7),
                                                     uiOutput('downloadbuttonLS')
                                                 )
                                )
@@ -303,28 +157,31 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                     fluidRow(
                         
                         column(6,
-                               conditionalPanel(condition = "input.goLS != 0",
+                               conditionalPanel(condition = "output.pairwiseSelector_LS && input.goLS != 0 && output.volcano_LS",
                                                 panel(
-                                                    heading = tagList(h4(shiny::icon("fas fa-braille"),
+                                                    heading = tagList(h5(shiny::icon("fas fa-braille"),
                                                                          "Gene Set Enrichment Analysis: Plot")),
                                                     status = "primary",
                                                     withSpinner(plotOutput('GSEAPlot_LS'),
-                                                                color = "#2C3E50"),
+                                                                color = "#2C3E50",
+                                                                type = 7),
                                                     downloadButton("downloadGSEAPlot_LS",
                                                                    "Download Plot as PDF",
                                                                    class = "btn-primary")
                                                 ))
                         ),
                         column(6,
-                               conditionalPanel(condition = "input.goLS != 0",
+                               conditionalPanel(condition = "output.pairwiseSelector_LS && input.goLS != 0 && output.volcano_LS",
                                                 panel(
-                                                    heading = tagList(h4(shiny::icon("fas fa-table"),
+                                                    heading = tagList(h5(shiny::icon("fas fa-table"),
                                                                          "Gene Set Enrichment Analysis: Data Table")),
                                                     status = "primary",
                                                     withSpinner(DTOutput('GSEATbl_LS'),
-                                                                color = "#2C3E50"),
+                                                                color = "#2C3E50",
+                                                                type = 7),
                                                     uiOutput("downloadGSEAtbl_LS")
                                                 )))
+                    )
                     )
            ),
            
@@ -333,7 +190,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                     fluidRow(
                         column(12,
                                # About this app ----
-                               panel(heading =  tagList(h4(shiny::icon("fas fa-question-circle"),
+                               panel(heading =  tagList(h5(shiny::icon("fas fa-question-circle"),
                                                            "About this App")),
                                      
                                      status = "primary",
@@ -389,7 +246,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                ),
                                
                                # App Credits ----
-                               panel( heading =  tagList(h4(shiny::icon("fas fa-poop"),
+                               panel( heading =  tagList(h5(shiny::icon("fas fa-poop"),
                                                             "Who is responsibe for this?")),
                                       status = "primary",
                                       p('This app was created by', 
@@ -400,8 +257,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                         tags$br(),
                                         'The underlying code is avaliable on Github:', 
                                         tags$a(
-                                            href = "Stercoralis RNAseq Browser App  Repository", 
-                                            'https://github.com/astrasb/Strongyloides_Bioinformatics/tree/master/Stercoralis_RNAseq_Browser'))
+                                            href = 'https://github.com/astrasb/Strongyloides_Bioinformatics/tree/master/Strongyloides_RNAseq_Browser', "Strongyloides RNAseq Browser App Repository"))
                                )
                         )
                     )

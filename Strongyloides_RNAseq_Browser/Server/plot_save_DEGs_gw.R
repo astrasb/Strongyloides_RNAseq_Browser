@@ -1,13 +1,13 @@
 ## GW: Extract the Differentially Expressed Genes ----
 pull_DEGs_GW <- reactive({
-    
     req(vals$comparison_GW)
     req(vals$list.myTopHits.df_GW)
+    req(vals$v.DEGList.filtered.norm)
+    
     if (isTruthy(input$displayedComparison_GW)){
         vals$displayedComparison_GW <- match(input$displayedComparison_GW,
                                              vals$comparison_GW, nomatch = 1)
     } else {vals$displayedComparison_GW <- 1}
-    
     
     #### Volcano Plots
     point_labels <- if(nrow(vals$list.highlight.tbl_GW[[vals$displayedComparison_GW]])<
@@ -51,33 +51,63 @@ pull_DEGs_GW <- reactive({
     
 })
 
+
 ## GW: Volcano Plot, Generate UI  ----
-output$volcano_GW <- renderPlot({
-    req(input$goLifeStage_GW)
-    req(vals$comparison_GW)
+output$volcano_GW <- renderUI({
     
+    parse_contrasts_GW()
+    req(vals$genelist,vals$comparison_GW)
+    
+    output$volcano_UI_GW <- renderPlot({
     set_linear_model_GW()
     pull_DEGs_GW()
+    })
+    
+    panel(
+        heading = tagList(h5(shiny::icon("fas fa-mountain"),
+                             "Pairwise Differential Gene Expression: Volcano Plot")),
+        status = "primary",
+        
+        tagList(withSpinner(plotOutput('volcano_UI_GW',
+                                       hover = hoverOpts("plot_hover", 
+                                                         delay = 100, 
+                                                         delayType = "debounce")),
+                            
+                            color = "#2C3E50",
+                            type = 7),
+                uiOutput("hover_info"),
+                uiOutput("downloadVolcanoGW")
+        )
+    )
+})
+
+
+## GW: Save Volcano Plot ----
+output$downloadVolcanoGW <- renderUI({
+    req(input$goLifeStage_GW, vals$comparison_GW,vals$genelist)
+    
+    output$downloadVolcano_GW <- downloadHandler(
+        filename = function(){
+            paste('VolcanoPlot_',vals$comparison_GW[vals$displayedComparison_GW], '_',Sys.Date(),'.pdf', sep='')
+        },
+        content = function(file){
+            withProgress({
+                pull_DEGs_GW()
+                ggsave(file,width = 11, height = 8, units = "in", device = "pdf", useDingbats=FALSE)
+            },
+            message = "Saving Plot")
+        }
+    )
+    
+    downloadButton("downloadVolcano_GW",
+                   "Download Plot as PDF",
+                   class = "btn-primary")
     
 })
 
-## GW: Save Volcano Plot ----
-output$downloadVolcano_GW <- downloadHandler(
-    filename = function(){
-        paste('VolcanoPlot_',vals$comparison_GW[vals$displayedComparison_GW], '_',Sys.Date(),'.pdf', sep='')
-    },
-    content = function(file){
-        withProgress({
-            pull_DEGs_GW()
-            ggsave(file,width = 11, height = 8, units = "in", device = "pdf", useDingbats=FALSE)
-        },
-        message = "Saving Plot")
-    }
-)
-
 ## GW: Volcano Hover Info ----
 output$hover_info <- renderUI({
-    req(vals$displayedComparison_GW)
+    req(vals$displayedComparison_GW,vals$genelist,vals$comparison_GW)
     
     pointer.df <- vals$list.highlight.tbl_GW[[vals$displayedComparison_GW]] %>%
         dplyr::mutate(log10.adj.P.Val = -log10(BH.adj.P.Val))
@@ -88,7 +118,6 @@ output$hover_info <- renderUI({
                         yvar = "log10.adj.P.Val",
                         threshold = 5, maxpoints = 1, addDist = TRUE)
     if (nrow(point) == 0) return(NULL)
-    
     
     # calculate point position INSIDE the image as percent of total dimensions
     # from left (horizontal) and from top (vertical)
@@ -130,107 +159,130 @@ output$hover_info <- renderUI({
 
 ## GW: Data Table of Differentially Expressed Genes from User Subset ----
 assemble_DEGs_GW <- reactive({
-    req(vals$displayedComparison_GW)
-    tS<- vals$targetStage_GW[vals$displayedComparison_GW,
-                             ][vals$targetStage_GW[vals$displayedComparison_GW,
-                                                   ]!=""]
-    cS<- vals$contrastStage_GW[vals$displayedComparison_GW,
-                               ][vals$contrastStage_GW[vals$displayedComparison_GW,
+    req(vals$comparison_GW,vals$displayedComparison_GW)
+    
+    isolate({
+        tS<- vals$targetStage_GW[vals$displayedComparison_GW,
+                                 ][vals$targetStage_GW[vals$displayedComparison_GW,
                                                        ]!=""]
-    
-    # Add back on genes that were submitted by the user but don't appear in the list of genes for which there is available data.
-    excluded.genes <- dplyr::anti_join(vals$submitted.genelist, 
-                                       vals$genelist,
-                                       by = "geneID")
-    
-    n_num_cols <- length(tS)*3 + length(cS)*3 + 5
-    highlight.datatable <- vals$list.highlight.tbl_GW[[vals$displayedComparison_GW]] %>%
-        dplyr::full_join(excluded.genes, by = "geneID") %>%
-        DT::datatable(rownames = FALSE,
-                      caption = htmltools::tags$caption(
-                          style = 'caption-side: top; text-align: left; color: black',
-                          htmltools::tags$b('Differentially Expressed Genes in', 
-                                            htmltools::tags$em('S. stercoralis'), 
-                                            gsub('-',' vs ',vals$comparison_GW[vals$displayedComparison_GW])),
-                          htmltools::tags$br(),
-                          "Threshold: p < ",
-                          adj.P.thresh, "; log-fold change > ",
-                          lfc.thresh,
-                          htmltools::tags$br(),
-                          'Values = log2 counts per million'),
-                      options = list(autoWidth = TRUE,
-                                     scrollX = TRUE,
-                                     scrollY = '300px',
-                                     scrollCollapse = TRUE,
-                                     order = list(n_num_cols-1, 
-                                                  'desc'),
-                                     searchHighlight = TRUE, 
-                                     pageLength = 25, 
-                                     lengthMenu = c("5",
-                                                    "10",
-                                                    "25",
-                                                    "50",
-                                                    "100"),
-                                     initComplete = htmlwidgets::JS(
-                                         "function(settings, json) {",
-                                         paste0("$(this.api().table().container()).css({'font-size': '", "10pt", "'});"),
-                                         "}"),
-                                     columnDefs = list(
-                                         list(
-                                             targets = ((n_num_cols + 
-                                                             4):(n_num_cols + 
-                                                                     5)),
-                                             render = JS(
-                                                 "function(data, type, row, meta) {",
-                                                 "return type === 'display' && data.length > 20 ?",
-                                                 "'<span title=\"' + data + '\">' + data.substr(0, 20) + '...</span>' : data;",
-                                                 "}")
+        cS<- vals$contrastStage_GW[vals$displayedComparison_GW,
+                                   ][vals$contrastStage_GW[vals$displayedComparison_GW,
+                                                           ]!=""]
+        # Add back on genes that were submitted by the user but don't appear in the list of genes for which there is available data.
+        excluded.genes <- dplyr::anti_join(vals$submitted.genelist, 
+                                           vals$genelist,
+                                           by = "geneID") %>%
+            left_join(vals$annotations, by = "geneID") # Add gene annotations
+        
+        sample.num.tS <- sapply(tS, function(x) {colSums(vals$v.DEGList.filtered.norm$design)[[x]]}) %>% sum()
+        sample.num.cS <- sapply(cS, function(x) {colSums(vals$v.DEGList.filtered.norm$design)[[x]]}) %>% sum()
+        
+        
+        n_num_cols <- sample.num.tS + sample.num.cS + 5
+        
+        highlight.datatable <- vals$list.highlight.tbl_GW[[vals$displayedComparison_GW]] %>%
+            {suppressMessages(dplyr::full_join(.,excluded.genes))} %>%
+            DT::datatable(rownames = FALSE,
+                          caption = htmltools::tags$caption(
+                              style = 'caption-side: top; text-align: left; color: black',
+                              htmltools::tags$b('Differentially Expressed Genes in', 
+                                                htmltools::tags$em(input$selectSpecies_GW), 
+                                                gsub('-',' vs ',vals$comparison_GW[vals$displayedComparison_GW])),
+                              htmltools::tags$br(),
+                              "Threshold: p < ",
+                              adj.P.thresh, "; log-fold change > ",
+                              lfc.thresh,
+                              htmltools::tags$br(),
+                              'Values = log2 counts per million'),
+                          options = list(autoWidth = TRUE,
+                                         scrollX = TRUE,
+                                         scrollY = '300px',
+                                         scrollCollapse = TRUE,
+                                         order = list(n_num_cols-1, 
+                                                      'desc'),
+                                         searchHighlight = TRUE, 
+                                         pageLength = 25, 
+                                         lengthMenu = c("5",
+                                                        "10",
+                                                        "25",
+                                                        "50",
+                                                        "100"),
+                                         initComplete = htmlwidgets::JS(
+                                             "function(settings, json) {",
+                                             paste0("$(this.api().table().container()).css({'font-size': '", "10pt", "'});"),
+                                             "}"),
+                                         columnDefs = list(
+                                             list(
+                                                 targets = ((n_num_cols + 
+                                                                 4):(n_num_cols + 
+                                                                         5)),
+                                                 render = JS(
+                                                     "function(data, type, row, meta) {",
+                                                     "return type === 'display' && data.length > 20 ?",
+                                                     "'<span title=\"' + data + '\">' + data.substr(0, 20) + '...</span>' : data;",
+                                                     "}")
+                                             ),
+                                             list(targets = "_all",
+                                                  class="dt-right")
                                          ),
-                                         list(targets = "_all",
-                                              class="dt-right")
-                                     )
-                                     
-                      )) 
-    
-    highlight.datatable <- highlight.datatable %>%
-        DT::formatRound(columns=c(3:n_num_cols), 
-                        digits=3)
-    
-    highlight.datatable <- highlight.datatable %>%
-        DT::formatRound(columns=c(n_num_cols+2, 
-                                  n_num_cols+8), 
-                        digits=2)
-    
-    highlight.datatable <- highlight.datatable %>%
-        DT::formatSignif(columns=c(n_num_cols+1), 
-                         digits=3)
-    
-    highlight.datatable
+                                         rowCallback = JS(c(
+                                             "function(row, data){",
+                                             "  for(var i=0; i<data.length; i++){",
+                                             "    if(data[i] === null){",
+                                             "      $('td:eq('+i+')', row).html('NA')",
+                                             "        .css({'color': 'rgb(151,151,151)', 'font-style': 'italic'});",
+                                             "    }",
+                                             "  }",
+                                             "}"  
+                                         ))
+                                         
+                          )) 
+        
+        highlight.datatable <- highlight.datatable %>%
+            DT::formatRound(columns=c(3:n_num_cols), 
+                            digits=3)
+        
+        highlight.datatable <- highlight.datatable %>%
+            DT::formatRound(columns=c(n_num_cols+2, 
+                                      n_num_cols+9,
+                                      n_num_cols+11), 
+                            digits=2)
+        
+        highlight.datatable <- highlight.datatable %>%
+            DT::formatSignif(columns=c(n_num_cols+1), 
+                             digits=3)
+        
+        highlight.datatable
+        
+    })
 })
 
-
 output$highlight.df <- renderDT ({
-    req(vals$list.highlight.tbl_GW)
-    req(vals$displayedComparison_GW)
-    assemble_DEGs_GW()
+    req(input$goGW,vals$list.highlight.tbl_GW,vals$genelist)
+    DEG.datatable_GW<-assemble_DEGs_GW()
+    DEG.datatable_GW
 })
 
 ## GW: Save Excel Tables with DEG Tables ----
 output$downloadbuttonGW <- renderUI({
-    req(input$goLifeStage_GW)
-    req(vals$comparison_GW)
+    req(input$goLifeStage_GW,vals$comparison_GW,vals$genelist)
     
     # Add back on genes that were submitted by the user but don't appear in the list of genes for which there is available data.
     excluded.genes <- dplyr::anti_join(vals$submitted.genelist, 
                                        vals$genelist,
-                                       by = "geneID")
+                                       by = "geneID") %>%
+        left_join(vals$annotations, by = "geneID") # Add gene annotations
+    
     
     downloadablel.tbl_GW <-lapply(vals$list.highlight.tbl_GW, function (x) {
-        dplyr::full_join(x,excluded.genes, by = "geneID")
+        suppressMessages(dplyr::full_join(x,excluded.genes))
     })
     
     output$generate_excel_report_GW <- generate_excel_report(vals$comparison_GW, 
-                                                             downloadablel.tbl_GW)
+                                                             downloadablel.tbl_GW,
+                                                             name = paste(input$selectSpecies_GW,
+                                                                          "RNAseq Differential Gene Expression"))
+    
     downloadButton("generate_excel_report_GW",
                    "Download DEG Tables",
                    class = "btn-primary")

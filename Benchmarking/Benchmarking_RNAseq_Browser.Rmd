@@ -1,0 +1,91 @@
+---
+title: "RNAseq Benchmarking"
+author: "Astra Bryant"
+date: "8/22/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+This document compares results from the Str_RNAseqBrowser to data from Hunt *et al* 2016  
+It uses the test case of a pairwise comparison bettween iL3s and FLF.  
+
+Query Dataset: list of chemosensory genes from Nic Wheeler's recent paper.  
+Hunt Database: import from Supplemental Table 5 from Hunt *et al* 2016.   
+Browser Database: downloaded xlsx output table from Str-RNAseq Browser.  
+
+```{r echo = FALSE}
+suppressPackageStartupMessages({
+    library(openxlsx)
+    library(tidyverse)
+    library(ggplot2)
+})
+# Load Hunt Dataset: iL3 vs FLF comparison
+temp.dat <-  read.xlsx ("ng.3495-S5.xlsx", 
+                        sheet = 5, startRow = 2)
+
+Hunt.dat <- tibble(geneID = temp.dat$X2, logFC = temp.dat$logFC)
+rm(temp.dat)
+
+# Load Results of iL3 vs FLF comparison from Browser
+temp.dat <-  read.xlsx ("Stercoralis_RNAseq_Data_iL3vFLF.xlsx", 
+                        sheet = 1, startRow = 5)
+Browser.dat <- tibble(geneID = temp.dat$geneID, logFC = temp.dat$logFC)
+rm(temp.dat)
+
+# Load Results of iL3 vs FLF comparison on chemosensory gene set in Browser
+temp.dat <-  read.xlsx ("Stercoralis_RNAseq_Data_chemosensorygenes.xlsx", 
+                        sheet = 1, startRow = 5)
+GPCR.Browser.dat <- tibble(geneID = temp.dat$geneID, logFC = temp.dat$logFC)
+rm(temp.dat)
+
+GPCR.Hunt.dat <- dplyr::filter(Hunt.dat, geneID %in% GPCR.Browser.dat$geneID)
+
+```
+
+## Results
+### General results  
+
+Total number of genes in Hunt *et al* 2016 iL3 vs FLF comparison tab: `r nrow(Hunt.dat)`  
+Total number of genes in Str-RNAseq Browser iL3 vs FLF output file: `r nrow(Browser.dat)`  
+
+Number of genes in Wheeler chemosensory gene list: `r nrow(GPCR.Browser.dat)`  
+Number of genes in Wheeler chemensory gene list present in Hunt iL3 vs FLF database: `r nrow(GPCR.Hunt.dat)`  
+Number of genes in Wheeler chemensory gene list present in Browser iL3 vs FLF database: `r nrow(dplyr::filter(GPCR.Browser.dat, !is.na(logFC)))`  
+
+### Plots  
+
+The plot below takes the genes with LogFC results in both the Browser and Hunt databases, and plots the two sets against each other.  
+```{r echo = FALSE}
+plotting.all <- inner_join(Browser.dat, Hunt.dat, by = "geneID")
+ggplot(plotting.all, aes(x = logFC.x, y = logFC.y)) +
+    geom_smooth(method=lm, color = 'red', formula = "y ~ x") +
+    geom_point(shape=16, size=3, alpha = 0.8) +
+    labs(title = "All Overlapping Genes: Str-Browser vs Hunt Data",
+         subtitle = "iL3 vs FLF",
+         caption = "points = genes; red line = linear model (y ~ x)",
+         x = "Str-Browser LogFC",
+         y = "Hunt LogFC") +
+    coord_equal() +
+    theme_bw()
+```
+
+The plot below takes genes from the Wheeler chemosensory gene list that with LogFC results in both the Browser and Hunt databases, and plots the two sets against each other.  
+```{r echo = FALSE}
+plotting.set <- dplyr::filter(GPCR.Browser.dat, !is.na(logFC)) %>%
+    inner_join(GPCR.Hunt.dat, by = "geneID")
+ggplot(plotting.set, aes(x = logFC.x, y = logFC.y)) +
+    geom_smooth(method=lm, color = 'red', formula = "y ~ x") +
+    geom_point(shape=16, size=3, alpha = 0.8) +
+    labs(title = "Wheeler Gene Set Results: Str-Browser vs Hunt Data",
+         subtitle = "iL3 vs FLF",
+         caption = "points = genes; red line = linear model (y ~ x)",
+         x = "Str-Browser LogFC",
+         y = "Hunt LogFC")+
+    coord_equal() +
+    theme_bw()
+```
+

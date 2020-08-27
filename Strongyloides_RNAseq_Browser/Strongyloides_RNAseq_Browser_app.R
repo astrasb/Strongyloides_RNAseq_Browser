@@ -50,12 +50,19 @@ ui <- fluidPage(
 server <- function(input, output, session) {
     vals<-reactiveValues()
     
+    ## Initialize Species ----
+    ## GW: Load species data in Gene-wise tab
+    ## LS: Load species data in Life-stage tab
+    source('Server/load_Species.R', local = T)$value
+    
     ## GW: Gene Expression Across Life Stage ----
     
     ## GW: Generate/Reset Gene File Upload
     ## GW: Clear Genes
+    ## GW/LS: Reset Elements on Tab Change 
     source('Server/reset_state.R', local = T)
     
+    ## GW: Generate Main Gene Input Panel
     ## GW: Parse Gene Inputs
     source('Server/parse_geneIDs_gw.R', local = T)
     
@@ -72,11 +79,10 @@ server <- function(input, output, session) {
     source('Server/plot_save_gene_expression_gw.R', local = T)
     
     
-    
-    
     ## GW: Pairwise Comparisons Across Life Stage ----
 
     ## GW: Clear Comparison Selections
+    ## GW: Generate Comparison Selection Boxes
     ## GW: Parse the inputs
     ## GW: Generate Responsive Selection for Life Stage to Display
     source('Server/initialize_pairwiseComparisons_gw.R', local = T)
@@ -94,10 +100,11 @@ server <- function(input, output, session) {
     ## GW: Save Excel Tables with DEG Tables
     source('Server/plot_save_DEGs_gw.R', local = T)
     
-    ## GW: Pairwise Comparisons Across Life Stage ----
+    ## LS: Pairwise Comparisons Across Life Stage ----
     ## LS: Clear Comparison Selections
     ## LS: Pairwise comparisons Across Life Stages
     ## LS: Generate Responsive Selection for Life Stage to Display
+    ## LS: Generate Legend Explaining the Life Stages ----
     source('Server/initialize_pairwiseComparisons_ls.R', local = T)
     
     ## LS: Set Contrast Matrix and Fit the Linear Model
@@ -121,7 +128,9 @@ server <- function(input, output, session) {
     
     ## Output Options ----
     outputOptions(output, "downloadbuttonsGenes", suspendWhenHidden = FALSE)
-    outputOptions(output, "contrastDisplaySelection_GW", suspendWhenHidden = FALSE)
+    outputOptions(output, "volcano_GW", suspendWhenHidden = FALSE)
+    outputOptions(output, "pairwiseSelector_GW", suspendWhenHidden = FALSE)
+    outputOptions(output, "pairwiseSelector_LS", suspendWhenHidden = FALSE)
     
     session$onSessionEnded(stopApp)
 }
