@@ -131,9 +131,15 @@ parse_contrasts_LS<-eventReactive(input$goLS,{
         vals$multipleCorrection_LS <- F
     }
    
-    # Produces error message if target and contrasts are not different. Only really works if there is a single target and contrast. Might need to use a vector approach to validate cases where there are multiple columns/rows in target and contrast stage objects. Especially need to be cautious about cases where the values are both NULL.
+    # Produces error message if any target and contrast inputs from drop down menus are identical (even if multiple inputs here)
+    # Also catches any identical inputs in target vs contrast for multiple comparison input box
+    # by removing the identical empty strings "" in both target and contrast conditions
     validate(
-        need(targetStage != contrastStage, "Target and Contrast selections are identical. Please select new options.")
+        need(
+            isTruthy(length(intersect((targetStage[targetStage != ""]), contrastStage
+            )) < 1),
+            "Target and Contrast selections are identical. Please select new options."
+        )
     )
     
     vals$targetStage_LS <- targetStage 
