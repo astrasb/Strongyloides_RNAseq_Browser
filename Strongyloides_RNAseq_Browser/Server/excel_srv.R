@@ -1,5 +1,5 @@
 generate_excel_report <- function(comparison, tbl,
-                                  name = "S. stercoralis RNAseq Differential Gene Expression",
+                                  name = "RNAseq Differential Gene Expression",
                                   filename_prefix = "Stercoralis_RNAseq_Data_",
                                   subtitle_prefix = "Contrast:"){
    

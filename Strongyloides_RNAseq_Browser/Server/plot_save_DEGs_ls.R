@@ -7,6 +7,7 @@ pull_DEGs_LS <- reactive({
         vals$displayedComparison_LS <- match(input$displayedComparison_LS,
                                              vals$comparison_LS, nomatch = 1)
     } else {vals$displayedComparison_LS <- 1}
+    
     #### Volcano Plots
     vplot <- ggplot(vals$list.highlight.tbl_LS[[vals$displayedComparison_LS]]) +
         aes(y=-log10(BH.adj.P.Val), x=logFC) +
@@ -36,26 +37,61 @@ pull_DEGs_LS <- reactive({
 })
 
 ## LS: Volcano Plot, Generate UI ----
-output$volcano_LS <- renderPlot({
+output$volcano_LS <- renderUI({
     req(input$goLS)
-    set_linear_model_LS()
-    pull_DEGs_LS()
+    parse_contrasts_LS()
+    req(vals$comparison_LS)
+    
+    output$volcano_UI_LS <- renderPlot({
+        set_linear_model_LS()
+        pull_DEGs_LS()
+    })
+   
+    panel(
+        heading = tagList(h5(shiny::icon("fas fa-mountain"),
+                             "Pairwise Differential Gene Expression: Volcano Plot")),
+        status = "primary",
+        withSpinner(plotOutput('volcano_UI_LS',
+                               hover = hoverOpts("plot_hover_LS",
+                                                 delay = 100,
+                                                 delayType = "debounce")),
+                    color = "#2C3E50"),
+        
+        uiOutput("hover_info_LS"),
+        
+        uiOutput("downloadVolcanoLS")
+    )
+    
 })
 
 ## LS: Save Volcano Plot ----
-output$downloadVolcano_LS <- downloadHandler(
-    filename = function(){
-        paste('VolcanoPlot_',vals$comparison_LS[vals$displayedComparison_LS], '_',Sys.Date(),'.pdf', sep='')
-    },
-    content = function(file){
-        pull_DEGs_LS()
-        ggsave(file,width = 11, height = 8, units = "in", device = "pdf", useDingbats=FALSE)
-    }
-)
+output$downloadVolcanoLS <- renderUI({
+    req(input$goLS,vals$comparison_LS)
+    
+    output$downloadVolcano_LS <- downloadHandler(
+        filename = function(){
+            paste('VolcanoPlot_',vals$comparison_LS[vals$displayedComparison_LS], '_',Sys.Date(),'.pdf', sep='')
+        },
+        content = function(file){
+            withProgress({
+                pull_DEGs_LS()
+                ggsave(file,width = 11, height = 8, units = "in", device = "pdf", useDingbats=FALSE)
+            },
+            message = "Saving Plot")
+        }
+    )
+    
+    downloadButton("downloadVolcano_LS",
+                   "Download Plot as PDF",
+                   class = "btn-primary")
+    
+})
+
 
 ## LS: Volcano Hover Info ----
 output$hover_info_LS <- renderUI({
-    req(vals$displayedComparison_LS)
+    req(vals$comparison_LS,vals$displayedComparison_LS)
+    
     pointer.df <- vals$list.highlight.tbl_LS[[vals$displayedComparison_LS]] %>%
         dplyr::mutate(log10.adj.P.Val = -log10(BH.adj.P.Val))
     
@@ -107,103 +143,109 @@ output$hover_info_LS <- renderUI({
 
 ## LS: Data Table of Differentially Expressed Genes ----
 assemble_DEGs_LS <- reactive({
-    req(vals$displayedComparison_LS)
-    tS<- vals$targetStage_LS[vals$displayedComparison_LS,
-                             ][vals$targetStage_LS[vals$displayedComparison_LS,
-                                                   ]!=""]
-    cS<- vals$contrastStage_LS[vals$displayedComparison_LS,
-                               ][vals$contrastStage_LS[vals$displayedComparison_LS,
+    req(vals$comparison_LS,vals$displayedComparison_LS)
+    
+    isolate({
+        tS<- vals$targetStage_LS[vals$displayedComparison_LS,
+                                 ][vals$targetStage_LS[vals$displayedComparison_LS,
                                                        ]!=""]
+        cS<- vals$contrastStage_LS[vals$displayedComparison_LS,
+                                   ][vals$contrastStage_LS[vals$displayedComparison_LS,
+                                                           ]!=""]
+        sample.num.tS <- sapply(tS, function(x) {colSums(vals$v.DEGList.filtered.norm$design)[[x]]}) %>% sum()
+        sample.num.cS <- sapply(cS, function(x) {colSums(vals$v.DEGList.filtered.norm$design)[[x]]}) %>% sum()
+        
+        
+        n_num_cols <- sample.num.tS + sample.num.cS + 5
+        
+        LS.datatable <- vals$list.highlight.tbl_LS[[vals$displayedComparison_LS]] %>%
+            DT::datatable(rownames = FALSE,
+                          caption = htmltools::tags$caption(
+                              style = 'caption-side: top; text-align: left; color: black',
+                              htmltools::tags$b('Differentially Expressed Genes in', 
+                                                htmltools::tags$em(input$selectSpecies_LS), 
+                                                gsub('-',' vs ',vals$comparison_LS[vals$displayedComparison_LS])),
+                              htmltools::tags$br(),
+                              "Threshold: p < ",
+                              adj.P.thresh, "; log-fold change > ",
+                              lfc.thresh,
+                              htmltools::tags$br(),
+                              'Values = log2 counts per million'),
+                          options = list(autoWidth = TRUE,
+                                         scrollX = TRUE,
+                                         scrollY = '300px',
+                                         scrollCollapse = TRUE,
+                                         order = list(n_num_cols-1, 
+                                                      'desc'),
+                                         searchHighlight = TRUE, 
+                                         pageLength = 25, 
+                                         lengthMenu = c("5",
+                                                        "10",
+                                                        "25",
+                                                        "50",
+                                                        "100"),
+                                         initComplete = htmlwidgets::JS(
+                                             "function(settings, json) {",
+                                             paste0("$(this.api().table().container()).css({'font-size': '", "10pt", "'});"),
+                                             "}"),
+                                         columnDefs = list(
+                                             list(
+                                                 targets = ((n_num_cols + 
+                                                                 1)),
+                                                 render = JS(
+                                                     "function(data, row) {",
+                                                     "data.toExponential(1);",
+                                                     "}")
+                                             ),
+                                             list(
+                                                 targets = ((n_num_cols + 
+                                                                 4):(n_num_cols + 
+                                                                         5)),
+                                                 render = JS(
+                                                     "function(data, type, row, meta) {",
+                                                     "return type === 'display' && data.length > 20 ?",
+                                                     "'<span title=\"' + data + '\">' + data.substr(0, 20) + '...</span>' : data;",
+                                                     "}")
+                                             ),
+                                             list(targets = "_all",
+                                                  class="dt-right")
+                                         )
+                                         
+                          )) 
+        LS.datatable <- LS.datatable %>%
+            DT::formatRound(columns=c(3:n_num_cols), 
+                            digits=3)
+        
+        LS.datatable <- LS.datatable %>%
+            DT::formatRound(columns=c(n_num_cols+2, 
+                                      n_num_cols+9,
+                                      n_num_cols+11), 
+                            digits=2)
+        
+        LS.datatable <- LS.datatable %>%
+            DT::formatSignif(columns=c(n_num_cols+1), 
+                             digits=3)
+        
+        LS.datatable
+    })
     
-    n_num_cols <- length(tS)*3 + length(cS)*3 + 5
-    
-    LS.datatable <- vals$list.highlight.tbl_LS[[vals$displayedComparison_LS]] %>%
-        DT::datatable(rownames = FALSE,
-                      caption = htmltools::tags$caption(
-                          style = 'caption-side: top; text-align: left; color: black',
-                          htmltools::tags$b('Differentially Expressed Genes in', 
-                                            htmltools::tags$em('S. stercoralis'), 
-                                            gsub('-',' vs ',vals$comparison_LS[vals$displayedComparison_LS])),
-                          htmltools::tags$br(),
-                          "Threshold: p < ",
-                          adj.P.thresh, "; log-fold change > ",
-                          lfc.thresh,
-                          htmltools::tags$br(),
-                          'Values = log2 counts per million'),
-                      options = list(autoWidth = TRUE,
-                                     scrollX = TRUE,
-                                     scrollY = '300px',
-                                     scrollCollapse = TRUE,
-                                     order = list(n_num_cols-1, 
-                                                  'desc'),
-                                     searchHighlight = TRUE, 
-                                     pageLength = 25, 
-                                     lengthMenu = c("5",
-                                                    "10",
-                                                    "25",
-                                                    "50",
-                                                    "100"),
-                                     initComplete = htmlwidgets::JS(
-                                         "function(settings, json) {",
-                                         paste0("$(this.api().table().container()).css({'font-size': '", "10pt", "'});"),
-                                         "}"),
-                                     columnDefs = list(
-                                         list(
-                                             targets = ((n_num_cols + 
-                                                             1)),
-                                             render = JS(
-                                                 "function(data, row) {",
-                                                 "data.toExponential(1);",
-                                                 "}")
-                                         ),
-                                         list(
-                                             targets = ((n_num_cols + 
-                                                             4):(n_num_cols + 
-                                                                     5)),
-                                             render = JS(
-                                                 "function(data, type, row, meta) {",
-                                                 "return type === 'display' && data.length > 20 ?",
-                                                 "'<span title=\"' + data + '\">' + data.substr(0, 20) + '...</span>' : data;",
-                                                 "}")
-                                         ),
-                                         list(targets = "_all",
-                                              class="dt-right")
-                                     )
-                                     
-                      )) 
-    LS.datatable <- LS.datatable %>%
-        DT::formatRound(columns=c(3:n_num_cols), 
-                        digits=3)
-    
-    LS.datatable <- LS.datatable %>%
-        DT::formatRound(columns=c(n_num_cols+2, 
-                                  n_num_cols+9,
-                                  n_num_cols+11), 
-                        digits=2)
-    
-    LS.datatable <- LS.datatable %>%
-        DT::formatSignif(columns=c(n_num_cols+1), 
-                         digits=3)
-    
-    LS.datatable
 })
 
 
 
-
 output$tbl_LS <- renderDT ({
-    req(input$goLS)
+    req(input$goLS,vals$list.highlight.tbl_LS)
     DEG.datatable_LS<-assemble_DEGs_LS()
     DEG.datatable_LS
 })
 
 ## LS: Save Excel Tables with DEG Tables ----
 output$downloadbuttonLS <- renderUI({
-    req(input$goLS)
-    req(vals$comparison_LS)
-    
+    req(input$goLS,vals$comparison_LS)
     output$generate_excel_report_LS <- generate_excel_report(vals$comparison_LS, 
-                                                             vals$list.highlight.tbl_LS)
+                                                             vals$list.highlight.tbl_LS,
+                                                             name = paste(input$selectSpecies_LS,
+                                                                          "RNAseq Differential Gene Expression"))
     downloadButton("generate_excel_report_LS",
                    "Download DEG Tables",
                    class = "btn-primary")

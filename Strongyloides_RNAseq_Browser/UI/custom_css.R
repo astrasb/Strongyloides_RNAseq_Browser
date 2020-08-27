@@ -79,6 +79,14 @@ tags$head(
     color: white;
     }
     
+    #contrastDisplaySelectionPanel_LS .shiny-output-error-validation {
+    color: white;
+    }
+    
+    #contrastDisplaySelectionPanel_GW .shiny-output-error-validation {
+    color: white;
+    }
+    
     #lifeStageLegend_GW .shiny-html-output{
     font-size: 12px}
 
