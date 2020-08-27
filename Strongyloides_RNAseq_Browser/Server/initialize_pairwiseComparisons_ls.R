@@ -39,7 +39,7 @@ output$pairwiseSelector_LS<- renderUI({
             textAreaInput('multiContrasts_LS',
                           NULL,
                           # (h6('Type comma-separated comparisons using format: (Target)-(Contrast)',
-                              # tags$br(),tags$em('e.g. iL3-PF, (iL3+iL3a)-(PF+FLF)', style = "color: #7b8a8b"))),
+                          # tags$br(),tags$em('e.g. iL3-PF, (iL3+iL3a)-(PF+FLF)', style = "color: #7b8a8b"))),
                           rows = 5, 
                           resize = "vertical"),
             
@@ -69,11 +69,12 @@ output$pairwiseSelector_LS<- renderUI({
 
 ## LS: Pairwise comparisons Across Life Stages ----
 parse_contrasts_LS<-eventReactive(input$goLS,{
-    
-    # Produces error message if target and contrasts are not different
+    # Make sure there are sufficient inputs
     validate(
-        need(input$selectTarget_LS != input$selectContrast_LS, "Target and Contrast selections are identical. Please select new options.")
+        need((isTruthy(input$multiContrasts_LS) || (isTruthy(input$selectTarget_LS) && isTruthy(input$selectContrast_LS))),
+             "Not enough inputs were provided to generate contrasts. Please re-select.")
     )
+    
     
     if (isTruthy(input$multiContrasts_LS)) {
         comparison <- input$multiContrasts_LS %>%
@@ -129,6 +130,11 @@ parse_contrasts_LS<-eventReactive(input$goLS,{
                             sep = "-")
         vals$multipleCorrection_LS <- F
     }
+   
+    # Produces error message if target and contrasts are not different. Only really works if there is a single target and contrast. Might need to use a vector approach to validate cases where there are multiple columns/rows in target and contrast stage objects. Especially need to be cautious about cases where the values are both NULL.
+    validate(
+        need(targetStage != contrastStage, "Target and Contrast selections are identical. Please select new options.")
+    )
     
     vals$targetStage_LS <- targetStage 
     vals$contrastStage_LS <- contrastStage

@@ -83,7 +83,7 @@ tags$head(
     color: white;
     }
     
-    #contrastDisplaySelectionPanel_GW .shiny-output-error-validation {
+    #contrastSelectionPanel_GW .shiny-output-error-validation {
     color: white;
     }
     

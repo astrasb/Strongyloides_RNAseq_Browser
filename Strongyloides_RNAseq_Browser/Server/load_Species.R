@@ -13,7 +13,6 @@ observeEvent(input$speciesGW, {
     updateSelectInput(session, "selectContrast_GW", selected = "")
     updateSelectInput(session, "selectTarget_GW", selected = "")
     updateTextAreaInput(session,"multiContrasts_GW",value = "")
-    removeUI(selector = "#contrastDisplaySelectionPanel_GW")
     vals$comparison_GW <- NULL
     
     species <- switch(input$selectSpecies_GW,
@@ -21,15 +20,20 @@ observeEvent(input$speciesGW, {
                       `S. ratti` = 'Sr')
     
     withProgress({
+        
         # Import a variance-stabilized DEGList created by voom transformation command.
         # Outputs: E = normalized CPMexpression values on the log2 scale
         load(file = paste0("./Data/",species,"_vDEGList"))
         vals$v.DEGList.filtered.norm <- v.DEGList.filtered.norm
         
+        setProgress(value = .25)
+        
         vals$target.contrast.options <- vals$v.DEGList.filtered.norm$targets$group
         # Import a tidy dataframe containing gene annotations for all genes in the genome (including those that are excluded from this database.)
         load(file = paste0("./Data/",species,"_geneAnnotations"))
         vals$annotations <- as_tibble(annotations, rownames = "geneID")
+        
+        setProgress(value = .5)
         
         # Parse vDEGList into a tibble containing Log2CPM information
         vals$Log2CPM<-v.DEGList.filtered.norm$E %>%
@@ -44,8 +48,13 @@ observeEvent(input$speciesGW, {
         vals$diffGenes.df <- v.DEGList.filtered.norm$E %>%
             as_tibble(rownames = "geneID", .name_repair = "unique")
         
+        setProgress(value = .75)
+        
         ## Fit a linear model to the data ----
         vals$fit <- lmFit(v.DEGList.filtered.norm, v.DEGList.filtered.norm$design)
+        
+        setProgress(value = 1)
+        
     }, message = "Loading Species Database")
     
     
@@ -69,9 +78,13 @@ observeEvent(input$speciesLS, {
         load(file = paste0("./Data/",species,"_vDEGList"))
         vals$v.DEGList.filtered.norm <- v.DEGList.filtered.norm
         
+        setProgress(value = .25)
+        
         # Import a tidy dataframe containing gene annotations for all genes in the genome (including those that are excluded from this database.)
         load(file = paste0("./Data/",species,"_geneAnnotations"))
         vals$annotations <- as_tibble(annotations, rownames = "geneID")
+        
+        setProgress(value = .5)
         
         # Parse vDEGList into a tibble containing Log2CPM information
         vals$Log2CPM<-v.DEGList.filtered.norm$E %>%
@@ -86,8 +99,12 @@ observeEvent(input$speciesLS, {
         vals$diffGenes.df <- v.DEGList.filtered.norm$E %>%
             as_tibble(rownames = "geneID", .name_repair = "unique")
         
+        setProgress(value = .75)
+        
         ## Fit a linear model to the data ----
         vals$fit <- lmFit(v.DEGList.filtered.norm, v.DEGList.filtered.norm$design)
+        
+        setProgress(value = 1)
     }, message = "Loading Species Database")
     
     

@@ -54,9 +54,9 @@ pull_DEGs_GW <- reactive({
 
 ## GW: Volcano Plot, Generate UI  ----
 output$volcano_GW <- renderUI({
-    req(input$goLifeStage_GW, vals$genelist)
+    
     parse_contrasts_GW()
-    req(vals$comparison_GW)
+    req(vals$genelist,vals$comparison_GW)
     
     output$volcano_UI_GW <- renderPlot({
     set_linear_model_GW()
@@ -73,7 +73,8 @@ output$volcano_GW <- renderUI({
                                                          delay = 100, 
                                                          delayType = "debounce")),
                             
-                            color = "#2C3E50"),
+                            color = "#2C3E50",
+                            type = 7),
                 uiOutput("hover_info"),
                 uiOutput("downloadVolcanoGW")
         )

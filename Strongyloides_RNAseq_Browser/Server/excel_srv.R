@@ -10,11 +10,14 @@ temp <- downloadHandler(
     },
     
     content = function(file){
-        removeModal() 
+        
+      withProgress({
+      removeModal() 
         
         # Workbook
         to_download <<- createWorkbook()
         
+        setProgress(.25)
         
         # Write Data
         
@@ -33,7 +36,7 @@ temp <- downloadHandler(
                     paste0("Report generated on ", format(Sys.Date(), "%B %d, %Y"))
                 )
             )
-            
+             
             ## Sheet Data
             writeData(
                 to_download,
@@ -64,11 +67,12 @@ temp <- downloadHandler(
             )
             
         })
-            
-        withProgress(
-            saveWorkbook(to_download, file),
-            message = "Generating Excel Report")
+        setProgress(.75)
+            saveWorkbook(to_download, file)
+            setProgress(1)
+      },
+      message = "Generating Excel Report"
+      )
     }
 )
-
 }

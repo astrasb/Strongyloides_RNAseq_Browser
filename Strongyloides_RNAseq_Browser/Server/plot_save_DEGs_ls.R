@@ -55,7 +55,8 @@ output$volcano_LS <- renderUI({
                                hover = hoverOpts("plot_hover_LS",
                                                  delay = 100,
                                                  delayType = "debounce")),
-                    color = "#2C3E50"),
+                    color = "#2C3E50",
+                    type = 7),
         
         uiOutput("hover_info_LS"),
         
@@ -74,7 +75,9 @@ output$downloadVolcanoLS <- renderUI({
         },
         content = function(file){
             withProgress({
+                setProgress(.25)
                 pull_DEGs_LS()
+                setProgress(.75)
                 ggsave(file,width = 11, height = 8, units = "in", device = "pdf", useDingbats=FALSE)
             },
             message = "Saving Plot")

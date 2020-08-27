@@ -71,7 +71,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                         ),
                         column(2,
                                conditionalPanel(condition = "output.downloadbuttonsGenes && input.goLifeStage_GW !=0",
-                               id = "contrastDisplaySelectionPanel_GW",
+                               id = "contrastSelectionPanel_GW",
                                uiOutput('contrastDisplaySelection_GW')
                                )
       
@@ -84,7 +84,8 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                                     status = "primary",
                                                     
                                                     tagList(withSpinner(DTOutput('highlight.df'),
-                                                                        color = "#2C3E50"),
+                                                                        color = "#2C3E50",
+                                                                        type = 7),
                                                             
                                                             uiOutput("downloadbuttonGW")        
                                                     )
@@ -145,7 +146,8 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                                                          "Pairwise Differential Gene Expression: Table")),
                                                     status = "primary",
                                                     withSpinner(DTOutput('tbl_LS'),
-                                                                color = "#2C3E50"),
+                                                                color = "#2C3E50",
+                                                                type = 7),
                                                     uiOutput('downloadbuttonLS')
                                                 )
                                )
@@ -161,7 +163,8 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                                                          "Gene Set Enrichment Analysis: Plot")),
                                                     status = "primary",
                                                     withSpinner(plotOutput('GSEAPlot_LS'),
-                                                                color = "#2C3E50"),
+                                                                color = "#2C3E50",
+                                                                type = 7),
                                                     downloadButton("downloadGSEAPlot_LS",
                                                                    "Download Plot as PDF",
                                                                    class = "btn-primary")
@@ -174,7 +177,8 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                                                          "Gene Set Enrichment Analysis: Data Table")),
                                                     status = "primary",
                                                     withSpinner(DTOutput('GSEATbl_LS'),
-                                                                color = "#2C3E50"),
+                                                                color = "#2C3E50",
+                                                                type = 7),
                                                     uiOutput("downloadGSEAtbl_LS")
                                                 )))
                     )

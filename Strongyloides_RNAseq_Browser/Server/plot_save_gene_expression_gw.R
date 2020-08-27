@@ -184,7 +184,8 @@ observeEvent(input$displayedGene,{
             ui = tagList(div(id = "CPMPlotlydiv",
                              h5("Log2 Counts Per Million (CPM) Expression Across Life Stages"),
                              withSpinner(plotlyOutput('CPMPlotly'),
-                                         color = "#2C3E50")
+                                         color = "#2C3E50",
+                                         type = 7)
             ))
         )
         removeUI(
@@ -205,7 +206,8 @@ observeEvent(input$displayedGene,{
             ui = tagList(div(id = "CPMTablediv",
                              h5("Mean Log2 Counts Per Million (CPM) Expression Across Life Stages"),
                              withSpinner(DTOutput('CPM.datatable'),
-                                         color = "#2C3E50")
+                                         color = "#2C3E50",
+                                         type = 7)
             ))
         )
         removeUI(
@@ -225,7 +227,8 @@ observeEvent(input$displayedGene,{
             where = "beforeBegin",
             ui = tagList(div(id = "CPMdiv",
                              withSpinner(plotOutput('CPM'),
-                                         color = "#2C3E50")
+                                         color = "#2C3E50",
+                                         type = 7)
             ))
         )
         removeUI(

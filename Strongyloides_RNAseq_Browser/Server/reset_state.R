@@ -45,7 +45,6 @@ observeEvent(input$resetGenes, {
          updateSelectInput(session, "selectContrast_GW", selected = "")
          updateSelectInput(session, "selectTarget_GW", selected = "")
          updateTextAreaInput(session,"multiContrasts_GW",value = "")
-         removeUI(selector = "#contrastDisplaySelectionPanel_GW")
          vals$comparison_GW <- NULL
          updateSelectInput(session, "selectContrast_LS", selected = "")
          updateSelectInput(session, "selectTarget_LS", selected = "")

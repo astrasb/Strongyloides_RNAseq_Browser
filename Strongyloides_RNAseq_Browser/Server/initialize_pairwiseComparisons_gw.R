@@ -74,13 +74,11 @@ output$pairwiseSelector_GW<- renderUI({
 
 ## GW: Parse the inputs ----
 parse_contrasts_GW <- eventReactive(input$goLifeStage_GW,{
-    
-    # Produces error message if target and contrasts are not different
+    # Make sure there are sufficient inputs
     validate(
-        need(input$selectTarget_GW != input$selectContrast_GW, "Target and Contrast selections are identical. Please select new options.")
+        need((isTruthy(input$multiContrasts_GW) || (isTruthy(input$selectTarget_GW) && isTruthy(input$selectContrast_GW))),
+             "Not enough inputs were provided to generate contrasts. Please re-select.")
     )
-    
-    req(isTruthy(input$multiContrasts_GW) || (isTruthy(input$selectTarget_GW) && isTruthy(input$selectContrast_GW)))
     if (isTruthy(input$multiContrasts_GW)) {
         comparison <- input$multiContrasts_GW %>%
             gsub(" ", "", ., fixed = TRUE) %>%
@@ -138,6 +136,11 @@ parse_contrasts_GW <- eventReactive(input$goLifeStage_GW,{
         vals$multipleCorrection_GW <- F
     }
     
+    # Produces error message if target and contrasts are not different. Only really works if there is a single target and contrast. Might need to use a vector approach to validate cases where there are multiple columns/rows in target and contrast stage objects. Especially need to be cautious about cases where the values are both NULL.
+    validate(
+        need(targetStage != contrastStage, "Target and Contrast selections are identical. Please select new options.")
+    )
+    
     vals$targetStage_GW <- targetStage 
     vals$contrastStage_GW <- contrastStage
     vals$limmacontrast_GW <- comparison
@@ -147,9 +150,8 @@ parse_contrasts_GW <- eventReactive(input$goLifeStage_GW,{
 
 ## GW: Generate Responsive Selection for Life Stage to Display ----
 output$contrastDisplaySelection_GW <- renderUI({
-    req(input$goLifeStage_GW, vals$genelist)
-    
     comparison <- parse_contrasts_GW()
+    req(vals$genelist)
     isolate({
         panel(
             heading = tagList(h5(shiny::icon("fas fa-filter"),
