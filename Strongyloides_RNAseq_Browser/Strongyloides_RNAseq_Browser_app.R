@@ -24,6 +24,7 @@ suppressPackageStartupMessages({
     library(openxlsx)
     library(egg)
     library(dendextend)
+    library(vctrs)
     library(clusterProfiler) # provides a suite of tools for functional enrichment analysis
     source("Server/ggheatmap_local.R")
     source("Server/calc_DEG_tbl.R")
