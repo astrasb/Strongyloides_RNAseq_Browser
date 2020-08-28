@@ -3,13 +3,14 @@ generateGenePlot <- reactive({
     req(vals$genelist)
     req(input$displayedGene)
     req(vals$genelist.Log2CPM)
+    req(vals$v.DEGList.filtered.norm)
     
     # Set gene to display
     if (input$displayedGene == "All Genes" | input$displayedGene == "Data Table"){
         vals$gene_of_interest <- vals$genelist$geneID
     } else vals$gene_of_interest <- input$displayedGene
-    
-    if (length(vals$gene_of_interest) == 1) {
+   
+    if (length(vals$gene_of_interest) == 1 && input$displayedGene != "Data Table") {
         # Plot Log2CPM values for an individual gene
         gene_vals <- vals$genelist.Log2CPM %>%
             dplyr::filter(geneID == vals$gene_of_interest)
@@ -25,12 +26,10 @@ generateGenePlot <- reactive({
             theme(aspect.ratio=2/3) 
         p 
     } else if (input$displayedGene == "Data Table") {
-        
-        
         excluded.genes <- dplyr::anti_join(vals$submitted.genelist, 
                                            vals$genelist,
                                            by = "geneID") %>%
-            left_join(annotations, by = "geneID") # Add gene annotations
+            left_join(vals$annotations, by = "geneID") # Add gene annotations
         
         gene_vals <- vals$genelist.Log2CPM %>%
             dplyr::filter(geneID %in% vals$gene_of_interest) %>%
@@ -38,43 +37,45 @@ generateGenePlot <- reactive({
             pivot_wider(names_from = life_stage,
                         id_cols = geneID,
                         values_from = mean) %>%
-            left_join(annotations, by = "geneID") %>%
+            left_join(vals$annotations, by = "geneID") %>%
+            dplyr::relocate(UniProtKB, Description, InterPro, GO_term, Str_geneID, Str_percent_homology, Ce_geneID, Ce_percent_homology, .after = last_col())  %>%
+            dplyr::relocate(ends_with("WBgeneID"), .before = Str_geneID)%>%
             {suppressMessages(dplyr::full_join(.,excluded.genes))} 
+        
+        
         n_num_cols <- ncol(gene_vals)
-            #browser()
+        n_num_values <- nlevels(vals$v.DEGList.filtered.norm$targets$group)
+        
         gene_vals.datatable <- gene_vals %>%
             DT::datatable(rownames = FALSE,
-                          # caption = htmltools::tags$caption(
-                          #     style = 'caption-side: top; text-align: left; color: black',
-                          #     htmltools::tags$b('Log2CPM Expression')),
-                           options = list(autoWidth = TRUE,
-                                          scrollX = TRUE,
-                                          scrollY = '300px',
-                                          scrollCollapse = TRUE,
-                                          searchHighlight = TRUE, 
-                                          pageLength = 25, 
-                                          lengthMenu = c("5",
-                                                         "10",
-                                                         "25",
-                                                         "50",
-                                                         "100"),
-                                          initComplete = htmlwidgets::JS(
-                                              "function(settings, json) {",
-                                              paste0("$(this.api().table().container()).css({'font-size': '", "10pt", "'});"),
-                                              "}"),
-                                          columnDefs = list(
-                                              list(
-                                                  targets = ((n_num_cols -
-                                                                  2):(n_num_cols-1)),
-                                                  render = JS(
-                                                      "function(data, type, row, meta) {",
-                                                      "return type === 'display' && data.length > 20 ?",
-                                                      "'<span title=\"' + data + '\">' + data.substr(0, 20) + '...</span>' : data;",
-                                                      "}")
-                                              ),
-                                              list(targets = "_all",
-                                                   class="dt-right")
-                                          ),
+                          options = list(autoWidth = TRUE,
+                                         scrollX = TRUE,
+                                         scrollY = '300px',
+                                         scrollCollapse = TRUE,
+                                         searchHighlight = TRUE, 
+                                         pageLength = 25, 
+                                         lengthMenu = c("5",
+                                                        "10",
+                                                        "25",
+                                                        "50",
+                                                        "100"),
+                                         initComplete = htmlwidgets::JS(
+                                             "function(settings, json) {",
+                                             paste0("$(this.api().table().container()).css({'font-size': '", "10pt", "'});"),
+                                             "}"),
+                                         columnDefs = list(
+                                             list(
+                                                 targets = ((n_num_cols -
+                                                                 7):(n_num_cols-6)),
+                                                 render = JS(
+                                                     "function(data, type, row, meta) {",
+                                                     "return type === 'display' && data.length > 20 ?",
+                                                     "'<span title=\"' + data + '\">' + data.substr(0, 20) + '...</span>' : data;",
+                                                     "}")
+                                             ),
+                                             list(targets = "_all",
+                                                  class="dt-right")
+                                         ),
                                          rowCallback = JS(c(
                                              "function(row, data){",
                                              "  for(var i=0; i<data.length; i++){",
@@ -84,31 +85,34 @@ generateGenePlot <- reactive({
                                              "    }",
                                              "  }",
                                              "}"
-                                         ))
-
-                           )
+                                         )
+                                         )
+                                         
                           )
+            )
         gene_vals.datatable <-  gene_vals.datatable %>%
-            DT::formatRound(columns=c(2:8), 
+            DT::formatRound(columns=c(2:(n_num_values+1)), 
                             digits=3)
         
         gene_vals.datatable <-  gene_vals.datatable %>%
-            DT::formatRound(columns=c(n_num_cols-4, 
-                                      n_num_cols-6), 
+            DT::formatRound(columns=c(n_num_cols, 
+                                      n_num_cols-2), 
                             digits=2)
         
     } else {
         # Make a heatmap for all the genes using the Log2CPM values
         myheatcolors <- RdBu(75)
-        diffGenes <- diffGenes.df %>%
+        diffGenes <- vals$diffGenes.df %>%
             dplyr::select(!geneID) %>%
             as.matrix()
-        rownames(diffGenes) <- rownames(v.DEGList.filtered.norm$E)
+        rownames(diffGenes) <- rownames(vals$v.DEGList.filtered.norm$E)
         clustColumns <- hclust(as.dist(1-cor(diffGenes, method="spearman")), method="complete")
         subset.diffGenes<- diffGenes[vals$gene_of_interest,]
-        colnames(subset.diffGenes) <- paste0(v.DEGList.filtered.norm$targets$group, 
-                                             ".", 
-                                             rep(1:3,7))
+        
+        colnames(subset.diffGenes) <- paste0(vals$v.DEGList.filtered.norm$targets$group,
+                                             ".",
+                                             vals$v.DEGList.filtered.norm$targets$samples)
+        colnames(subset.diffGenes) <- vec_as_names(as.character(vals$v.DEGList.filtered.norm$targets$group), repair = "unique", quiet = T)
         clustRows <- hclust(as.dist(1-cor(t(subset.diffGenes), 
                                           method="pearson")), 
                             method="complete") 
@@ -119,11 +123,11 @@ generateGenePlot <- reactive({
         
         hovertext <- as.data.frame(subset.diffGenes) %>%
             round(digits = 2)
-        colnames(hovertext) <- v.DEGList.filtered.norm$targets$samples
+        colnames(hovertext) <- vals$v.DEGList.filtered.norm$targets$samples
         hovertext[] <- lapply(seq_along(hovertext), function(x){
             paste0("GeneID: ", rownames(hovertext), "<br>",
                    "Log2CPM: ", hovertext[,x], "<br>",
-                   "Life Stage: ", v.DEGList.filtered.norm$targets$group[x],
+                   "Life Stage: ", vals$v.DEGList.filtered.norm$targets$group[x],
                    "<br>",
                    "Sample: ", colnames(hovertext)[x])
         })
@@ -179,7 +183,8 @@ observeEvent(input$displayedGene,{
             ui = tagList(div(id = "CPMPlotlydiv",
                              h5("Log2 Counts Per Million (CPM) Expression Across Life Stages"),
                              withSpinner(plotlyOutput('CPMPlotly'),
-                                         color = "#2C3E50")
+                                         color = "#2C3E50",
+                                         type = 7)
             ))
         )
         removeUI(
@@ -200,7 +205,8 @@ observeEvent(input$displayedGene,{
             ui = tagList(div(id = "CPMTablediv",
                              h5("Mean Log2 Counts Per Million (CPM) Expression Across Life Stages"),
                              withSpinner(DTOutput('CPM.datatable'),
-                                         color = "#2C3E50")
+                                         color = "#2C3E50",
+                                         type = 7)
             ))
         )
         removeUI(
@@ -220,7 +226,8 @@ observeEvent(input$displayedGene,{
             where = "beforeBegin",
             ui = tagList(div(id = "CPMdiv",
                              withSpinner(plotOutput('CPM'),
-                                         color = "#2C3E50")
+                                         color = "#2C3E50",
+                                         type = 7)
             ))
         )
         removeUI(
@@ -242,26 +249,26 @@ output$downloadGenePlot <- downloadHandler(
         withProgress ({
             
             if (input$displayedGene == "All Genes" | input$displayedGene == "Data Table") {
-                
                 # Make a heatmap for all the genes using the Log2CPM values
                 myheatcolors <- RdBu(75)
                 
-                diffGenes <- diffGenes.df %>%
+                diffGenes <- vals$diffGenes.df %>%
                     dplyr::select(!geneID) %>%
                     as.matrix()
-                rownames(diffGenes) <- rownames(v.DEGList.filtered.norm$E)
-                colnames(diffGenes) <- as.character(v.DEGList.filtered.norm$targets$group)
+                rownames(diffGenes) <- rownames(vals$v.DEGList.filtered.norm$E)
+                colnames(diffGenes) <- as.character(vals$v.DEGList.filtered.norm$targets$group)
                 clustColumns <- hclust(as.dist(1-cor(diffGenes, method="spearman")), method="complete")
                 subset.diffGenes<- diffGenes[vals$gene_of_interest,]
-                colnames(subset.diffGenes) <- paste0(v.DEGList.filtered.norm$targets$group, 
+                colnames(subset.diffGenes) <- paste0(vals$v.DEGList.filtered.norm$targets$group, 
                                                      "_", 
-                                                     v.DEGList.filtered.norm$targets$samples)
+                                                     vals$v.DEGList.filtered.norm$targets$samples)
                 clustRows <- hclust(as.dist(1-cor(t(subset.diffGenes), 
                                                   method="pearson")), 
                                     method="complete") 
                 par(cex.main=1.2)
                 
                 showticklabels <- if(length(vals$gene_of_interest)<20){c(TRUE,TRUE)} else {c(TRUE,FALSE)}
+                
                 
                 p<-ggheatmap_local(subset.diffGenes,
                                    colors = rev(myheatcolors),
@@ -301,30 +308,36 @@ output$downloadGenePlot <- downloadHandler(
 output$downloadbuttonsGenes <- renderUI({
     req(vals$genelist)
     req(vals$genelist.Log2CPM)
-    req(vals$HeatmapRowOrder)
+    if (nrow(vals$genelist)>1) {req(vals$HeatmapRowOrder)}
     isolate({
         
-        vals$genelist.Log2CPM$sampleID <- rep(as.character(v.DEGList.filtered.norm$targets$samples), 
+        vals$genelist.Log2CPM$sampleID <- rep(as.character(vals$v.DEGList.filtered.norm$targets$samples), 
                                               times =  nrow(vals$genelist))
-        
-        row.order <- tibble(OldOrder = vals$HeatmapRowOrder,
-                            NewOrder = seq_along(vals$HeatmapRowOrder)) %>%
-            dplyr::arrange(OldOrder)
-        
-        col.order <- tibble(OldOrder = vals$HeatmapColOrder,
-                            NewOrder = seq_along(vals$HeatmapColOrder)) %>%
-            dplyr::arrange(desc(NewOrder))
-        
+       
         genelist.expression <-  vals$genelist.Log2CPM %>%
             left_join(vals$genelist, .,by = "geneID") %>%
             pivot_wider(id_cols = geneID,
                         names_from = c(life_stage,sampleID),
                         names_sep = "-",
-                        values_from = log2CPM) %>%
-            add_column(NewOrder = row.order$NewOrder, .before = "geneID") %>%
-            dplyr::arrange(NewOrder) %>%
-            dplyr::select(!NewOrder) %>%
-            .[c(1, col.order$OldOrder+1)] %>%
+                        values_from = log2CPM) 
+        
+        if (isTruthy(vals$HeatmapRowOrder)){
+            row.order <- tibble(OldOrder = vals$HeatmapRowOrder,
+                                NewOrder = seq_along(vals$HeatmapRowOrder)) %>%
+                dplyr::arrange(OldOrder)
+            
+            col.order <- tibble(OldOrder = vals$HeatmapColOrder,
+                                NewOrder = seq_along(vals$HeatmapColOrder)) %>%
+                dplyr::arrange(desc(NewOrder))
+            
+            genelist.expression <- genelist.expression %>%
+                add_column(NewOrder = row.order$NewOrder, .before = "geneID") %>%
+                dplyr::arrange(NewOrder) %>%
+                dplyr::select(!NewOrder) %>%
+                .[c(1, col.order$OldOrder+1)]
+        }
+        
+        genelist.expression <- genelist.expression %>%
             list("User-selected Genes" = . )
         
         # Add back on genes that were submitted by the user but don't appear in the list of genes for which there is available data.
@@ -336,19 +349,19 @@ output$downloadbuttonsGenes <- renderUI({
             dplyr::full_join(x,excluded.genes, by = "geneID")
         })
         
-       
         # Add gene annotations
         genelist.expression <-lapply(genelist.expression, function (x) {
-            annotations %>%
-            dplyr::relocate(UniProtKB, Description, InterPro, GO_term, Sr_geneID, Sr_WBgeneID, Sr_percent_homology, Ce_geneID, Ce_percent_homology, .after = geneID) %>%
-            dplyr::left_join(x,., by = "geneID") 
-                  
+            vals$annotations %>%
+                dplyr::relocate(UniProtKB, Description, InterPro, GO_term, Str_geneID, Str_percent_homology, Ce_geneID, Ce_percent_homology, .after = geneID)  %>%
+                dplyr::relocate(ends_with("WBgeneID"), .before = Str_geneID)%>%
+                dplyr::left_join(x,., by = "geneID") 
+            
         })
     })
     
     output$heatmap_data_download <- generate_excel_report(c("User-selected Genes"), 
                                                           genelist.expression,
-                                                          name = "S. stercoralis RNAseq Gene Expression",
+                                                          name = paste(input$selectSpecies_GW, "RNAseq Gene Expression"),
                                                           filename_prefix = "Gene_Expression_Data_",
                                                           subtitle_prefix = "Log2CPM Expression:")
     

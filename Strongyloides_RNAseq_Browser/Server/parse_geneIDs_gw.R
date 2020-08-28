@@ -1,14 +1,50 @@
+## GW: Generate Main Gene Input Panel ----
+output$genePanelinputs <- renderUI({
+    tagList(
+        panel(
+            id = "GeneInputBox",
+            heading = tagList(h5(shiny::icon("fas fa-dna"), "Step 1: Input Genes / Keywords")),
+            status = "primary",
+            ### GeneID (text box)
+            h5('Pick Genes', class = 'text-danger', style = "margin: 0px 0px 5px 0px"),
+            p(tags$em('Users may type gene stable IDs or keywords that will be matched against Wormbase Parasite Gene Descriptions, known C. elegans homologs, InterPro terms, and an Ensembl Compara database of gene families. Please separate search terms by a comma. Users may also upload a .csv file containing comma-separated gene stable IDs.', style = "color: #7b8a8b")),
+            p(tags$em(tags$b('Note: Please hit the Clear button between successive searches.', style = "color: #F39C12"))),
+            textAreaInput('idtext',
+                          h6('Gene Stable IDs or Keyword'),
+                          rows = 5, 
+                          resize = "vertical"),
+            
+            ### Upload list of GeneIDs
+            uiOutput('genefile_upload'),
+            
+            ### Action Button
+            actionButton('goGW',
+                         'Submit',
+                         #width = '50%',
+                         icon = icon("fas fa-share"),
+                         class = "btn-primary"),
+            
+            actionButton('resetGenes', 'Clear',
+                         icon = icon("far fa-trash-alt"))
+        )
+    )
+})
+
 ## GW: Parse Gene Inputs ----
 parse_ids <- eventReactive(input$goGW,{
     vals$genelist <- NULL
     vals$HeatmapRowOrder <- NULL
     validate(
-        need({isTruthy(input$loadfile) | isTruthy(input$idtext)}, "Please input gene ids")
+        need(isTruthy(vals$v.DEGList.filtered.norm), 
+             "Please re-select a species for analysis")
     )
     
+    validate(
+        need({isTruthy(input$loadfile) | isTruthy(input$idtext)}, "Please input gene ids")
+    )
     isolate({
         if (isTruthy(input$idtext)){
-            if (any(grepl('SSTP', input$idtext, ignore.case = TRUE))){
+            if (any(grepl('SSTP|SRAE', input$idtext, ignore.case = TRUE))){
                 # Text input matches SSTP values
                 genelist <- input$idtext %>%
                     gsub("\\s+", "", .) %>% #remove any number of whitespace
@@ -24,11 +60,18 @@ parse_ids <- eventReactive(input$goGW,{
                 
                 geneindex<-sapply(terms, function(y) {
                     grepl(gsub("^\\s+|\\s+$","",y), #remove any number of whitespace from start of end
-                          v.DEGList.filtered.norm$genes$Description,
+                          vals$v.DEGList.filtered.norm$genes$Description,
                           ignore.case = TRUE)
                 }) %>%
                     rowSums() %>%
                     as.logical()
+                
+                genelist <- vals$v.DEGList.filtered.norm$genes %>%
+                    rownames_to_column(var = "geneID") %>%
+                    dplyr::select(geneID)
+                ensComp<- ensComp %>%
+                    left_join(genelist, ., by = "geneID") %>%
+                    dplyr::relocate(gs_name, geneID)
                 
                 geneindex.ensembl<-sapply(terms, function(y) {
                     gsub("^\\s+|\\s+$","",y) %>%
@@ -44,7 +87,7 @@ parse_ids <- eventReactive(input$goGW,{
                     gsub("^\\s+|\\s+$","",y) %>%
                         paste0("\\<",.,"\\>") %>%
                         grepl(., 
-                              v.DEGList.filtered.norm$genes$Ce_geneID,
+                              vals$v.DEGList.filtered.norm$genes$Ce_geneID,
                               ignore.case = TRUE)
                 }) %>%
                     rowSums() %>%
@@ -54,7 +97,7 @@ parse_ids <- eventReactive(input$goGW,{
                     gsub("^\\s+|\\s+$","",y) %>%
                         paste0("\\<",.,"\\>") %>%
                         grepl(., 
-                              v.DEGList.filtered.norm$genes$InterPro,
+                              vals$v.DEGList.filtered.norm$genes$InterPro,
                               ignore.case = TRUE)
                 }) %>%
                     rowSums() %>%
@@ -62,7 +105,7 @@ parse_ids <- eventReactive(input$goGW,{
                 
                 geneindex <- geneindex | geneindex.ensembl | geneindex.Cehomologs | geneindex.InterPro
                 
-                genelist <- v.DEGList.filtered.norm$genes %>%
+                genelist <- vals$v.DEGList.filtered.norm$genes %>%
                     rownames_to_column(var = "geneID") %>%
                     dplyr::select(geneID)
                 genelist <- genelist$geneID[geneindex] %>%
@@ -98,13 +141,13 @@ parse_ids <- eventReactive(input$goGW,{
         vals$submitted.genelist <- genelist %>%
             dplyr::filter(!grepl("gene", geneID, ignore.case = T))
         
-        # Remove genes from the list that aren't part of Log2CPM
+        # Remove genes from the list that aren't part of vals$Log2CPM
         # Ideally, this would trigger a notification to the user.
         genelist <- genelist %>%
-            dplyr::filter(geneID %in% Log2CPM$geneID)
+            dplyr::filter(geneID %in% vals$Log2CPM$geneID)
         
         vals$genelist <- genelist
-        vals$genelist.Log2CPM <- Log2CPM %>%
+        vals$genelist.Log2CPM <- vals$Log2CPM %>%
             dplyr::filter(geneID %in% genelist$geneID)
     })
 })

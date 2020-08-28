@@ -24,7 +24,8 @@ output$geneDisplaySelection_GW <- renderUI({
     if (length(vals$genelist$geneID)>1) {
         choices <- c("All Genes", "Data Table", vals$genelist$geneID)
         selected <- "All Genes"
-    } else choices <- vals$genelist$geneID
+    } else {
+        choices <- c(vals$genelist$geneID,"Data Table")}
     tagList(div(id = "geneDisplaySelectionPanel",
                 panel(
                     heading = tagList(h5(shiny::icon("fas fa-filter"),

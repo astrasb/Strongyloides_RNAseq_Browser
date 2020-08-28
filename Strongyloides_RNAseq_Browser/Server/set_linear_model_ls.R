@@ -1,14 +1,15 @@
-## GW: Set Contrast Matrix and Fit the Linear Model ----
+## LS: Set Contrast Matrix, Fit the Linear Model, Extract the Differentially Expressed Genes ----
 set_linear_model_LS <- eventReactive(input$goLS,{
+    req(vals$limmacontrast_LS)
     limma_ranking(vals$limmacontrast_LS, 
                   vals$targetStage_LS, 
                   vals$contrastStage_LS, 
                   vals$multipleCorrection_LS, 
                   NA, 
-                  vals, fit, 
-                  v.DEGList.filtered.norm, 
+                  vals, vals$fit, 
+                  vals$v.DEGList.filtered.norm, 
                   adj.P.thresh, 
-                  diffGenes.df)
+                  vals$diffGenes.df)
     
     vals$list.highlight.tbl_LS <- vals$list.highlight.tbl
 })
