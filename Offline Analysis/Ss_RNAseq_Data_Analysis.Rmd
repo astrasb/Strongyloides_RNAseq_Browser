@@ -277,8 +277,11 @@ myscores.Top10.interactive
 ```
 # Heatmap of Gene Expression Across Life Stages ---
 ```{r gene.expression.heatmap}
+suppressPackageStartupMessages({
 library(pheatmap)
 library(RColorBrewer)
+library(heatmaply)
+})
 # Make a heatmap for all the genes using the Log2CPM values
 
 diffGenes <- v.DEGList.filtered.norm$E %>%
@@ -620,8 +623,8 @@ ggplot(plotting.all, aes(x = logFC.x, y = logFC.y)) +
 
 ```
 
-# Cluster DEGs into functional modules ---
-```{r heatmaps, eval=TRUE, include=F}
+<!-- # Cluster DEGs into functional modules --- -->
+```{r heatmaps, eval=FALSE, include=FALSE}
 # Introduction to this chunk ----
 # this chunk creates heatmaps from differentially expressed genes;
 # it takes as input a list of genes that are differentially expressed in any life stage
@@ -643,7 +646,7 @@ suppressPackageStartupMessages({
 })
 
 # Choose a color pallette ----
-#myheatcolors <- rev(brewer.pal(name="RdBu", n=11))
+
 myheatcolors <- RdBu(75)
 
 # Select the comparison
@@ -781,7 +784,8 @@ ensComp.geneIDs <- read.xlsx ("../Data/Hunt_Parasite_Ensembl_Compara.xlsx",
   dplyr::select(-name) %>%
   dplyr::filter(grepl("SSTP_", geneID))
 
-ensComp.geneIDs$geneID <- str_remove_all(ensComp.geneIDs$geneID, "//.[0-9]$")
+ensComp.geneIDs$geneID <- str_remove_all(ensComp.geneIDs$geneID, "\\.[0-9]$")
+ensComp.geneIDs$geneID <- str_remove_all(ensComp.geneIDs$geneID, "[a-z]$")
 
 # Compare these genes to the list of genes in our filtered, normalized list ----
 # 
@@ -826,8 +830,6 @@ ensComp <- left_join(ensComp.geneIDs, ensComp.familyIDs, by = "Compara.family.id
 
 rm(ensComp.geneIDs, ensComp.familyIDs)
 
-# Save database of parasite Gene Sets for import into Shiny App. ----
-
 # Filter out genes that aren't part of our RNAseq dataset
 genelist <- v.DEGList.filtered.norm$genes %>%
   rownames_to_column(var = "geneID") %>%
@@ -836,9 +838,6 @@ ensComp<- ensComp %>%
   dplyr::rename(geneID = gene_symbol) %>%
   left_join(genelist, ., by = "geneID") %>%
   dplyr::relocate(gs_name, geneID)
-
-save(ensComp,
-     file = "../Outputs/parasiteGeneSets")
 
 # Generate rank ordered list of genes ----
 mydata.df.sub <- dplyr::select(list.myTopHits.df[[yy]], geneID, logFC)

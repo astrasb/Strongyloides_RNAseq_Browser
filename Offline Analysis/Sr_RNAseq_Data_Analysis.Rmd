@@ -188,8 +188,11 @@ p6
 ```
 # Heatmap of Gene Expression Across Life Stages ---
 ```{r gene.expression.heatmap}
+suppressPackageStartupMessages({
 library(pheatmap)
 library(RColorBrewer)
+library(heatmaply)
+})
 # Make a heatmap for all the genes using the Log2CPM values
 
 diffGenes <- v.DEGList.filtered.norm$E %>%
@@ -547,7 +550,7 @@ ggplot(plotting.all, aes(x = logFC.x, y = logFC.y)) +
 ```
 
 
-# Cluster DEGs into functional modules ---
+<!-- # Cluster DEGs into functional modules --- -->
 ```{r heatmaps, eval=FALSE, include=FALSE}
 # Introduction to this chunk ----
 # this chunk creates heatmaps from differentially expressed genes;
@@ -753,8 +756,6 @@ ensComp <- left_join(ensComp.geneIDs, ensComp.familyIDs, by = "Compara.family.id
 
 rm(ensComp.geneIDs, ensComp.familyIDs)
 
-# Save database of parasite Gene Sets for import into Shiny App. ----
-
 # Filter out genes that aren't part of our RNAseq dataset
 genelist <- v.DEGList.filtered.norm$genes %>%
   rownames_to_column(var = "geneID") %>%
@@ -764,8 +765,6 @@ ensComp<- ensComp %>%
   left_join(genelist, ., by = "geneID") %>%
   dplyr::relocate(gs_name, geneID)
 
-save(ensComp,
-     file = "../Outputs/Sr_parasiteGeneSets")
 
 # Generate rank ordered list of genes ----
 mydata.df.sub <- dplyr::select(list.myTopHits.df[[yy]], geneID, logFC)
