@@ -142,7 +142,7 @@ generateGenePlot <- reactive({
                        scale='row', #rows are scaled to have mean zero and standard deviation one. 
                        plot_method = "plotly",
                        branches_lwd = 0.2,
-                       key.title = "Row Z Score",
+                       key.title = "Row-scaled Z Score",
                        cexRow=1.2, cexCol=1.2,
                        xlab = "Note: column clustering performed across entire RNAseq dataset",
                        margins = c(100, 50, 10, 0),
