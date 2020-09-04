@@ -102,17 +102,22 @@ generateGenePlot <- reactive({
     } else {
         # Make a heatmap for all the genes using the Log2CPM values
         myheatcolors <- RdBu(75)
+        
         diffGenes <- vals$diffGenes.df %>%
-            dplyr::select(!geneID) %>%
+            dplyr::select(!geneID) 
+        
+        colnames(diffGenes) <- vals$v.DEGList.filtered.norm$target$group
+        diffGenes <- diffGenes %>%
+            avearrays() %>%
             as.matrix()
         rownames(diffGenes) <- rownames(vals$v.DEGList.filtered.norm$E)
         clustColumns <- hclust(as.dist(1-cor(diffGenes, method="spearman")), method="complete")
         subset.diffGenes<- diffGenes[vals$gene_of_interest,]
         
-        colnames(subset.diffGenes) <- paste0(vals$v.DEGList.filtered.norm$targets$group,
-                                             ".",
-                                             vals$v.DEGList.filtered.norm$targets$samples)
-        colnames(subset.diffGenes) <- vec_as_names(as.character(vals$v.DEGList.filtered.norm$targets$group), repair = "unique", quiet = T)
+        # colnames(subset.diffGenes) <- paste0(vals$v.DEGList.filtered.norm$targets$group,
+        #                                      ".",
+        #                                      vals$v.DEGList.filtered.norm$targets$samples)
+        #colnames(subset.diffGenes) <- vec_as_names(as.character(vals$v.DEGList.filtered.norm$targets$group), repair = "unique", quiet = T)
         clustRows <- hclust(as.dist(1-cor(t(subset.diffGenes), 
                                           method="pearson")), 
                             method="complete") 
@@ -123,13 +128,15 @@ generateGenePlot <- reactive({
         
         hovertext <- as.data.frame(subset.diffGenes) %>%
             round(digits = 2)
-        colnames(hovertext) <- vals$v.DEGList.filtered.norm$targets$samples
+        
+        #colnames(hovertext) <- vals$v.DEGList.filtered.norm$targets$samples
         hovertext[] <- lapply(seq_along(hovertext), function(x){
             paste0("GeneID: ", rownames(hovertext), "<br>",
                    "Log2CPM: ", hovertext[,x], "<br>",
-                   "Life Stage: ", vals$v.DEGList.filtered.norm$targets$group[x],
+                   #"Life Stage: ", vals$v.DEGList.filtered.norm$targets$group[x],
                    "<br>",
-                   "Sample: ", colnames(hovertext)[x])
+                   "Life Stage: ", colnames(hovertext)[x])
+                   #"Sample: ", colnames(hovertext)[x])
         })
         
         showticklabels <- if(length(vals$gene_of_interest)<20){c(TRUE,TRUE)} else {c(TRUE,FALSE)}
@@ -181,7 +188,7 @@ observeEvent(input$displayedGene,{
             selector = '#GenePlotDiv',
             where = "beforeBegin",
             ui = tagList(div(id = "CPMPlotlydiv",
-                             h5("Log2 Counts Per Million (CPM) Expression Across Life Stages"),
+                             h5("Mean Log2 Counts Per Million (CPM) Expression Across Life Stages"),
                              withSpinner(plotlyOutput('CPMPlotly'),
                                          color = "#2C3E50",
                                          type = 7)
@@ -253,15 +260,19 @@ output$downloadGenePlot <- downloadHandler(
                 myheatcolors <- RdBu(75)
                 
                 diffGenes <- vals$diffGenes.df %>%
-                    dplyr::select(!geneID) %>%
+                    dplyr::select(!geneID) 
+                colnames(diffGenes) <- vals$v.DEGList.filtered.norm$target$group
+                diffGenes <- diffGenes %>%
+                    avearrays() %>%
                     as.matrix()
+                
                 rownames(diffGenes) <- rownames(vals$v.DEGList.filtered.norm$E)
-                colnames(diffGenes) <- as.character(vals$v.DEGList.filtered.norm$targets$group)
+                #colnames(diffGenes) <- as.character(vals$v.DEGList.filtered.norm$targets$group)
                 clustColumns <- hclust(as.dist(1-cor(diffGenes, method="spearman")), method="complete")
                 subset.diffGenes<- diffGenes[vals$gene_of_interest,]
-                colnames(subset.diffGenes) <- paste0(vals$v.DEGList.filtered.norm$targets$group, 
-                                                     "_", 
-                                                     vals$v.DEGList.filtered.norm$targets$samples)
+                # colnames(subset.diffGenes) <- paste0(vals$v.DEGList.filtered.norm$targets$group, 
+                #                                      "_", 
+                #                                      vals$v.DEGList.filtered.norm$targets$samples)
                 clustRows <- hclust(as.dist(1-cor(t(subset.diffGenes), 
                                                   method="pearson")), 
                                     method="complete") 
