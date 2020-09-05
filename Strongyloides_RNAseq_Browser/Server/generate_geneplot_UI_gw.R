@@ -22,8 +22,8 @@ output$genePlotPanel_GW <- renderUI({
 output$geneDisplaySelection_GW <- renderUI({
     parse_ids()
     if (length(vals$genelist$geneID)>1) {
-        choices <- c("All Genes", "Data Table", vals$genelist$geneID)
-        selected <- "All Genes"
+        choices <- c("All Genes", "Data Table",vals$genelist$geneID)
+        #selected <- "All Genes"
     } else {
         choices <- c(vals$genelist$geneID,"Data Table")}
     tagList(div(id = "geneDisplaySelectionPanel",
@@ -50,6 +50,7 @@ spacing = "xs", align = "l", bordered = T)
 
 output$Legend_GW <- renderUI({
     req(vals$genelist)
+    vals$genelist
     panel(
         heading = tagList(h5(shiny::icon("fas fa-book-open"),
                              "Sample ID Legend")),
