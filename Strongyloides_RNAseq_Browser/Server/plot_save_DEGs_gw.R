@@ -165,7 +165,7 @@ assemble_DEGs_GW <- reactive({
                                    ][vals$contrastStage_GW[vals$displayedComparison_GW,
                                                            ]!=""]
         
-        
+
         # Add back on genes that were submitted by the user but don't appear in the list of genes for which there is available data.
         excluded.genes <- dplyr::anti_join(vals$submitted.genelist, 
                                            vals$genelist,
@@ -178,7 +178,7 @@ assemble_DEGs_GW <- reactive({
         
         n_num_cols <- sample.num.tS + sample.num.cS + 5
         index_homologs <- length(colnames(vals$list.highlight.tbl_GW[[vals$displayedComparison_GW]])) - 5
-        
+
         highlight.datatable <- vals$list.highlight.tbl_GW[[vals$displayedComparison_GW]] %>%
             {suppressMessages(dplyr::full_join(.,excluded.genes))} %>%
             DT::datatable(rownames = FALSE,
@@ -236,7 +236,7 @@ assemble_DEGs_GW <- reactive({
                                          ))
                                          
                           )) 
-       
+
         highlight.datatable <- highlight.datatable %>%
             DT::formatRound(columns=c(3:n_num_cols), 
                             digits=3)
@@ -250,7 +250,7 @@ assemble_DEGs_GW <- reactive({
         highlight.datatable <- highlight.datatable %>%
             DT::formatSignif(columns=c(n_num_cols+1), 
                              digits=3)
-        
+        withProgress(1)
         highlight.datatable
 })
 
