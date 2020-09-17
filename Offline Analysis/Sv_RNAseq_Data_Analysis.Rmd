@@ -39,7 +39,7 @@ myDGEList.filtered.norm <-SvRNAseq.preprocessed.data$myDGEList.filtered.norm
 
 rm(SvRNAseq.preprocessed.data)
 
-load(file = "../Strongyloides_RNAseq_Browser/Data/Sv_group_FLF_PF_vDEGList")
+load(file = "../Strongyloides_RNAseq_Browser/Data/Sv_vDEGList")
 
 ```
 
@@ -909,7 +909,7 @@ myDGEList.filtered.norm <-SvRNAseq.preprocessed.data$myDGEList.filtered.norm
 
 rm(SvRNAseq.preprocessed.data)
 
-load(file = "../Strongyloides_RNAseq_Browser/Data/Sv_vDEGList")
+load(file = "../Outputs/Sv_allSamples_vDEGList")
 
 ```
 
