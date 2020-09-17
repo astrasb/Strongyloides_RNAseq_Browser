@@ -41,8 +41,11 @@ generateGenePlot <- reactive({
                         id_cols = geneID,
                         values_from = mean) %>%
             left_join(vals$annotations, by = "geneID") %>%
-            dplyr::relocate(UniProtKB, Description, InterPro, GO_term, Str_geneID, Str_percent_homology, Ce_geneID, Ce_percent_homology, .after = last_col())  %>%
-            dplyr::relocate(ends_with("WBgeneID"), .before = Str_geneID)%>%
+            dplyr::relocate(UniProtKB, Description, InterPro, GO_term,
+                            In.subclade_geneID, In.subclade_percent_homology,
+                            Out.subclade_geneID, Out.subclade_percent_homology,
+                            Ce_geneID, Ce_percent_homology, .after = last_col())  %>%
+            dplyr::relocate(ends_with("WBgeneID"), .before = In.subclade_geneID)%>%
             {suppressMessages(dplyr::full_join(.,excluded.genes))} 
         
         
@@ -100,7 +103,8 @@ generateGenePlot <- reactive({
         
         gene_vals.datatable <-  gene_vals.datatable %>%
             DT::formatRound(columns=c(n_num_cols, 
-                                      n_num_cols-2), 
+                                      n_num_cols-2,
+                                      n_num_cols-4), 
                             digits=2)
         
     } else {
@@ -108,21 +112,25 @@ generateGenePlot <- reactive({
         myheatcolors <- RdBu(75)
         
         diffGenes <- vals$diffGenes.df %>%
-            dplyr::select(!geneID) 
+            dplyr::select(!geneID) %>%
         
-        colnames(diffGenes) <- vals$v.DEGList.filtered.norm$target$group
-        diffGenes <- diffGenes %>%
-            avearrays() %>%
+        # colnames(diffGenes) <- vals$v.DEGList.filtered.norm$target$group
+        # diffGenes <- diffGenes %>%
+        #     avearrays() %>%
             as.matrix()
         rownames(diffGenes) <- rownames(vals$v.DEGList.filtered.norm$E)
         setProgress(0.2)
         clustColumns <- hclust(as.dist(1-cor(diffGenes, method="spearman")), method="complete")
         subset.diffGenes<- diffGenes[vals$gene_of_interest,]
         
-
-        # colnames(subset.diffGenes) <- paste0(vals$v.DEGList.filtered.norm$targets$group,
-        #                                      ".",
-        #                                      vals$v.DEGList.filtered.norm$targets$samples)
+        colnames(subset.diffGenes) <- paste0(vals$v.DEGList.filtered.norm$targets$group,
+                                             "...",
+                                             substr(vals$v.DEGList.filtered.norm$targets$samples, 
+                                                    nchar(
+                                                        as.character(vals$v.DEGList.filtered.norm$targets$samples[1]))-2, nchar(
+                                                            as.character(vals$v.DEGList.filtered.norm$targets$samples[1])))
+                                             )
+        
         #colnames(subset.diffGenes) <- vec_as_names(as.character(vals$v.DEGList.filtered.norm$targets$group), repair = "unique", quiet = T)
 
         setProgress(0.4)
@@ -139,14 +147,13 @@ generateGenePlot <- reactive({
         hovertext <- as.data.frame(subset.diffGenes) %>%
             round(digits = 2)
         
-        #colnames(hovertext) <- vals$v.DEGList.filtered.norm$targets$samples
+        colnames(hovertext) <- vals$v.DEGList.filtered.norm$targets$samples
         hovertext[] <- lapply(seq_along(hovertext), function(x){
             paste0("GeneID: ", rownames(hovertext), "<br>",
                    "Log2CPM: ", hovertext[,x], "<br>",
-                   #"Life Stage: ", vals$v.DEGList.filtered.norm$targets$group[x],
+                   "Life Stage: ", vals$v.DEGList.filtered.norm$targets$group[x],
                    "<br>",
-                   "Life Stage: ", colnames(hovertext)[x])
-                   #"Sample: ", colnames(hovertext)[x])
+                   "Sample: ", colnames(hovertext)[x])
         })
         
         showticklabels <- if(length(vals$gene_of_interest)<20){c(TRUE,TRUE)} else {c(TRUE,FALSE)}
@@ -162,7 +169,7 @@ generateGenePlot <- reactive({
                        branches_lwd = 0.2,
                        key.title = "Row-scaled Z Score",
                        cexRow=1.2, cexCol=1.2,
-                       xlab = "Note: column clustering performed across entire RNAseq dataset",
+                       xlab = "Column clustering performed across all genes",
                        margins = c(100, 50, 10, 0),
                        colorbar_len = 0.5,
                        colorbar_ypos = 0.5,
@@ -228,7 +235,7 @@ observe({
             selector = '#GenePlotDiv',
             where = "beforeBegin",
             ui = tagList(div(id = "CPMTablediv",
-                             h5("Mean Log2 Counts Per Million (CPM) Expression Across Life Stages"),
+                             h5("Log2 Counts Per Million (CPM) Expression Across Life Stages"),
                              DTOutput('CPM.datatable')
             ))
         )
@@ -386,8 +393,11 @@ output$downloadbuttonsGenes <- renderUI({
         # Add gene annotations
         genelist.expression <-lapply(genelist.expression, function (x) {
             vals$annotations %>%
-                dplyr::relocate(UniProtKB, Description, InterPro, GO_term, Str_geneID, Str_percent_homology, Ce_geneID, Ce_percent_homology, .after = geneID)  %>%
-                dplyr::relocate(ends_with("WBgeneID"), .before = Str_geneID)%>%
+                dplyr::relocate(UniProtKB, Description, InterPro, GO_term,
+                                In.subclade_geneID, In.subclade_percent_homology,
+                                Out.subclade_geneID, Out.subclade_percent_homology,
+                                Ce_geneID, Ce_percent_homology, .after = geneID) %>%
+                dplyr::relocate(ends_with("WBgeneID"), .before = In.subclade_geneID)%>%
                 dplyr::left_join(x,., by = "geneID")
 
         })
