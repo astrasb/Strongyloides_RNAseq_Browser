@@ -148,7 +148,6 @@ output$hover_info_LS <- renderUI({
 assemble_DEGs_LS <- reactive({
     req(vals$comparison_LS,vals$displayedComparison_LS)
     
-    isolate({
         tS<- vals$targetStage_LS[vals$displayedComparison_LS,
                                  ][vals$targetStage_LS[vals$displayedComparison_LS,
                                                        ]!=""]
@@ -231,7 +230,6 @@ assemble_DEGs_LS <- reactive({
                              digits=3)
         
         LS.datatable
-    })
     
 })
 
