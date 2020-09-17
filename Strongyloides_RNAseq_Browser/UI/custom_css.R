@@ -44,6 +44,10 @@ tags$head(
     font-weight: normal;
     }
     
+    ol{
+    font-size: 12px
+    }
+    
     .selectize-input {
     word-wrap: break-word;
     font-size: 12px;
@@ -88,6 +92,9 @@ tags$head(
     }
     
     #lifeStageLegend_GW .shiny-html-output{
+    font-size: 12px}
+    
+    #lifeStageLegend_LS .shiny-html-output{
     font-size: 12px}
 
                     "))
