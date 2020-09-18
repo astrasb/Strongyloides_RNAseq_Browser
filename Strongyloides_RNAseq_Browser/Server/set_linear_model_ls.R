@@ -10,6 +10,5 @@ set_linear_model_LS <- eventReactive(input$goLS,{
                   vals$v.DEGList.filtered.norm, 
                   adj.P.thresh, 
                   vals$diffGenes.df)
-    
     vals$list.highlight.tbl_LS <- vals$list.highlight.tbl
 })

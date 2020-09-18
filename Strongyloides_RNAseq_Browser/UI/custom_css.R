@@ -44,6 +44,10 @@ tags$head(
     font-weight: normal;
     }
     
+    ol{
+    font-size: 12px
+    }
+    
     .selectize-input {
     word-wrap: break-word;
     font-size: 12px;
@@ -87,8 +91,27 @@ tags$head(
     color: white;
     }
     
-    #lifeStageLegend_GW .shiny-html-output{
+    #lifeStageLegend_GW .shiny-html-output {
     font-size: 12px}
+    
+    #lifeStageLegend_LS .shiny-html-output {
+    font-size: 12px}
+    
+    #speciesPanelID_GW .selectize-input {
+    font-style: italic;
+    }
+    
+    #speciesPanelID_GW .selectize-dropdown-content {
+    font-style: italic;
+    }
+    
+    #speciesPanelID_LS .selectize-input {
+    font-style: italic;
+    }
+    
+    #speciesPanelID_LS .selectize-dropdown-content {
+    font-style: italic;
+    }
 
                     "))
     

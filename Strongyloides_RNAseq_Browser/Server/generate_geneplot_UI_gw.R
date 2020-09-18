@@ -30,23 +30,33 @@ output$geneDisplaySelection_GW <- renderUI({
                 panel(
                     heading = tagList(h5(shiny::icon("fas fa-filter"),
                                          "Pick Gene to Display")),
-                    status = "default",
+                    status = "danger",
                     pickerInput("displayedGene",
                                 NULL, 
                                 choices,
-                                options = list(style = 'btn btn-primary'))
+                                options = list(style = 'btn btn-danger'))
                 )
     ))
 })
 
 ## GW: Generate Legend Explaining the Life Stages ----
-output$lifeStageLegend_GW <- renderTable({
+output$lifeStageLegend_GW <- renderDT({
     lifestage_legend.df <- lifestage_legend %>%
-        dplyr::filter(group %in% unique(vals$genelist.Log2CPM$life_stage)) %>%
-        dplyr::rename(`Abbr.` = group, `Life Stage` = developmental_stage) %>%
-        dplyr::arrange(`Abbr.`)
-}, striped = T,
-spacing = "xs", align = "l", bordered = T)
+        dplyr::select(any_of(unique(vals$v.DEGList.filtered.norm$targets$group))) %>%
+        as.data.frame()
+    rownames(lifestage_legend.df)<- c("<b>Life Stage</b>")
+    lifestage_legend.DT <- lifestage_legend.df %>%
+        DT::datatable(rownames = TRUE,
+                      escape = FALSE,
+                      class = "table-bordered",
+                      colnames = c("Abbr." = 1),
+                      options = list(scrollX = TRUE,
+                                     ordering = FALSE,
+                                     dom = 'tS'
+                      )
+        )
+    lifestage_legend.DT
+})
 
 output$Legend_GW <- renderUI({
     req(vals$genelist)
@@ -55,6 +65,6 @@ output$Legend_GW <- renderUI({
         heading = tagList(h5(shiny::icon("fas fa-book-open"),
                              "Sample ID Legend")),
         status = "default",
-        tableOutput("lifeStageLegend_GW")
+        DTOutput("lifeStageLegend_GW")
     )
 })

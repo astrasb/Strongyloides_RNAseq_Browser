@@ -3,7 +3,7 @@ pull_DEGs_GW <- reactive({
     req(vals$comparison_GW)
     req(vals$list.myTopHits.df_GW)
     req(vals$v.DEGList.filtered.norm)
-    
+    setProgress(0.2)
     if (isTruthy(input$displayedComparison_GW)){
         vals$displayedComparison_GW <- match(input$displayedComparison_GW,
                                              vals$comparison_GW, nomatch = 1)
@@ -12,7 +12,7 @@ pull_DEGs_GW <- reactive({
     #### Volcano Plots
     point_labels <- if(nrow(vals$list.highlight.tbl_GW[[vals$displayedComparison_GW]])<
                        20){guide_legend(override.aes = list(size = 4))} else {FALSE}
-    
+    setProgress(0.4)
     vplot <- ggplot(vals$list.myTopHits.df_GW[[vals$displayedComparison_GW]]) +
         aes(y=-log10(BH.adj.P.Val), x=logFC) +
         geom_point(size=3,
@@ -46,7 +46,7 @@ pull_DEGs_GW <- reactive({
              color = "GeneIDs") +
         theme_Publication() +
         theme(aspect.ratio=1/3)
-    
+    setProgress(0.8)
     vplot
     
 })
@@ -54,13 +54,12 @@ pull_DEGs_GW <- reactive({
 
 ## GW: Volcano Plot, Generate UI  ----
 output$volcano_GW <- renderUI({
-    
     parse_contrasts_GW()
     req(vals$genelist,vals$comparison_GW)
     
     output$volcano_UI_GW <- renderPlot({
-    set_linear_model_GW()
-    pull_DEGs_GW()
+        set_linear_model_GW()
+        withProgress(pull_DEGs_GW(), message = "Calculating...")
     })
     
     panel(
@@ -68,13 +67,10 @@ output$volcano_GW <- renderUI({
                              "Pairwise Differential Gene Expression: Volcano Plot")),
         status = "primary",
         
-        tagList(withSpinner(plotOutput('volcano_UI_GW',
+        tagList(plotOutput('volcano_UI_GW',
                                        hover = hoverOpts("plot_hover", 
                                                          delay = 100, 
                                                          delayType = "debounce")),
-                            
-                            color = "#2C3E50",
-                            type = 7),
                 uiOutput("hover_info"),
                 uiOutput("downloadVolcanoGW")
         )
@@ -159,15 +155,17 @@ output$hover_info <- renderUI({
 
 ## GW: Data Table of Differentially Expressed Genes from User Subset ----
 assemble_DEGs_GW <- reactive({
-    req(vals$comparison_GW,vals$displayedComparison_GW)
     
-    isolate({
+    req(vals$comparison_GW,vals$displayedComparison_GW,vals$genelist)
+    
         tS<- vals$targetStage_GW[vals$displayedComparison_GW,
                                  ][vals$targetStage_GW[vals$displayedComparison_GW,
                                                        ]!=""]
         cS<- vals$contrastStage_GW[vals$displayedComparison_GW,
                                    ][vals$contrastStage_GW[vals$displayedComparison_GW,
                                                            ]!=""]
+        
+
         # Add back on genes that were submitted by the user but don't appear in the list of genes for which there is available data.
         excluded.genes <- dplyr::anti_join(vals$submitted.genelist, 
                                            vals$genelist,
@@ -179,7 +177,8 @@ assemble_DEGs_GW <- reactive({
         
         
         n_num_cols <- sample.num.tS + sample.num.cS + 5
-        
+        index_homologs <- length(colnames(vals$list.highlight.tbl_GW[[vals$displayedComparison_GW]])) - 5
+
         highlight.datatable <- vals$list.highlight.tbl_GW[[vals$displayedComparison_GW]] %>%
             {suppressMessages(dplyr::full_join(.,excluded.genes))} %>%
             DT::datatable(rownames = FALSE,
@@ -237,29 +236,28 @@ assemble_DEGs_GW <- reactive({
                                          ))
                                          
                           )) 
-        
+
         highlight.datatable <- highlight.datatable %>%
             DT::formatRound(columns=c(3:n_num_cols), 
                             digits=3)
         
         highlight.datatable <- highlight.datatable %>%
             DT::formatRound(columns=c(n_num_cols+2, 
-                                      n_num_cols+9,
-                                      n_num_cols+11), 
+                                      index_homologs+1,
+                                      index_homologs+3), 
                             digits=2)
         
         highlight.datatable <- highlight.datatable %>%
             DT::formatSignif(columns=c(n_num_cols+1), 
                              digits=3)
-        
+        withProgress(1)
         highlight.datatable
-        
-    })
 })
 
 output$highlight.df <- renderDT ({
     req(input$goGW,vals$list.highlight.tbl_GW,vals$genelist)
     DEG.datatable_GW<-assemble_DEGs_GW()
+    #DEG.datatable_GW<-withProgress(assemble_DEGs_GW(), message = "Generating DataTable")
     DEG.datatable_GW
 })
 

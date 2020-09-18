@@ -3,11 +3,12 @@ pull_DEGs_LS <- reactive({
     req(vals$comparison_LS)
     req(vals$list.highlight.tbl_LS)
     
+    setProgress(0.2)
     if (isTruthy(input$displayedComparison_LS)){
         vals$displayedComparison_LS <- match(input$displayedComparison_LS,
                                              vals$comparison_LS, nomatch = 1)
     } else {vals$displayedComparison_LS <- 1}
-    
+    setProgress(0.4)
     #### Volcano Plots
     vplot <- ggplot(vals$list.highlight.tbl_LS[[vals$displayedComparison_LS]]) +
         aes(y=-log10(BH.adj.P.Val), x=logFC) +
@@ -33,6 +34,7 @@ pull_DEGs_LS <- reactive({
              color = "GeneIDs") +
         theme_Publication() +
         theme(aspect.ratio=1/3)
+    setProgress(0.8)
     vplot
 })
 
@@ -44,19 +46,17 @@ output$volcano_LS <- renderUI({
     
     output$volcano_UI_LS <- renderPlot({
         set_linear_model_LS()
-        pull_DEGs_LS()
+        withProgress(pull_DEGs_LS(), message = "Calculating...")
     })
    
     panel(
         heading = tagList(h5(shiny::icon("fas fa-mountain"),
                              "Pairwise Differential Gene Expression: Volcano Plot")),
         status = "primary",
-        withSpinner(plotOutput('volcano_UI_LS',
+        plotOutput('volcano_UI_LS',
                                hover = hoverOpts("plot_hover_LS",
                                                  delay = 100,
                                                  delayType = "debounce")),
-                    color = "#2C3E50",
-                    type = 7),
         
         uiOutput("hover_info_LS"),
         
@@ -148,7 +148,6 @@ output$hover_info_LS <- renderUI({
 assemble_DEGs_LS <- reactive({
     req(vals$comparison_LS,vals$displayedComparison_LS)
     
-    isolate({
         tS<- vals$targetStage_LS[vals$displayedComparison_LS,
                                  ][vals$targetStage_LS[vals$displayedComparison_LS,
                                                        ]!=""]
@@ -160,6 +159,7 @@ assemble_DEGs_LS <- reactive({
         
         
         n_num_cols <- sample.num.tS + sample.num.cS + 5
+        index_homologs <- length(colnames(vals$list.highlight.tbl_LS[[vals$displayedComparison_LS]])) - 5
         
         LS.datatable <- vals$list.highlight.tbl_LS[[vals$displayedComparison_LS]] %>%
             DT::datatable(rownames = FALSE,
@@ -221,8 +221,8 @@ assemble_DEGs_LS <- reactive({
         
         LS.datatable <- LS.datatable %>%
             DT::formatRound(columns=c(n_num_cols+2, 
-                                      n_num_cols+9,
-                                      n_num_cols+11), 
+                                      index_homologs+1,
+                                      index_homologs+3), 
                             digits=2)
         
         LS.datatable <- LS.datatable %>%
@@ -230,7 +230,6 @@ assemble_DEGs_LS <- reactive({
                              digits=3)
         
         LS.datatable
-    })
     
 })
 

@@ -8,17 +8,20 @@ output:
     toc: yes
 ---
 
-# Introduction ---
-The goal of this file is to pre-process the *Strongyloides ratti* RNAseq dataset originally published by [Hunt *et al* 2016](https://www.nature.com/articles/ng.3495). Raw reads are aligned to the *S. ratti* reference transcription (PRJEB125.WBPS14.mRNA_transcripts, downloaded from [WormBase Parasite](https://parasite.wormbase.org/Strongyloides_ratti_prjeb125/Info/Index) on 17 August 2020)
+# Introduction
+The goal of this file is to pre-process the *Strongyloides ratti* RNAseq dataset originally published by [Hunt *et al* 2016](https://www.nature.com/articles/ng.3495).
 
 ### Data Pre-Processing    
 A description of Kallisto alignment and data filtering/normalization steps can be found in `Sr_RNAseq_Data_Processing.rmd`. 
 
 ### Data Analysis   
-The limma package ( [Ritchie *et al* 2015](https://pubmed.ncbi.nlm.nih.gov/25605792/), [Phipson *et al* 2016](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5373812/)) is used to conduct pairwise differential gene expression analyses between life stages. Here, all unique pairwise comparisons between life stages are displayed as interactive volcano plots and DataTables. In this analysis, genes included in DataTables are corrected for multiple life-stage comparisons. An additional code chunk identifies all genes that are differentially expressed in any way across groups (i.e. an ANOVA analysis across life stages). This set of genes is passed into a clustering analysis that generates a heatmap of differential gene expression across life stages.
+The limma package ( [Ritchie *et al* 2015](https://pubmed.ncbi.nlm.nih.gov/25605792/), [Phipson *et al* 2016](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5373812/)) is used to conduct pairwise differential gene expression analyses between life stages. An example pairwise comparisons between two life stages is displayed as a volcano plot and interactive DataTable. 
 
+# Code
+All code is echoed under descriptive headers; code chunks are hidden from view by default. Users may show hidden R code by clicking the Show buttons. In addition, all code chunks are collated at the end of the document in an Appendix. 
 
-# Load and Parse Preprocessed Data ---
+## Load and Parse Preprocessed Data
+This code loads R data objects that has been preproprocessed by `Sr_RNAseq_Data_Processing.rmd`.  
 ```{r loadBaseData}
 load (file = "../Outputs/SrRNAseq_data_preprocessed")
 targets <- SrRNAseq.preprocessed.data$targets
@@ -33,8 +36,9 @@ load(file = "../Strongyloides_RNAseq_Browser/Data/Sr_vDEGList")
 ```
 
 
-# Hierarchical Clustering and Principle Components Analysis ---
-```{r multivariate}
+## Hierarchical Clustering and Principle Components Analysis  
+This code chunk starts with filtered and normalized abundance data in a data frame (not tidy). It will implement hierarchical clustering and PCA analyses on the data. It will plot various graphs, including a dendrogram of the heirachical clustering, and several plots of visualize the PCA. Because the data that are passed into these analyses do not have batch correction applied, the clustering appears dominanted by a batch effect.  
+```{r multivariate.1}
 # Introduction to this chunk -----------
 # This code chunk starts with filtered and normalized abundance data in a data frame (not tidy).
 # It will implement hierarchical clustering and PCA analyses on the data.
@@ -72,17 +76,17 @@ clusters <- hclust(distance, method = "complete") #other agglomeration methods a
 dend <- as.dendrogram(clusters) 
 
 p1<-dend %>% 
-  dendextend::set("branches_k_color", k = 5) %>% 
-  dendextend::set("hang_leaves", c(0.1)) %>% 
+  dendextend::set("branches_k_color", k = 4) %>% 
+  dendextend::set("hang_leaves", c(0.05)) %>% 
   dendextend::set("labels_cex", c(0.5)) %>%
-  dendextend::set("labels_colors", k = 5) %>% 
+  dendextend::set("labels_colors", k = 4) %>% 
   dendextend::set("branches_lwd", c(0.7)) %>% 
   
   as.ggdend %>%
-  ggplot (offset_labels = -0.5) +
+  ggplot (offset_labels = -0.2) +
   theme_dendro() +
   ylim(0, max(get_branches_heights(dend))) +
-  labs(title = "Hierarchical Cluster Dendrogram ",
+  labs(title = "S. ratti: Hierarchical Cluster Dendrogram ",
        subtitle = "filtered, TMM normalized",
        y = "Distance",
        x = "Life stage") +
@@ -93,8 +97,16 @@ p1<-dend %>%
         axis.line.y = element_line(color = "black"),
         axis.ticks.y = element_line(color = "black"),
         axis.ticks.length.y = unit(2, "mm"))
-p1
+```
 
+### Dendrogram to visualize heirachical clustering  
+Clustering performed on filtered and normalized abundance data using the "complete" method.  
+```{r echo = FALSE}
+p1
+```
+
+
+```{r multivariate.2}
 # Principal component analysis (PCA) -------------
 # this also works on a data matrix, not a data frame
 pca.res <- prcomp(t(log2.cpm.filtered.norm), scale.=F, retx=T)
@@ -110,8 +122,16 @@ p2<-fviz_eig(pca.res,
              linecolor = "black",
              main = "Scree plot: proportion of variance accounted for by each principal component",
              ggtheme = theme_bw()) 
-p2
+```
 
+### Screeplot of PCA Eigenvalues  
+A scree plot is a standard way to view eigenvalues for each PCA. The plot shows the proportion of variance accounted for by each PC. 
+```{r echo = FALSE}
+p2
+```
+
+
+```{r multivariate.3}
 pc.var<-pca.res$sdev^2 # sdev^2 captures these eigenvalues from the PCA result
 pc.per<-round(pc.var/sum(pc.var)*100, 1) # we can then use these eigenvalues to calculate the percentage variance explained by each PC
 
@@ -133,15 +153,23 @@ p3<-ggplot(pca.res.df) +
   #stat_ellipse() +
   xlab(paste0("PC1 (",pc.per[1],"%",")")) + 
   ylab(paste0("PC2 (",pc.per[2],"%",")")) +
-  labs(title="Principal Components Analysis of S. stercoralis RNAseq Samples",
+  labs(title="S. ratti: Principal Components Analysis of RNAseq Samples",
        sub = "Note: analysis is blind to life stage identity.",
        fill = "Life Stage") +
   scale_x_continuous(expand = c(.3, .3)) +
   scale_y_continuous(expand = c(.3, .3)) +
   coord_fixed() +
   theme_bw()
-p3
+```
 
+### PCA Plot
+Plot of the samples in PCA space. Fill color indicates life stage.  
+```{r echo = FALSE}
+p3
+``` 
+
+
+```{r multivariate.4}
 # Create a PCA 'small multiples' chart ----
 pca.res.df <- pca.res$x[,1:3] %>% 
   as_tibble() %>%
@@ -166,19 +194,18 @@ p6<-ggplot(pca.pivot) +
   facet_wrap(~PC) +
   geom_bar(data = PC1, stat = "identity", aes(fill = batch)) +
   geom_bar(data = PC2, stat = "identity", aes(fill = batch)) +
-  labs(title="PCA 'small multiples' plot",
+  labs(title="S. ratti: PCA 'small multiples' plot",
        fill = "Life Stage Groups",
        caption=paste0("produced on ", Sys.time())) +
   scale_x_discrete(limits = targets$sample, labels = targets$group) +
   theme_bw() +
   coord_flip()
-p6
 
 # Graph all the plots generated in this script ----
 # Plot all the plots on a grid
 # p7<- grid.arrange(p1,p2,p3,p4, p5,p6,ncol = 4,
 #             layout_matrix = cbind(c(1,1,1,2,2,2),c(3,3,4,4,5,5),c(6,6,6,6,6,6), c(6,6,6,6,6,6)))
-# ggsave("Strongyloides stercoralis RNAseq Multivariate Analysis.pdf", 
+# ggsave("Strongyloides ratti RNAseq Multivariate Analysis.pdf", 
 #        plot = p7, 
 #        device = "pdf",
 #        #height = 17,
@@ -186,7 +213,15 @@ p6
 #        path = '../Outputs/'
 
 ```
-# Heatmap of Gene Expression Across Life Stages ---
+
+
+### PCA "Small Multiples" Plot
+```{r echo = FALSE}
+p6
+```
+
+## Heatmap of Gene Expression Across Life Stages  
+Make a heatmap for all the genes using the Log2CPM values.  
 ```{r gene.expression.heatmap}
 suppressPackageStartupMessages({
 library(pheatmap)
@@ -222,7 +257,8 @@ p<-pheatmap(diffGenes,
 ```
 
 
-# Differentially Expressed Genes ---
+## Differentially Expressed Genes
+This chunk uses a variance-stabilized DGEList of filtered and normalized abundance data. These data/results are examples, a responsive version of this code is avaliable in a Shiny App.  
 ```{r DEG, echo=TRUE, warning=FALSE, paged.print=TRUE}
 # Introduction to this chunk ----
 # This chunk uses a variance-stabilized DGEList of filtered and normalized abundance data.
@@ -325,7 +361,10 @@ calc_DEG_tbl <- function (ebFit, coef) {
                                   sort.by="logFC") %>%
     as_tibble(rownames = "geneID") %>%
     dplyr::rename(tStatistic = t, LogOdds = B, BH.adj.P.Val = adj.P.Val) %>%
-    dplyr::relocate(UniProtKB, Description, InterPro, GO_term, WBgeneID, Str_geneID, Str_percent_homology, Ce_geneID, Ce_percent_homology, .after = LogOdds)
+    dplyr::relocate(UniProtKB, Description, InterPro, GO_term, WBgeneID,
+                    In.subclade_geneID, In.subclade_percent_homology,
+                    Out.subclade_geneID, Out.subclade_percent_homology,
+                    Ce_geneID, Ce_percent_homology, .after = LogOdds)
   
   myTopHits.df
 }
@@ -430,7 +469,7 @@ sample.num.cS <- sapply(cS, function(x) {colSums(v.DEGList.filtered.norm$design)
 
 
 n_num_cols <- sample.num.tS + sample.num.cS + 5
-
+index_homologs <- length(colnames(list.myTopHits.df[[yy]])) - 5
 
 LS.datatable <- list.myTopHits.df[[yy]] %>%
   DT::datatable(rownames = FALSE,
@@ -498,8 +537,8 @@ LS.datatable <- LS.datatable %>%
 
 LS.datatable <- LS.datatable %>%
   DT::formatRound(columns=c(n_num_cols+2, 
-                            n_num_cols+9,
-                            n_num_cols+11), 
+                            index_homologs+1,
+                            index_homologs+3), 
                   digits=2)
 
 LS.datatable <- LS.datatable %>%
@@ -510,7 +549,8 @@ LS.datatable
 
 ```
 
-# Benchmarking
+## Benchmarking
+This section compares potential results to a published analsysis. Here, we use Supplementary Table 5 from [Hunt *et al* 2016](https://www.nature.com/articles/ng.3495), which includes the results of edgeR differential gene expression analysis between multiple life stages.  
 ```{r benchmarking}
 
 suppressPackageStartupMessages({
@@ -650,7 +690,18 @@ diffGenes.heatmap <- heatmap.2(diffGenes.thresh,
 
 ```
 
-# Functional Enrichment Analysis ---
+## Functional Enrichment Analysis
+This code prerform GSEA using the clusterProfiler library. Ability to do this depends on the availability of gene sets. Major databases (e.g. msigdb don't seem to have *Strongyloides* information. They do have *C. elegans* gene sets, but I'm not convinced the homology information is good enough for the comparison to be unbiased/meaningful. In Hunt et al 2016, there is an Ensembl Compara protein family set; we will use this as the basis for our gene set libraries.  
+Note that this uses specific transcript information, which I throw out (e.g. SSTP_0001137400.2 is recoded as SSTP_0001137400).
+
+Given a priori defined set of gene S (e.g., genes shareing the same DO category), the goal of GSEA is to determine whether the members of S are randomly distributed throughout the ranked gene list (L) or primarily found at the top or bottom.  
+There are three key elements of the GSEA method:  
+**Calculation of an Enrichment Score.**  
+The enrichment score (ES) represent the degree to which a set S is over-represented at the top or bottom of the ranked list L. The score is calculated by walking down the list L, increasing a running-sum statistic when we encounter a gene in S and decreasing when it is not. The magnitude of the increment depends on the gene statistics (e.g., correlation of the gene with phenotype). The ES is the maximum deviation from zero encountered in the random walk; it corresponds to a weighted Kolmogorov-Smirnov-like statistic (Subramanian et al. 2005).  
+**Esimation of Significance Level of ES.**  
+The p-value of the ES is calculated using permutation test. Specifically, we permute the gene labels of the gene list L and recompute the ES of the gene set for the permutated data, which generate a null distribution for the ES. The p-value of the observed ES is then calculated relative to this null distribution.  
+**Adjustment for Multiple Hypothesis Testing.**  
+When the entire gene sets were evaluated, DOSE adjust the estimated significance level to account for multiple hypothesis testing and also q-values were calculated for FDR control.  
 ```{r functionalEnrichment}
 # Load packages ----
 suppressPackageStartupMessages({
@@ -856,6 +907,11 @@ ggplot(myGSEA.df, aes(x=life_stage, y=ID)) +
         aspect.ratio = 3/1)
 
 ```
+
+# Appendix I: All code for this report  
+```{r ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
+```
+
 
 
 

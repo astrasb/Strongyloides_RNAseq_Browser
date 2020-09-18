@@ -137,9 +137,10 @@ parse_contrasts_GW <- eventReactive(input$goLifeStage_GW,{
     }
     
     # Produces error message if target and contrasts are not different. Only really works if there is a single target and contrast. Might need to use a vector approach to validate cases where there are multiple columns/rows in target and contrast stage objects. Especially need to be cautious about cases where the values are both NULL.
-    validate(
-        need(targetStage != contrastStage, "Target and Contrast selections are identical. Please select new options.")
-    )
+    # Update: 9-17-20: Realized this is crashing the program if either selection includes more than one life stage group (e.g. FLF - (iL3+iL3a) will crash). I've commented out this code until a fix can be provided. - ASB
+    # validate(
+    #     need(targetStage != contrastStage, "Target and Contrast selections are identical. Please select new options.")
+    # )
     
     vals$targetStage_GW <- targetStage 
     vals$contrastStage_GW <- contrastStage
@@ -156,12 +157,12 @@ output$contrastDisplaySelection_GW <- renderUI({
         panel(
             heading = tagList(h5(shiny::icon("fas fa-filter"),
                                  "Pick Contrast to Display")),
-            status = "default",
+            status = "danger",
             pickerInput("displayedComparison_GW",
                         NULL, 
                         comparison,
                         selected = comparison[[1]],
-                        options = list(style = 'btn btn-primary'))
+                        options = list(style = 'btn btn-danger'))
         )
     })
 })

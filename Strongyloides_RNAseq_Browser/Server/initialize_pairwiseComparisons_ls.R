@@ -132,9 +132,10 @@ parse_contrasts_LS<-eventReactive(input$goLS,{
     }
    
     # Produces error message if target and contrasts are not different. Only really works if there is a single target and contrast. Might need to use a vector approach to validate cases where there are multiple columns/rows in target and contrast stage objects. Especially need to be cautious about cases where the values are both NULL.
-    validate(
-        need(targetStage != contrastStage, "Target and Contrast selections are identical. Please select new options.")
-    )
+    # Update: 9-17-20: Realized this is crashing the program if either selection includes more than one life stage group (e.g. FLF - (iL3+iL3a) will crash). I've commented out this code until a fix can be provided. - ASB 
+    # validate(
+    #     need(targetStage != contrastStage, "Target and Contrast selections are identical. Please select new options.")
+    # )
     
     vals$targetStage_LS <- targetStage 
     vals$contrastStage_LS <- contrastStage
@@ -154,31 +155,42 @@ output$contrastDisplaySelection_LS <- renderUI({
         panel(
             heading = tagList(h4(shiny::icon("fas fa-filter"),
                                  "Pick Contrast to Display")),
-            status = "default",
+            status = "danger",
             pickerInput("displayedComparison_LS",
                         NULL, 
                         comparison,
-                        options = list(style = 'btn btn-primary'))
+                        options = list(style = 'btn btn-danger'))
         )
     })
 })
 
 ## LS: Generate Legend Explaining the Life Stages ----
-output$lifeStageLegend_LS <- renderTable({
+output$lifeStageLegend_LS <- renderDT({
+    #req(vals$comparison_LS)
+    req(vals$v.DEGList.filtered.norm)
     lifestage_legend.df <- lifestage_legend %>%
-        dplyr::filter(group %in% unique(vals$v.DEGList.filtered.norm$targets$group)) %>%
-        dplyr::rename(`Abbr.` = group, `Life Stage` = developmental_stage) %>%
-        dplyr::arrange(`Abbr.`)
-}, striped = T,
-spacing = "xs", align = "l", bordered = T)
+        dplyr::select(any_of(unique(vals$v.DEGList.filtered.norm$targets$group))) %>%
+        as.data.frame()
+    rownames(lifestage_legend.df)<- c("<b>Life Stage</b>")
+    lifestage_legend.DT <- lifestage_legend.df %>%
+        DT::datatable(rownames = TRUE,
+                      escape = FALSE,
+                      class = "table-bordered",
+                      colnames = c("Abbr." = 1),
+                      options = list(scrollX = TRUE,
+                                     ordering = FALSE,
+                                     dom = 'tS'
+                                     )
+                      )
+    lifestage_legend.DT
+})
 
 output$Legend_LS <- renderUI({
-    req(vals$comparison_LS)
     req(vals$v.DEGList.filtered.norm)
     panel(
         heading = tagList(h5(shiny::icon("fas fa-book-open"),
                              "Life Stage Legend")),
         status = "default",
-        tableOutput("lifeStageLegend_LS")
+        DTOutput("lifeStageLegend_LS")
     )
 })
