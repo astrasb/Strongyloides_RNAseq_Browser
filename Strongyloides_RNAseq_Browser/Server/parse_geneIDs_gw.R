@@ -44,8 +44,8 @@ parse_ids <- eventReactive(input$goGW,{
     )
     isolate({
         if (isTruthy(input$idtext)){
-            if (any(grepl('SSTP|SRAE', input$idtext, ignore.case = TRUE))){
-                # Text input matches SSTP values
+            if (any(grepl('SSTP|SRAE|SVE|SPAL', input$idtext, ignore.case = TRUE))){
+                # Text input matches SSTP|SRAE|SVE|SPAL values
                 genelist <- input$idtext %>%
                     gsub("\\s+", "", .) %>% #remove any number of whitespace
                     str_split(pattern = ",") %>%
