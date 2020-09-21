@@ -571,7 +571,7 @@ colnames(v.DEGList.filtered.norm$E) <- paste(v.DEGList.filtered.norm$targets$gro
 # Save v.DEGList ----
 # This file will be imported into Shiny App
 save(v.DEGList.filtered.norm,
-     file = "../Strongyloides_RNAseq_Browser/Data/Sr_vDEGList")
+     file = "../Strongyloides_RNAseq_Browser/Data/Sr_vDGEList")
 
 ```
 

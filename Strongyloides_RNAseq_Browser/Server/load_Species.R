@@ -25,7 +25,7 @@ observeEvent(input$speciesGW, {
         
         # Import a variance-stabilized DEGList created by voom transformation command.
         # Outputs: E = normalized CPMexpression values on the log2 scale
-        load(file = paste0("./Data/",species,"_vDEGList"))
+        load(file = paste0("./Data/",species,"_vDGEList"))
         vals$v.DEGList.filtered.norm <- v.DEGList.filtered.norm
         
         setProgress(value = .25)

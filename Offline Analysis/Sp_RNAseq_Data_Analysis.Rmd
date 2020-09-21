@@ -35,7 +35,7 @@ myDGEList.filtered.norm <-SpRNAseq.preprocessed.data$myDGEList.filtered.norm
 
 rm(SpRNAseq.preprocessed.data)
 
-load(file = "../Strongyloides_RNAseq_Browser/Data/Sp_vDEGList")
+load(file = "../Strongyloides_RNAseq_Browser/Data/Sp_vDGEList")
 
 ```
 
@@ -533,146 +533,7 @@ LS.datatable
 ```
 
 ## Benchmarking
-This section compares potential results to a published analsysis. Here, we use Supplementary Table 1 from [Hunt *et al* 2018](https://www.nature.com/articles/s41598-018-23514-z), which includes the results of edgeR differential gene expression analysis between free living females and parasitic females. Note that we manually adjust the geneID names in Table S1 in order to match current Wormbase ParaSite nomenclature, such that 'SVE_' is used instead of 'SVEN_'.  
-```{r benchmarking, eval = FALSE}
-
-suppressPackageStartupMessages({
-  library(openxlsx)
-  library(tidyverse)
-  library(ggplot2)
-})
-# Load Hunt Dataset: iL3 vs FLF comparison
-temp.dat <-  read.xlsx ("../Benchmarking/41598_2018_23514_MOESM2_ESM.xlsx", 
-                        sheet = 1, startRow = 4)
-
-Hunt.dat <- tibble(geneID = temp.dat$QUERY_GENE, logFC = temp.dat$logFC)
-Hunt.dat <- Hunt.dat[complete.cases(Hunt.dat),]
-rm(temp.dat)
-
-# Rename Results of iL3 vs FLF comparison from Browser
-Browser.dat <- list.myTopHits.df$`(PF)-(FLF)` %>%
-  dplyr::select(geneID, logFC)
-
-print(paste('Total number of genes in Hunt *et al* 2018 iL3 vs FLF comparison tab:',nrow(Hunt.dat)))
-print(paste('Total number of genes in Str-RNAseq Browser iL3 vs FLF output file:', nrow(Browser.dat))) 
-
-
-# The plot below takes the genes with LogFC results in both the Browser and Hunt databases, and plots the two sets against each other. 
-plotting.all <- inner_join(Browser.dat, Hunt.dat, by = "geneID")
-ggplot(plotting.all, aes(x = logFC.x, y = logFC.y)) +
-  geom_smooth(method=lm, color = 'red', formula = "y ~ x") +
-  geom_point(shape=16, size=3, alpha = 0.8) +
-  labs(title = "S. papillosus: All Overlapping Genes: Str-Browser vs Hunt Data",
-       subtitle = "comparison = iL3 vs FLF",
-       caption = "points = genes; red line = linear model (y ~ x)",
-       x = "Str-Browser LogFC",
-       y = "Hunt LogFC") +
-  coord_equal() +
-  theme_bw()
-
-
-```
-
-
-<!-- # Cluster DEGs into functional modules --- -->
-```{r heatmaps, eval=FALSE}
-# Introduction to this chunk ----
-# this chunk creates heatmaps from differentially expressed genes;
-# it takes as input a list of genes that are differentially expressed in any life stage
-# It selects modules of co-expressed genes based on pearson correlations
-# 
-# These data/results are examples of possible analyses that can be run on this data.
-
-# Load packages -----
-suppressPackageStartupMessages({
-  library(tidyverse)
-  library(limma)
-  library(RColorBrewer)
-  library(gplots)
-  library(heatmaply)
-  library(ggplot2)
-  library(egg)
-  library(dendextend)
-  source("../Strongyloides_RNAseq_Browser/Server/ggheatmap_local.R")
-})
-
-# Choose a color pallette ----
-#myheatcolors <- rev(brewer.pal(name="RdBu", n=11))
-myheatcolors <- RdBu(75)
-
-# Select the comparison
-y = 1
-
-# Generate variable containing expression data for the thresholded DEGs 
-diffGenes.thresh <- v.DEGList.filtered.norm$E[results[,y] !=0,]
-
-
-# Cluster DEGs across stages ----
-#begin by clustering the genes (rows) for a list of genes that are differentially expressed in at least one life stage
-# use the 'cor' function and the pearson method for finding all pairwise correlations of genes
-# '1-cor' converts this to a 0-2 scale for each of these correlations, which can then be used to calculate a distance matrix using 'as.dist'
-clustRows <- hclust(as.dist(1-cor(t(diffGenes.thresh), method="pearson")), method="complete") 
-# hierarchical clustering is a type of unsupervised clustering. 
-# NOTE: this cluster may provide different results to one based on log2.cpm.filtered.norm data, likely b/c this version is specifcally focused on genes that are significantly different between conditions.
-# Related methods include K-means, SOM, etc 
-# unsupervised methods are blind to sample/group identity
-# in contrast, supervised methods 'train' on a set of labeled data.  
-# supervised clustering methods include random forest, and artificial neural networks
-
-# cluster samples (columns)
-clustColumns <- hclust(as.dist(1-cor(diffGenes.thresh, method="spearman")), method="complete") #cluster columns by spearman correlation
-#note: use Spearman, instead of Pearson, for clustering samples because it gives equal weight to highly vs lowly expressed transcripts or genes
-
-#Cut the resulting tree and create color vector for clusters.  
-module.assign <- stats::cutree(clustRows, k=8) #The diffGenes info is based on a pairwise comparison between all 7 life stages. 
-
-# assign a color to each module (makes it easy to identify and manipulate)
-module.color <- rainbow(length(unique(module.assign)), start=0.1, end=0.9) 
-module.color <- module.color[as.vector(module.assign)] 
-
-# # simplfy heatmap by averaging the biological replicates and display only one column per condition
-# diffGenes.AVG <- avearrays(diffGenes.thresh)
-
-# plot the hclust results as a heatmap, grouping the life stages together
-diffGenes.heatmap <- heatmap.2(diffGenes.thresh,
-                               srtCol = 0, adjCol= c(0.5,0.5),
-                               Rowv=as.dendrogram(clustRows),
-                               Colv=as.dendrogram(clustColumns),
-                               key.title = NA,
-                               main = paste0("S. papillosus: DEG Heatmap (by life stage): "),
-                               sub = paste0("Genes pass threshold in >= 1 comparison. Threshold: p < ",
-                                            adj.P.thresh, "; log-fold change > ",
-                                            lfc.thresh),
-                               RowSideColors=module.color,
-                               col=rev(myheatcolors), scale='row', labRow=NA,
-                               density.info="none", trace="none",
-                               cexRow=1, cexCol=1)
-
-## GGPlots version
-# gg.diffGenes.heatmap<-ggheatmap_local(diffGenes.thresh,
-#                    colors = rev(myheatcolors),
-#                    Rowv= ladderize(as.dendrogram(clustRows)),
-#                    Colv=ladderize(as.dendrogram(clustColumns)),
-#                    key.title = "Log2CPM",
-#                    branches_lwd = 0.2,
-#                    showticklabels = c(TRUE, FALSE),
-#                    scale='row',
-#                    cexRow=1, cexCol=1)
-
-# ggsave("./heatmap.pdf", plot = gg.heatmap, width = 11, height = 8, units = "in", device = "pdf")
-# Make an interactive version
-# interactive.diffGenes.heatmap <- heatmaply(diffGenes.thresh,
-#                                  colors = rev(myheatcolors),
-#                                  Rowv= ladderize(as.dendrogram(clustRows)),
-#                                  Colv=ladderize(as.dendrogram(clustColumns)),
-#                                  showticklabels = c(TRUE, FALSE),
-#                                  scale='row',
-#                                  plot_method = "ggplot",
-#                                  branches_lwd = 0.2,
-#                                  key.title = "Log2CPM",
-#                                  cexRow=1, cexCol=1)
-
-```
+Tables with data suitable for benchmarking are not currently available.  
 
 ## Functional Enrichment Analysis
 This code prerform GSEA using the clusterProfiler library. Ability to do this depends on the availability of gene sets. Major databases (e.g. msigdb don't seem to have *Strongyloides* information. They do have *C. elegans* gene sets, but I'm not convinced the homology information is good enough for the comparison to be unbiased/meaningful. In Hunt et al 2016, there is an Ensembl Compara protein family set; we will use this as the basis for our gene set libraries.  
@@ -740,7 +601,7 @@ ensComp.geneIDs <- read.xlsx ("../Data/Hunt_Parasite_Ensembl_Compara.xlsx",
   dplyr::select(-Family.members) %>%
   pivot_longer(cols = -Compara.family.id, values_to = "geneID") %>%
   dplyr::select(-name) %>%
-  dplyr::filter(grepl("SVE_", geneID))
+  dplyr::filter(grepl("SPAL_", geneID))
 
 ensComp.geneIDs$geneID <- str_remove_all(ensComp.geneIDs$geneID, "\\.[0-9]$")
 ensComp.geneIDs$geneID <- str_remove_all(ensComp.geneIDs$geneID, "[a-z]$")
@@ -883,6 +744,8 @@ ggplot(myGSEA.df, aes(x=life_stage, y=ID)) +
         plot.caption.position = "plot",
         plot.title = element_text(face = "bold",
                                   size = 13, hjust = 0),
+        axis.text.y = element_text(size = 4, hjust = 1),
+        legend.key.size = unit(3, "mm"),
         axis.title = element_text(face = "bold",size = 10.4),
         legend.title = element_text(face="bold",size = 10.4),
         aspect.ratio = 3/1)
