@@ -194,11 +194,18 @@ PC2 <-subset(pca.pivot, PC == "PC2")
 PC3 <- subset(pca.pivot, PC == "PC3")
 #PC4 <- subset(pca.pivot, PC == "PC4")
 
+# New facet label names for PCs
+PC.labs <- c(paste0("PC1 (",pc.per[1],"%",")"),
+             paste0("PC2 (",pc.per[2],"%",")"),
+             paste0("PC3 (",pc.per[3],"%",")")
+             )
+names(PC.labs) <- c("PC1", "PC2", "PC3")
+
 p6<-ggplot(pca.pivot) +
   aes(x=sample, y=loadings) + # you could iteratively 'paint' different covariates onto this plot using the 'fill' aes
   geom_bar(stat="identity",aes(fill = group)) +
   scale_fill_brewer(palette = "Set2") +
-  facet_wrap(~PC) +
+  facet_wrap(~PC, labeller = labeller(PC = PC.labs)) +
   # geom_bar(data = PC1, stat = "identity", aes(fill = group)) +
   # geom_bar(data = PC2, stat = "identity", aes(fill = group)) +
   # geom_bar(data = PC3, stat = "identity", aes(fill = group)) +
