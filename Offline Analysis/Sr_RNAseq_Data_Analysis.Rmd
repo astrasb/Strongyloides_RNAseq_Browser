@@ -159,7 +159,17 @@ p3<-ggplot(pca.res.df) +
   scale_x_continuous(expand = c(.3, .3)) +
   scale_y_continuous(expand = c(.3, .3)) +
   coord_fixed() +
-  theme_bw()
+  theme_bw() +
+  theme(text = element_text(size = 10),
+        title = element_text(size = 10))
+
+ggsave("Sr_Multivariate_Plots_PCA.pdf",
+       plot = p3,
+       device = "pdf",
+       height = 4,
+       #width = 7,
+       path = './Plots')
+
 ```
 
 ### PCA Plot
@@ -184,33 +194,32 @@ pca.pivot <- pivot_longer(pca.res.df, # dataframe to be pivoted
                           values_to = "loadings") # name of new variable (column) storing all the values (data)
 PC1<-subset(pca.pivot, PC == "PC1")
 PC2 <-subset(pca.pivot, PC == "PC2")
-#PC3 <- subset(pca.pivot, PC == "PC3")
+PC3 <- subset(pca.pivot, PC == "PC3")
 #PC4 <- subset(pca.pivot, PC == "PC4")
 
 p6<-ggplot(pca.pivot) +
   aes(x=sample, y=loadings) + # you could iteratively 'paint' different covariates onto this plot using the 'fill' aes
-  geom_bar(stat="identity", fill = brewer.pal(8,"Pastel2")[8]) +
+  geom_bar(stat="identity", fill = brewer.pal(8,"Set2")[8]) +
   scale_fill_brewer(palette = "Set2") +
   facet_wrap(~PC) +
-  geom_bar(data = PC1, stat = "identity", aes(fill = batch)) +
-  geom_bar(data = PC2, stat = "identity", aes(fill = batch)) +
+  geom_bar(data = PC1, stat = "identity", aes(fill = group)) +
+  geom_bar(data = PC2, stat = "identity", aes(fill = group)) +
+  geom_bar(data = PC3, stat = "identity", aes(fill = group)) +
   labs(title="S. ratti: PCA 'small multiples' plot",
-       fill = "Life Stage Groups",
+       fill = "Life Stage",
        caption=paste0("produced on ", Sys.time())) +
-  scale_x_discrete(limits = targets$sample, labels = targets$group) +
+  scale_x_discrete(limits = targets$sample, labels = targets$sample) +
   theme_bw() +
+  theme(text = element_text(size = 10),
+        title = element_text(size = 10)) +
   coord_flip()
 
-# Graph all the plots generated in this script ----
-# Plot all the plots on a grid
-# p7<- grid.arrange(p1,p2,p3,p4, p5,p6,ncol = 4,
-#             layout_matrix = cbind(c(1,1,1,2,2,2),c(3,3,4,4,5,5),c(6,6,6,6,6,6), c(6,6,6,6,6,6)))
-# ggsave("Strongyloides ratti RNAseq Multivariate Analysis.pdf", 
-#        plot = p7, 
-#        device = "pdf",
-#        #height = 17,
-#        width = 22,
-#        path = '../Outputs/'
+ggsave("Sr_Multivariate_Plots_Small_Multiples.pdf",
+       plot = p6,
+       device = "pdf",
+       height = 4,
+       width = 8,
+       path = './Plots')
 
 ```
 

@@ -1,5 +1,5 @@
 ---
-title: Offline Data Analysis of Strongyloides venezuelensis bulk RNAseq data
+title: Offline Data Analysis of Strongyloides papillosus bulk RNAseq data
 output:
   html_document:
     code_folding: hide
@@ -148,8 +148,8 @@ p3<-ggplot(pca.res.df) +
   ) +
   geom_point(size=4, shape= 21, color = "black", alpha = 0.5) +
   #geom_label(color = "black", size = 2) +
-  #scale_fill_brewer(palette = "Set2") +
-  #scale_color_brewer(palette = "Set2", guide = FALSE) +
+  scale_fill_brewer(palette = "Set2") +
+  scale_color_brewer(palette = "Set2", guide = FALSE) +
   #stat_ellipse() +
   xlab(paste0("PC1 (",pc.per[1],"%",")")) + 
   ylab(paste0("PC2 (",pc.per[2],"%",")")) +
@@ -160,7 +160,16 @@ p3<-ggplot(pca.res.df) +
   scale_x_continuous(expand = c(.3, .3)) +
   scale_y_continuous(expand = c(.3, .3)) +
   coord_fixed() +
-  theme_bw()
+  theme_bw() +
+  theme(text = element_text(size = 10),
+        title = element_text(size = 10))
+
+ggsave("Sp_Multivariate_Plots_PCA.pdf",
+       plot = p3,
+       device = "pdf",
+       height = 4,
+       #width = 7,
+       path = './Plots')
 ```
 
 ### PCA Plot
@@ -182,22 +191,31 @@ pca.pivot <- pivot_longer(pca.res.df, # dataframe to be pivoted
                           values_to = "loadings") # name of new variable (column) storing all the values (data)
 PC1<-subset(pca.pivot, PC == "PC1")
 PC2 <-subset(pca.pivot, PC == "PC2")
-#PC3 <- subset(pca.pivot, PC == "PC3")
+PC3 <- subset(pca.pivot, PC == "PC3")
 #PC4 <- subset(pca.pivot, PC == "PC4")
 
 p6<-ggplot(pca.pivot) +
   aes(x=sample, y=loadings) + # you could iteratively 'paint' different covariates onto this plot using the 'fill' aes
-  geom_bar(stat="identity", fill = brewer.pal(8,"Pastel2")[8]) +
+  geom_bar(stat="identity",aes(fill = group)) +
   scale_fill_brewer(palette = "Set2") +
   facet_wrap(~PC) +
-  geom_bar(data = PC1, stat = "identity", aes(fill = group)) +
-  geom_bar(data = PC2, stat = "identity", aes(fill = group)) +
+  # geom_bar(data = PC1, stat = "identity", aes(fill = group)) +
+  # geom_bar(data = PC2, stat = "identity", aes(fill = group)) +
+  # geom_bar(data = PC3, stat = "identity", aes(fill = group)) +
   labs(title="S. papillosus: PCA 'small multiples' plot",
-       fill = "Life Stage/Source",
-       subtitle ="All samples/groups") +
-  scale_x_discrete(limits = targets$sample, labels = targets$group) +
+       fill = "Life Stage") +
+  scale_x_discrete(limits = targets$sample, labels = targets$sample) +
   theme_bw() +
+  theme(text = element_text(size = 10),
+        title = element_text(size = 10)) +
   coord_flip()
+
+ggsave("Sp_Multivariate_Plots_Small_Multiples.pdf",
+       plot = p6,
+       device = "pdf",
+       height = 4,
+       width = 8,
+       path = './Plots')
 ```
 
 ### PCA "Small Multiples" Plot
