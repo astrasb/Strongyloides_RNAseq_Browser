@@ -244,18 +244,17 @@ library(pheatmap)
 library(RColorBrewer)
 library(heatmaply)
 })
-# Make a heatmap for all the genes using the Log2CPM values
 
 diffGenes <- v.DEGList.filtered.norm$E %>%
   as_tibble(rownames = "geneID", .name_repair = "unique") %>%
   dplyr::select(!geneID) %>%
   as.matrix()
 rownames(diffGenes) <- rownames(v.DEGList.filtered.norm$E)
-colnames(diffGenes) <- as.character(v.DEGList.filtered.norm$targets$group)
+colnames(diffGenes) <- as.character(v.DEGList.filtered.norm$targets$samples)
 clustColumns <- hclust(as.dist(1-cor(diffGenes, method="spearman")), method="complete")
-clustRows <- hclust(as.dist(1-cor(t(diffGenes), 
-                                  method="pearson")), 
-                    method="complete") 
+clustRows <- hclust(as.dist(1-cor(t(diffGenes),
+                                  method="pearson")),
+                    method="complete")
 par(cex.main=1.2)
 
 showticklabels <- c(TRUE,FALSE)
@@ -266,8 +265,8 @@ p<-pheatmap(diffGenes,
             show_rownames = F,
             scale = "row",
             angle_col = 45,
-            main = "Log2 Counts Per Million (CPM) Expression Across Life Stages"
-          
+            main = "Sr: Log2 Counts Per Million (CPM) Expression Across Life Stages"
+
 )
 
 ```

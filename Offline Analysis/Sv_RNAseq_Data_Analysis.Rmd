@@ -254,11 +254,11 @@ diffGenes <- v.DEGList.filtered.norm$E %>%
   dplyr::select(!geneID) %>%
   as.matrix()
 rownames(diffGenes) <- rownames(v.DEGList.filtered.norm$E)
-colnames(diffGenes) <- as.character(v.DEGList.filtered.norm$targets$group)
+colnames(diffGenes) <- as.character(v.DEGList.filtered.norm$targets$source)
 clustColumns <- hclust(as.dist(1-cor(diffGenes, method="spearman")), method="complete")
-clustRows <- hclust(as.dist(1-cor(t(diffGenes), 
-                                  method="pearson")), 
-                    method="complete") 
+clustRows <- hclust(as.dist(1-cor(t(diffGenes),
+                                  method="pearson")),
+                    method="complete")
 par(cex.main=1.2)
 
 showticklabels <- c(TRUE,FALSE)
@@ -269,8 +269,8 @@ p<-pheatmap(diffGenes,
             show_rownames = F,
             scale = "row",
             angle_col = 45,
-            main = "S. venezulensis: Log2 Counts Per Million (CPM) Expression Across Life Stages (Group FLF_PF)"
-          
+            main = "Sv: Log2 Counts Per Million (CPM) Expression Across Life Stages (Group FLF_PF)"
+
 )
 
 ```
