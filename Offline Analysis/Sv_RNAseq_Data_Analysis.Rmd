@@ -936,7 +936,7 @@ As stated in the Introduction, samples included in the *S. venezuelensis* databa
 
 ```{r loadBaseData.fullset, echo = FALSE}
 # Load and Parse Preprocessed Data
-load (file = "../Outputs/Sv_allSamples_RNAseq_data_preprocessed")
+load (file = "../Outputs/SvRNAseq_allSamples_data_preprocessed")
 targets <- SvRNAseq.preprocessed.data$targets
 annotations <- SvRNAseq.preprocessed.data$annotations
 log2.cpm.filtered.norm <- SvRNAseq.preprocessed.data$log2.cpm.filtered.norm
@@ -944,7 +944,7 @@ myDGEList.filtered.norm <-SvRNAseq.preprocessed.data$myDGEList.filtered.norm
 
 rm(SvRNAseq.preprocessed.data)
 
-load(file = "../Outputs/Sv_allSamples_vDEGList")
+load(file = "../Outputs/Sv_allSamples_vDGEList")
 
 ```
 

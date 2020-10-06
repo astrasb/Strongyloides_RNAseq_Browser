@@ -343,8 +343,8 @@ myDGEList <- DGEList(Txi_gene$counts,
                      genes = annotations)
 
 # Save DGEList of raw counts for import back into R----
-save(myDGEList,
-     file = "../Outputs/SvRNAseq_DGEList")
+# save(myDGEList,
+#      file = "../Outputs/SvRNAseq_DGEList")
 
 ```
 
@@ -374,7 +374,7 @@ suppressPackageStartupMessages({
 })
 
 # Load digital gene expression list ----
-load(file = "../Outputs/SvRNAseq_DGEList")
+# load(file = "../Outputs/SvRNAseq_DGEList")
 
 # If it's not available, read in the study design file ----
 targets <- read_tsv("../Data/S_venezuelensis/Study_Design/Svene_Group_FLF_PF_study_design.txt",
@@ -509,7 +509,7 @@ gostplot(gost.res, interactive = T, capped = T)
 # Save matrix of discarded genes and their raw counts ----
 log2.cpm.discarded.df.pivot %>%
   pivot_wider(names_from = c(life_stage, samples), names_sep = "-", values_from = expression, id_cols = geneID) %>%
-  write.csv(file = "../Strongyloides_RNAseq_Browser/www/SvRNAseq_group_FLF_PF_discardedGene_counts.csv")
+  write.csv(file = "../Strongyloides_RNAseq_Browser/www/SvRNAseq_discardedGene_counts.csv")
 
 # Normalize the data using a between samples normalization ----
 # Source for TMM sample normalization here: https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-3-r25
@@ -649,15 +649,15 @@ myDGEList <- DGEList(Txi_gene$counts,
                      samples = data.frame(samples = targets$source, source = targets$sample, batch = targets$batch),
                      group = targets$group,
                      genes = annotations)
-save(myDGEList,
-     file = "../Outputs/SvRNAseq_Group_iL3_extended_DGEList")
+# save(myDGEList,
+#      file = "../Outputs/SvRNAseq_Group_iL3_extended_DGEList")
 
 
 ```
 
 ## Data Filtering, Normalization, and Saving.   
 ```{r iL3.extended.preprocessing.2, message = FALSE, warning=FALSE}
-load(file = "../Outputs/SvRNAseq_Group_iL3_extended_DGEList")
+# load(file = "../Outputs/SvRNAseq_Group_iL3_extended_DGEList")
 
 targets <- read_tsv("../Data/S_venezuelensis/Study_Design/Svene_Group_iL3_extended_study_design.txt",
                     na = c("", "NA", "na"))
@@ -753,9 +753,9 @@ p.discarded
 discarded.geneID <- unique(log2.cpm.discarded.df.pivot$geneID)
 gost.res <- gost(list(Discarded_genes = discarded.geneID), organism = "stveneprjeb530", correction_method = "fdr")
 gostplot(gost.res, interactive = T, capped = T)
-log2.cpm.discarded.df.pivot %>%
-    pivot_wider(names_from = c(life_stage, samples), names_sep = "-", values_from = expression, id_cols = geneID) %>%
-    write.csv(file = "../Strongyloides_RNAseq_Browser/www/SvRNAseq_group_iL3_extended_discardedGene_counts.csv")
+# log2.cpm.discarded.df.pivot %>%
+#     pivot_wider(names_from = c(life_stage, samples), names_sep = "-", values_from = expression, id_cols = geneID) %>%
+#     write.csv(file = "../Strongyloides_RNAseq_Browser/www/SvRNAseq_group_iL3_extended_discardedGene_counts.csv")
 myDGEList.filtered.norm <- calcNormFactors(myDGEList.filtered, method = "TMM")
 log2.cpm.filtered.norm <- cpm(myDGEList.filtered.norm, log=TRUE) 
 
@@ -794,7 +794,7 @@ save(SvRNAseq.preprocessed.data,
 
 # Save matrix of genes and their filtered, normalized counts ----
 colnames(log2.cpm.filtered.norm)<-paste(targets$group, targets$sample, sep = "-")
-write.csv(log2.cpm.filtered.norm, file = "../Strongyloides_RNAseq_Browser/www/SvRNAseq_group_iL3_extended_log2cpm_filtered_norm.csv")
+# write.csv(log2.cpm.filtered.norm, file = "../Strongyloides_RNAseq_Browser/www/SvRNAseq_group_iL3_extended_log2cpm_filtered_norm.csv")
 
 group <- factor(targets$group)
 biolrep <- factor(targets$source)
@@ -812,7 +812,7 @@ v.DEGList.filtered.norm <- avearrays(v.DEGList.filtered.norm.withtechreplicates,
 colnames(v.DEGList.filtered.norm$E) <- paste(v.DEGList.filtered.norm$targets$group, v.DEGList.filtered.norm$targets$samples,sep = '-')
 
 save(v.DEGList.filtered.norm,
-     file = "../Strongyloides_RNAseq_Browser/Data/Sv_group_iL3_extended_vDGEList")
+     file = "../Outputs/Sv_group_iL3_extended_vDGEList")
 
 ```
 
@@ -966,7 +966,7 @@ SvRNAseq.preprocessed.data <- list(targets = targets,
                                    myDGEList.filtered.norm = myDGEList.filtered.norm
 )
 save(SvRNAseq.preprocessed.data,
-     file = "../Outputs/Sv_allSamples_RNAseq_data_preprocessed")
+     file = "../Outputs/SvRNAseq_allSamples_data_preprocessed")
 
 # Save matrix of genes and their filtered, normalized counts ----
 colnames(log2.cpm.filtered.norm)<-paste(targets$group, targets$sample, sep = "-")
