@@ -20,7 +20,6 @@ output$genePanelinputs <- renderUI({
             ### Action Button
             actionButton('goGW',
                          'Submit',
-                         #width = '50%',
                          icon = icon("fas fa-share"),
                          class = "btn-primary"),
             

@@ -9,7 +9,7 @@ generateGenePlot <- reactive({
     if (input$displayedGene == "All Genes" | input$displayedGene == "Data Table"){
         vals$gene_of_interest <- vals$genelist$geneID
     } else vals$gene_of_interest <- input$displayedGene
-   
+    
     if (length(vals$gene_of_interest) == 1 && input$displayedGene != "Data Table") {
         setProgress(0.25)
         # Plot Log2CPM values for an individual gene
@@ -18,14 +18,14 @@ generateGenePlot <- reactive({
         setProgress(0.5)
         
         p<- suppressWarnings(ggplot(gene_vals) + 
-            aes(x = life_stage, y = log2CPM, fill = life_stage) +
-            geom_boxplot(show.legend = F, alpha = 0.7) +
-            labs(y="log2 CPM expression", x = "Life Stage",
-                 title=paste("Log2 Counts per Million (CPM):",
-                             vals$gene_of_interest),
-                 subtitle="filtered, normalized, variance-stabilized") +
-            theme_Publication() + 
-            theme(aspect.ratio=2/3) )
+                                 aes(x = life_stage, y = log2CPM, fill = life_stage) +
+                                 geom_boxplot(show.legend = F, alpha = 0.7) +
+                                 labs(y="log2 CPM expression", x = "Life Stage",
+                                      title=paste("Log2 Counts per Million (CPM):",
+                                                  vals$gene_of_interest),
+                                      subtitle="filtered, normalized, variance-stabilized") +
+                                 theme_Publication() + 
+                                 theme(aspect.ratio=2/3) )
         setProgress(0.75)
         p
     } else if (input$displayedGene == "Data Table") {
@@ -113,10 +113,6 @@ generateGenePlot <- reactive({
         
         diffGenes <- vals$diffGenes.df %>%
             dplyr::select(!geneID) %>%
-        
-        # colnames(diffGenes) <- vals$v.DEGList.filtered.norm$target$group
-        # diffGenes <- diffGenes %>%
-        #     avearrays() %>%
             as.matrix()
         rownames(diffGenes) <- rownames(vals$v.DEGList.filtered.norm$E)
         setProgress(0.2)
@@ -129,12 +125,10 @@ generateGenePlot <- reactive({
                                                     nchar(
                                                         as.character(vals$v.DEGList.filtered.norm$targets$samples[1]))-2, nchar(
                                                             as.character(vals$v.DEGList.filtered.norm$targets$samples[1])))
-                                             )
+        )
         
-        #colnames(subset.diffGenes) <- vec_as_names(as.character(vals$v.DEGList.filtered.norm$targets$group), repair = "unique", quiet = T)
-
         setProgress(0.4)
-
+        
         clustRows <- hclust(as.dist(1-cor(t(subset.diffGenes), 
                                           method="pearson")), 
                             method="complete") 
@@ -203,11 +197,11 @@ observe({
     req(vals$genelist)
     req(input$displayedGene)
     vals$genelist
-   
+    
     if(input$displayedGene == "All Genes"){
-         removeUI(
-             selector = "#CPMPlotlydiv"
-         )
+        removeUI(
+            selector = "#CPMPlotlydiv"
+        )
         removeUI(
             selector = "#CPMdiv"
         )
@@ -221,11 +215,11 @@ observe({
             where = "beforeBegin",
             ui = tagList(div(id = "CPMPlotlydiv",
                              h5("Log2 Counts Per Million (CPM) Expression Across Life Stages"),
-                            plotlyOutput('CPMPlotly')
+                             plotlyOutput('CPMPlotly')
             ))
         )
         
-
+        
         
     }else if(input$displayedGene == "Data Table"){
         removeUI(
@@ -267,22 +261,21 @@ observe({
         )
     }
 })
-#},ignoreNULL = FALSE)
 
 ## GW: Save Gene Plots ----
 output$downloadGenePlot <- downloadHandler(
-   
+    
     filename = function(){
         paste('GeneExpression_',input$displayedGene, '_',Sys.Date(),'.pdf', sep='')
     },
     content = function(file){
         withProgress ({
-
+            
             if (input$displayedGene == "All Genes" | input$displayedGene == "Data Table") {
                 setProgress(0.2)
                 # Make a heatmap for all the genes using the Log2CPM values
                 myheatcolors <- RdBu(75)
-
+                
                 diffGenes <- vals$diffGenes.df %>%
                     dplyr::select(!geneID) 
                 colnames(diffGenes) <- vals$v.DEGList.filtered.norm$target$group
@@ -291,21 +284,16 @@ output$downloadGenePlot <- downloadHandler(
                     as.matrix()
                 
                 rownames(diffGenes) <- rownames(vals$v.DEGList.filtered.norm$E)
-                #colnames(diffGenes) <- as.character(vals$v.DEGList.filtered.norm$targets$group)
                 clustColumns <- hclust(as.dist(1-cor(diffGenes, method="spearman")), method="complete")
                 setProgress(0.4)
                 subset.diffGenes<- diffGenes[vals$gene_of_interest,]
-
-                # colnames(subset.diffGenes) <- paste0(vals$v.DEGList.filtered.norm$targets$group, 
-                #                                      "_", 
-                #                                      vals$v.DEGList.filtered.norm$targets$samples)
                 clustRows <- hclust(as.dist(1-cor(t(subset.diffGenes), 
                                                   method="pearson")), 
                                     method="complete") 
-
+                
                 par(cex.main=1.2)
                 setProgress(0.6)
-
+                
                 showticklabels <- if(length(vals$gene_of_interest)<20){c(TRUE,TRUE)} else {c(TRUE,FALSE)}
                 
                 p<-ggheatmap_local(subset.diffGenes,
@@ -318,7 +306,6 @@ output$downloadGenePlot <- downloadHandler(
                                    showticklabels = showticklabels,
                                    scale='row',
                                    cexRow=1.2, cexCol=1.2,
-                                   #margin = c(50,1000),
                                    main = "Log2 Counts Per Million (CPM) Expression Across Life Stages")
                 setProgress(0.8)
                 ggsave(file,
@@ -330,7 +317,7 @@ output$downloadGenePlot <- downloadHandler(
                 setProgress(1)
             } else {
                 p<-generateGenePlot()
-
+                
                 ggsave(file,
                        plot = p,
                        width = 7,
@@ -341,7 +328,7 @@ output$downloadGenePlot <- downloadHandler(
         },
         message = "Saving Plots")
     }
-
+    
 )
 
 ## GW: Save Excel Table with Gene Expression Data ----
@@ -350,45 +337,45 @@ output$downloadbuttonsGenes <- renderUI({
     req(vals$genelist.Log2CPM)
     if (nrow(vals$genelist)>1) {req(vals$HeatmapRowOrder)}
     isolate({
-
+        
         vals$genelist.Log2CPM$sampleID <- rep(as.character(vals$v.DEGList.filtered.norm$targets$samples),
                                               times =  nrow(vals$genelist))
-
+        
         genelist.expression <-  vals$genelist.Log2CPM %>%
             left_join(vals$genelist, .,by = "geneID") %>%
             pivot_wider(id_cols = geneID,
                         names_from = c(life_stage,sampleID),
                         names_sep = "-",
                         values_from = log2CPM)
-
+        
         if (isTruthy(vals$HeatmapRowOrder)){
             row.order <- tibble(OldOrder = vals$HeatmapRowOrder,
                                 NewOrder = seq_along(vals$HeatmapRowOrder)) %>%
                 dplyr::arrange(OldOrder)
-
+            
             col.order <- tibble(OldOrder = vals$HeatmapColOrder,
                                 NewOrder = seq_along(vals$HeatmapColOrder)) %>%
                 dplyr::arrange(desc(NewOrder))
-
+            
             genelist.expression <- genelist.expression %>%
                 add_column(NewOrder = row.order$NewOrder, .before = "geneID") %>%
                 dplyr::arrange(NewOrder) %>%
                 dplyr::select(!NewOrder) %>%
                 .[c(1, col.order$OldOrder+1)]
         }
-
+        
         genelist.expression <- genelist.expression %>%
             list("User-selected Genes" = . )
-
+        
         # Add back on genes that were submitted by the user but don't appear in the list of genes for which there is available data.
         excluded.genes <- dplyr::anti_join(vals$submitted.genelist,
                                            vals$genelist,
                                            by = "geneID")
-
+        
         genelist.expression <-lapply(genelist.expression, function (x) {
             dplyr::full_join(x,excluded.genes, by = "geneID")
         })
-
+        
         # Add gene annotations
         genelist.expression <-lapply(genelist.expression, function (x) {
             vals$annotations %>%
@@ -398,24 +385,24 @@ output$downloadbuttonsGenes <- renderUI({
                                 Ce_geneID, Ce_percent_homology, .after = geneID) %>%
                 dplyr::relocate(ends_with("WBgeneID"), .before = In.subclade_geneID)%>%
                 dplyr::left_join(x,., by = "geneID")
-
+            
         })
     })
-
+    
     output$heatmap_data_download <- generate_excel_report(c("User-selected Genes"),
                                                           genelist.expression,
                                                           name = paste(input$selectSpecies_GW, "RNAseq Gene Expression"),
                                                           filename_prefix = "Gene_Expression_Data_",
                                                           subtitle_prefix = "Log2CPM Expression:")
-
+    
     tagList(
         downloadButton("downloadGenePlot",
                        "Download Plot as PDF",
                        class = "btn-primary"),
-
+        
         downloadButton("heatmap_data_download",
                        "Download Expression Data",
                        class = "btn-primary")
     )
-
+    
 })

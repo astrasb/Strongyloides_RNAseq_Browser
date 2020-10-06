@@ -9,7 +9,7 @@ suppressPackageStartupMessages({
     library(shinythemes)
     library(DT)
     library(tidyverse)
-    library(limma) # differential gene expression using linear modeling
+    library(limma)
     library(edgeR)
     library(gt) 
     library(plotly)
@@ -25,7 +25,7 @@ suppressPackageStartupMessages({
     library(egg)
     library(dendextend)
     library(vctrs)
-    library(clusterProfiler) # provides a suite of tools for functional enrichment analysis
+    library(clusterProfiler)
     source("Server/ggheatmap_local.R")
     source("Server/calc_DEG_tbl.R")
     source("Server/theme_Publication.R")

@@ -37,7 +37,6 @@ perform_GSEA_LS <-reactive ({
     
     myGSEA.df$ID <- myGSEA.df$ID %>%
         word(sep = ',') %>%
-        #word(sep = '/') %>%
         word(sep = ' and')
     
     vals$myGSEA.df <- myGSEA.df
@@ -52,7 +51,6 @@ perform_GSEA_LS <-reactive ({
              from Ensembl Compara dataset defined in Hunt et al 2016',
              x = "Life Stage",
              y = "Family ID") +
-        #coord_fixed(1/2) +
         theme_bw() +
         theme(plot.title.position = "plot",
               plot.caption.position = "plot",

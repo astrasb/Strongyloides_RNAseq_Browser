@@ -37,7 +37,7 @@ observeEvent(input$speciesGW, {
         
         setProgress(value = .5)
         
-        # Parse vDEGList into a tibble containing Log2CPM information
+        # Parse vDGEList into a tibble containing Log2CPM information
         vals$Log2CPM<-v.DEGList.filtered.norm$E %>%
             as_tibble(rownames = "geneID")%>%
             setNames(nm = c("geneID", 
@@ -63,56 +63,56 @@ observeEvent(input$speciesGW, {
 })
 
 # GW: Load experiment information ----
- StudyInfo.filename.GW <- reactive({
-     req(input$selectSpecies_GW)
-     
-     species <- switch(input$selectSpecies_GW,
-                       `S. stercoralis` = 'Ss',
-                       `S. ratti` = 'Sr',
-                       `S. papillosus` = "Sp",
-                       `S. venezuelensis` = "Sv")
-     
-     Info.type <- switch(input$which.Experimental.Info.GW,
-            `Study Design` = '_studyDesign.txt',
-            `Log2CPM Gene Counts` = 'RNAseq_log2cpm_filtered_norm.csv',
-            `vDEGList` = "_vDGEList",
-            `Discarded Gene Counts` = "RNAseq_discardedGene_counts.csv")
-     
-     file.location <- switch(input$which.Experimental.Info.GW,
-                             `Study Design` = './www/',
-                             `Log2CPM Gene Counts` = './www/',
-                             `vDEGList` = "./Data/",
-                             `Discarded Gene Counts` = "./www/"
-                             )
-     Info.file <- paste0(file.location,species, Info.type)
-     Info.file
-     
- })
+StudyInfo.filename.GW <- reactive({
+    req(input$selectSpecies_GW)
+    
+    species <- switch(input$selectSpecies_GW,
+                      `S. stercoralis` = 'Ss',
+                      `S. ratti` = 'Sr',
+                      `S. papillosus` = "Sp",
+                      `S. venezuelensis` = "Sv")
+    
+    Info.type <- switch(input$which.Experimental.Info.GW,
+                        `Study Design` = '_studyDesign.txt',
+                        `Log2CPM Gene Counts` = 'RNAseq_log2cpm_filtered_norm.csv',
+                        `vDGEList` = "_vDGEList",
+                        `Discarded Gene Counts` = "RNAseq_discardedGene_counts.csv")
+    
+    file.location <- switch(input$which.Experimental.Info.GW,
+                            `Study Design` = './www/',
+                            `Log2CPM Gene Counts` = './www/',
+                            `vDGEList` = "./Data/",
+                            `Discarded Gene Counts` = "./www/"
+    )
+    Info.file <- paste0(file.location,species, Info.type)
+    Info.file
+    
+})
 
- output$StudyInfo.panel.GW <- renderUI({
-     output$StudyInfo.file.GW <- downloadHandler(
-         filename = function() {
-             Info.file <- StudyInfo.filename.GW()
-             file.location <- switch(input$which.Experimental.Info.GW,
-                                     `Study Design` = './www/',
-                                     `Log2CPM Gene Counts` = './www/',
-                                     `vDEGList` = "./Data/",
-                                     `Discarded Gene Counts` = "./www/"
-             )
-             str_remove(Info.file, file.location)
-         },
-         content = function(file){
-             Info.file <- StudyInfo.filename.GW()
-             file.copy(Info.file, file)
-         }
-     )
-     
-     downloadButton("StudyInfo.file.GW","Download",
-                    class = "btn-default")
- })
-     
- 
- 
+output$StudyInfo.panel.GW <- renderUI({
+    output$StudyInfo.file.GW <- downloadHandler(
+        filename = function() {
+            Info.file <- StudyInfo.filename.GW()
+            file.location <- switch(input$which.Experimental.Info.GW,
+                                    `Study Design` = './www/',
+                                    `Log2CPM Gene Counts` = './www/',
+                                    `vDGEList` = "./Data/",
+                                    `Discarded Gene Counts` = "./www/"
+            )
+            str_remove(Info.file, file.location)
+        },
+        content = function(file){
+            Info.file <- StudyInfo.filename.GW()
+            file.copy(Info.file, file)
+        }
+    )
+    
+    downloadButton("StudyInfo.file.GW","Download",
+                   class = "btn-default")
+})
+
+
+
 # LS: Load species data in life stage tab ----
 observeEvent(input$speciesLS, {
     input$selectSpecies_LS
@@ -141,7 +141,7 @@ observeEvent(input$speciesLS, {
         
         setProgress(value = .5)
         
-        # Parse vDEGList into a tibble containing Log2CPM information
+        # Parse vDGEList into a tibble containing Log2CPM information
         vals$Log2CPM<-v.DEGList.filtered.norm$E %>%
             as_tibble(rownames = "geneID")%>%
             setNames(nm = c("geneID", 
@@ -165,54 +165,54 @@ observeEvent(input$speciesLS, {
     
 })
 
- # LS: Load experiment information ----
- StudyInfo.filename.LS <- reactive({
-     req(input$selectSpecies_LS)
-     
-     species <- switch(input$selectSpecies_LS,
-                       `S. stercoralis` = 'Ss',
-                       `S. ratti` = 'Sr',
-                       `S. papillosus` = "Sp",
-                       `S. venezuelensis` = "Sv")
-     
-     Info.type <- switch(input$which.Experimental.Info.LS,
-                         `Study Design` = '_studyDesign.txt',
-                         `Log2CPM Gene Counts` = 'RNAseq_log2cpm_filtered_norm.csv',
-                         `vDEGList` = "_vDGEList",
-                         `Discarded Gene Counts` = "RNAseq_discardedGene_counts.csv")
-     
-     file.location <- switch(input$which.Experimental.Info.LS,
-                             `Study Design` = './www/',
-                             `Log2CPM Gene Counts` = './www/',
-                             `vDEGList` = "./Data/",
-                             `Discarded Gene Counts` = "./www/"
-     )
-     Info.file <- paste0(file.location,species, Info.type)
-     Info.file
-     
- })
- 
- output$StudyInfo.panel.LS <- renderUI({
-     output$StudyInfo.file.LS <- downloadHandler(
-         filename = function() {
-             Info.file <- StudyInfo.filename.LS()
-             file.location <- switch(input$which.Experimental.Info.LS,
-                                     `Study Design` = './www/',
-                                     `Log2CPM Gene Counts` = './www/',
-                                     `vDEGList` = "./Data/",
-                                     `Discarded Gene Counts` = "./www/"
-             )
-             str_remove(Info.file, file.location)
-         },
-         content = function(file){
-             Info.file <- StudyInfo.filename.LS()
-             file.copy(Info.file, file)
-         }
-     )
-     
-     downloadButton("StudyInfo.file.LS","Download",
-                    class = "btn-default")
- })
+# LS: Load experiment information ----
+StudyInfo.filename.LS <- reactive({
+    req(input$selectSpecies_LS)
+    
+    species <- switch(input$selectSpecies_LS,
+                      `S. stercoralis` = 'Ss',
+                      `S. ratti` = 'Sr',
+                      `S. papillosus` = "Sp",
+                      `S. venezuelensis` = "Sv")
+    
+    Info.type <- switch(input$which.Experimental.Info.LS,
+                        `Study Design` = '_studyDesign.txt',
+                        `Log2CPM Gene Counts` = 'RNAseq_log2cpm_filtered_norm.csv',
+                        `vDGEList` = "_vDGEList",
+                        `Discarded Gene Counts` = "RNAseq_discardedGene_counts.csv")
+    
+    file.location <- switch(input$which.Experimental.Info.LS,
+                            `Study Design` = './www/',
+                            `Log2CPM Gene Counts` = './www/',
+                            `vDGEList` = "./Data/",
+                            `Discarded Gene Counts` = "./www/"
+    )
+    Info.file <- paste0(file.location,species, Info.type)
+    Info.file
+    
+})
+
+output$StudyInfo.panel.LS <- renderUI({
+    output$StudyInfo.file.LS <- downloadHandler(
+        filename = function() {
+            Info.file <- StudyInfo.filename.LS()
+            file.location <- switch(input$which.Experimental.Info.LS,
+                                    `Study Design` = './www/',
+                                    `Log2CPM Gene Counts` = './www/',
+                                    `vDGEList` = "./Data/",
+                                    `Discarded Gene Counts` = "./www/"
+            )
+            str_remove(Info.file, file.location)
+        },
+        content = function(file){
+            Info.file <- StudyInfo.filename.LS()
+            file.copy(Info.file, file)
+        }
+    )
+    
+    downloadButton("StudyInfo.file.LS","Download",
+                   class = "btn-default")
+})
 
 
 
