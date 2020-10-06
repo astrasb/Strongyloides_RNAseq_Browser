@@ -7,14 +7,13 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
            collapsible = TRUE,
            id = "tab",
            
-           
            # Gene Browser Tab ----
            tabPanel(h4("Browse By Gene"),
                     value = "GW",
                     useShinyjs(),
                     div(id = "GW",
                     
-                        ## Fluid Row 1 ----    
+                        ## Fluid Row 1: Species Selection Panel + Download Study Info Dropdown Menu ----    
                     fluidRow(
                         
                         column(3,
@@ -33,7 +32,6 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                                ),
                                    actionButton('speciesGW',
                                                 'Initialize',
-                                                #width = '50%',
                                                 icon = icon("fas fa-share"),
                                                 class = "btn-primary")
                                )),
@@ -55,7 +53,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                offset = 6
                         )
                         ),
-                    ## Fluid Row 2 ----
+                    ## Fluid Row 2: Input Gene Panel + Life Stage Legend + Gene Dropdown Menu + Gene Expression Plots Panel----
                     fluidRow(
                         
                         column(3,
@@ -85,7 +83,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                         )
                         
                     ),
-                    ## Fluid Row 3 ----
+                    ## Fluid Row 3: Input Pairwise Comparisons Panel + Volcano Plot Panel + Contrasts Dropdown Menu + Differential Gene Expression Table  ----
                     fluidRow(
                         column(3,
                                conditionalPanel(condition = "(output.downloadbuttonsGenes || output.volcano_GW)",
@@ -128,7 +126,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                     value = "LS",
                     useShinyjs(),
                     div(id = "LS",
-                        ## Fluid Row 1 ----
+                        ## Fluid Row 1: Species Selection Panel + Life Stage Legend + Download Study Info Dropdown Menu ----
                     fluidRow(
                         column(3,
                                panel(
@@ -144,7 +142,6 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                                               "S. venezuelensis")),
                                    actionButton('speciesLS',
                                                 'Initialize',
-                                                #width = '50%',
                                                 icon = icon("fas fa-share"),
                                                 class = "btn-primary")
                                    )
@@ -174,19 +171,13 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                         ),
                     
                         
-                    ## Fluid Row 2 ----    
+                    ## Fluid Row 2: Input Pairwise Comparisons Panel + Volcano Plot Panel + Contrasts Dropdown Menu + Differential Gene Expression Table ----    
                     fluidRow(
                         column(3,
    
                                conditionalPanel(condition = 'input.speciesLS != 0',
                                uiOutput("pairwiseSelector_LS")
                         )),
-                        # column(7,
-                        #        
-                        #        conditionalPanel(condition = "input.speciesLS != 0",
-                        #                         id = "lifeStageLegend_LS",
-                        #                         uiOutput("Legend_LS"))
-                        # ),
                         column(3,
                                conditionalPanel(condition = "output.pairwiseSelector_LS && input.goLS !=0",
                                                 id = "contrastDisplaySelectionPanel_LS",
@@ -198,15 +189,6 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                                 uiOutput('volcano_LS')               
                                )
                         ),
-                        # column(2,
-                               # conditionalPanel(condition = "output.pairwiseSelector_LS && input.goLS !=0",
-                               #                  id = "contrastDisplaySelectionPanel_LS",
-                               #                  uiOutput('contrastDisplaySelection_LS')),
-                               
-                               # conditionalPanel(condition = "input.goLS !=0 && output.contrastDisplaySelection_LS",
-                               #                  id = "lifeStageLegend_LS",
-                               #                  uiOutput("Legend_LS"))
-                        # ),
                         
                         column(9,
                                conditionalPanel(condition = "output.pairwiseSelector_LS && input.goLS != 0 && output.volcano_LS",
@@ -221,7 +203,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                         )
                         
                     ),
-                    ## Fluid Row 3 ----
+                    ## Fluid Row 3: Gene Set Enrichment Analysis Plot and Table Panels ----
                     fluidRow(
                         
                         column(6,

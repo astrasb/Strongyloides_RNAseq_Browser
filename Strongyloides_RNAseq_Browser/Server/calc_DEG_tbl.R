@@ -14,4 +14,4 @@ calc_DEG_tbl <- function (ebFit, coef) {
         dplyr::relocate(ends_with("WBgeneID"), .before = In.subclade_geneID)
     
     myTopHits.df
-    }
+}

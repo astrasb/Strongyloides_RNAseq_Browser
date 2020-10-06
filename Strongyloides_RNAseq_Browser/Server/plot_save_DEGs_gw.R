@@ -68,9 +68,9 @@ output$volcano_GW <- renderUI({
         status = "primary",
         
         tagList(plotOutput('volcano_UI_GW',
-                                       hover = hoverOpts("plot_hover", 
-                                                         delay = 100, 
-                                                         delayType = "debounce")),
+                           hover = hoverOpts("plot_hover", 
+                                             delay = 100, 
+                                             delayType = "debounce")),
                 uiOutput("hover_info"),
                 uiOutput("downloadVolcanoGW")
         )
@@ -158,106 +158,105 @@ assemble_DEGs_GW <- reactive({
     
     req(vals$comparison_GW,vals$displayedComparison_GW,vals$genelist)
     
-        tS<- vals$targetStage_GW[vals$displayedComparison_GW,
-                                 ][vals$targetStage_GW[vals$displayedComparison_GW,
+    tS<- vals$targetStage_GW[vals$displayedComparison_GW,
+                             ][vals$targetStage_GW[vals$displayedComparison_GW,
+                                                   ]!=""]
+    cS<- vals$contrastStage_GW[vals$displayedComparison_GW,
+                               ][vals$contrastStage_GW[vals$displayedComparison_GW,
                                                        ]!=""]
-        cS<- vals$contrastStage_GW[vals$displayedComparison_GW,
-                                   ][vals$contrastStage_GW[vals$displayedComparison_GW,
-                                                           ]!=""]
-        
-
-        # Add back on genes that were submitted by the user but don't appear in the list of genes for which there is available data.
-        excluded.genes <- dplyr::anti_join(vals$submitted.genelist, 
-                                           vals$genelist,
-                                           by = "geneID") %>%
-            left_join(vals$annotations, by = "geneID") # Add gene annotations
-        
-        sample.num.tS <- sapply(tS, function(x) {colSums(vals$v.DEGList.filtered.norm$design)[[x]]}) %>% sum()
-        sample.num.cS <- sapply(cS, function(x) {colSums(vals$v.DEGList.filtered.norm$design)[[x]]}) %>% sum()
-        
-        
-        n_num_cols <- sample.num.tS + sample.num.cS + 5
-        index_homologs <- length(colnames(vals$list.highlight.tbl_GW[[vals$displayedComparison_GW]])) - 5
-
-        highlight.datatable <- vals$list.highlight.tbl_GW[[vals$displayedComparison_GW]] %>%
-            {suppressMessages(dplyr::full_join(.,excluded.genes))} %>%
-            DT::datatable(rownames = FALSE,
-                          caption = htmltools::tags$caption(
-                              style = 'caption-side: top; text-align: left; color: black',
-                              htmltools::tags$b('Differentially Expressed Genes in', 
-                                                htmltools::tags$em(input$selectSpecies_GW), 
-                                                gsub('-',' vs ',vals$comparison_GW[vals$displayedComparison_GW])),
-                              htmltools::tags$br(),
-                              "Threshold: p < ",
-                              adj.P.thresh, "; log-fold change > ",
-                              lfc.thresh,
-                              htmltools::tags$br(),
-                              'Values = log2 counts per million'),
-                          options = list(autoWidth = TRUE,
-                                         scrollX = TRUE,
-                                         scrollY = '300px',
-                                         scrollCollapse = TRUE,
-                                         order = list(n_num_cols-1, 
-                                                      'desc'),
-                                         searchHighlight = TRUE, 
-                                         pageLength = 25, 
-                                         lengthMenu = c("5",
-                                                        "10",
-                                                        "25",
-                                                        "50",
-                                                        "100"),
-                                         initComplete = htmlwidgets::JS(
-                                             "function(settings, json) {",
-                                             paste0("$(this.api().table().container()).css({'font-size': '", "10pt", "'});"),
-                                             "}"),
-                                         columnDefs = list(
-                                             list(
-                                                 targets = ((n_num_cols + 
-                                                                 4):(n_num_cols + 
-                                                                         5)),
-                                                 render = JS(
-                                                     "function(data, type, row, meta) {",
-                                                     "return type === 'display' && data.length > 20 ?",
-                                                     "'<span title=\"' + data + '\">' + data.substr(0, 20) + '...</span>' : data;",
-                                                     "}")
-                                             ),
-                                             list(targets = "_all",
-                                                  class="dt-right")
+    
+    
+    # Add back on genes that were submitted by the user but don't appear in the list of genes for which there is available data.
+    excluded.genes <- dplyr::anti_join(vals$submitted.genelist, 
+                                       vals$genelist,
+                                       by = "geneID") %>%
+        left_join(vals$annotations, by = "geneID") # Add gene annotations
+    
+    sample.num.tS <- sapply(tS, function(x) {colSums(vals$v.DEGList.filtered.norm$design)[[x]]}) %>% sum()
+    sample.num.cS <- sapply(cS, function(x) {colSums(vals$v.DEGList.filtered.norm$design)[[x]]}) %>% sum()
+    
+    
+    n_num_cols <- sample.num.tS + sample.num.cS + 5
+    index_homologs <- length(colnames(vals$list.highlight.tbl_GW[[vals$displayedComparison_GW]])) - 5
+    
+    highlight.datatable <- vals$list.highlight.tbl_GW[[vals$displayedComparison_GW]] %>%
+        {suppressMessages(dplyr::full_join(.,excluded.genes))} %>%
+        DT::datatable(rownames = FALSE,
+                      caption = htmltools::tags$caption(
+                          style = 'caption-side: top; text-align: left; color: black',
+                          htmltools::tags$b('Differentially Expressed Genes in', 
+                                            htmltools::tags$em(input$selectSpecies_GW), 
+                                            gsub('-',' vs ',vals$comparison_GW[vals$displayedComparison_GW])),
+                          htmltools::tags$br(),
+                          "Threshold: p < ",
+                          adj.P.thresh, "; log-fold change > ",
+                          lfc.thresh,
+                          htmltools::tags$br(),
+                          'Values = log2 counts per million'),
+                      options = list(autoWidth = TRUE,
+                                     scrollX = TRUE,
+                                     scrollY = '300px',
+                                     scrollCollapse = TRUE,
+                                     order = list(n_num_cols-1, 
+                                                  'desc'),
+                                     searchHighlight = TRUE, 
+                                     pageLength = 25, 
+                                     lengthMenu = c("5",
+                                                    "10",
+                                                    "25",
+                                                    "50",
+                                                    "100"),
+                                     initComplete = htmlwidgets::JS(
+                                         "function(settings, json) {",
+                                         paste0("$(this.api().table().container()).css({'font-size': '", "10pt", "'});"),
+                                         "}"),
+                                     columnDefs = list(
+                                         list(
+                                             targets = ((n_num_cols + 
+                                                             4):(n_num_cols + 
+                                                                     5)),
+                                             render = JS(
+                                                 "function(data, type, row, meta) {",
+                                                 "return type === 'display' && data.length > 20 ?",
+                                                 "'<span title=\"' + data + '\">' + data.substr(0, 20) + '...</span>' : data;",
+                                                 "}")
                                          ),
-                                         rowCallback = JS(c(
-                                             "function(row, data){",
-                                             "  for(var i=0; i<data.length; i++){",
-                                             "    if(data[i] === null){",
-                                             "      $('td:eq('+i+')', row).html('NA')",
-                                             "        .css({'color': 'rgb(151,151,151)', 'font-style': 'italic'});",
-                                             "    }",
-                                             "  }",
-                                             "}"  
-                                         ))
-                                         
-                          )) 
-
-        highlight.datatable <- highlight.datatable %>%
-            DT::formatRound(columns=c(3:n_num_cols), 
-                            digits=3)
-        
-        highlight.datatable <- highlight.datatable %>%
-            DT::formatRound(columns=c(n_num_cols+2, 
-                                      index_homologs+1,
-                                      index_homologs+3), 
-                            digits=2)
-        
-        highlight.datatable <- highlight.datatable %>%
-            DT::formatSignif(columns=c(n_num_cols+1), 
-                             digits=3)
-        withProgress(1)
-        highlight.datatable
+                                         list(targets = "_all",
+                                              class="dt-right")
+                                     ),
+                                     rowCallback = JS(c(
+                                         "function(row, data){",
+                                         "  for(var i=0; i<data.length; i++){",
+                                         "    if(data[i] === null){",
+                                         "      $('td:eq('+i+')', row).html('NA')",
+                                         "        .css({'color': 'rgb(151,151,151)', 'font-style': 'italic'});",
+                                         "    }",
+                                         "  }",
+                                         "}"  
+                                     ))
+                                     
+                      )) 
+    
+    highlight.datatable <- highlight.datatable %>%
+        DT::formatRound(columns=c(3:n_num_cols), 
+                        digits=3)
+    
+    highlight.datatable <- highlight.datatable %>%
+        DT::formatRound(columns=c(n_num_cols+2, 
+                                  index_homologs+1,
+                                  index_homologs+3), 
+                        digits=2)
+    
+    highlight.datatable <- highlight.datatable %>%
+        DT::formatSignif(columns=c(n_num_cols+1), 
+                         digits=3)
+    withProgress(1)
+    highlight.datatable
 })
 
 output$highlight.df <- renderDT ({
     req(input$goGW,vals$list.highlight.tbl_GW,vals$genelist)
     DEG.datatable_GW<-assemble_DEGs_GW()
-    #DEG.datatable_GW<-withProgress(assemble_DEGs_GW(), message = "Generating DataTable")
     DEG.datatable_GW
 })
 

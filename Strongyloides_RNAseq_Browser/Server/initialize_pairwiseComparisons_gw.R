@@ -42,9 +42,6 @@ output$pairwiseSelector_GW<- renderUI({
             # Text Input for Multiple Contrasts
             textAreaInput('multiContrasts_GW',
                           NULL,
-                          # (h6('Type comma-separated comparisons using format: (Target)-(Contrast)',
-                          #     tags$br(),tags$em('e.g. iL3-PF, (iL3+iL3a)-(PF+FLF)', style = "color: #7b8a8b"))),
-                          
                           rows = 5, 
                           resize = "vertical"),
             
@@ -84,6 +81,19 @@ parse_contrasts_GW <- eventReactive(input$goLifeStage_GW,{
             gsub(" ", "", ., fixed = TRUE) %>%
             str_split(pattern = "[,;]") %>%
             unlist()
+        
+        # Validation check - does the matrix of comparisons contain info for targets and contrasts?
+        # This will fail only if a single incomplete pairwise comparison is provided 
+        # using the multiContrasts input box
+        shiny::validate(
+            shiny::need({
+                (comparison %>%
+                     str_split(pattern="-", simplify = T) %>%
+                     ncol()) == 2
+                
+            },
+            message = "Not enough inputs were provided to generate contrasts. Please re-type inputs.")) 
+        
         targetStage<- comparison %>%
             str_split(pattern="-", simplify = T) %>%
             .[,1] %>%
@@ -136,11 +146,56 @@ parse_contrasts_GW <- eventReactive(input$goLifeStage_GW,{
         vals$multipleCorrection_GW <- F
     }
     
-    # Produces error message if target and contrasts are not different. Only really works if there is a single target and contrast. Might need to use a vector approach to validate cases where there are multiple columns/rows in target and contrast stage objects. Especially need to be cautious about cases where the values are both NULL.
-    # Update: 9-17-20: Realized this is crashing the program if either selection includes more than one life stage group (e.g. FLF - (iL3+iL3a) will crash). I've commented out this code until a fix can be provided. - ASB
-    # validate(
-    #     need(targetStage != contrastStage, "Target and Contrast selections are identical. Please select new options.")
-    # )
+    # Validation checks for contrast inputs:
+    # 1. Are constrasts complete and formatted correctly (are there life stages on each side of the '-' side)
+    ## Check for missing "target" elements 
+    missing.targets <- sapply(seq(1,nrow(targetStage)), function(x){
+        row <- x
+        targets.clean <- targetStage[row, targetStage[row,] != ""] %>%
+            is_empty()
+    })
+    
+    shiny::validate(shiny::need(any(!missing.targets), 
+                                message = "At least one pairwise comparison is missing a target element. Please check inputs.")) 
+    
+    ## Check for missing "contrast" elements
+    missing.contrasts <-sapply(seq(1,nrow(targetStage)), function(x){
+        row <- x
+        contrasts.clean <- contrastStage[row, contrastStage[row,] != ""] %>%
+            is_empty()
+    }) 
+    shiny::validate(shiny::need(any(!missing.contrasts), 
+                                message = "At least one pairwise comparison is missing a contrast element. Please check inputs.")) 
+    
+    # 2. Do contrasts include recognized life stages (corrects for spelling mistakes); compare relative to abbreviated names in lifestage_legend
+    ## Do all target elements match a life stage in this dataset? 
+    error.targets.validNames <- targetStage[targetStage != ""] %in% 
+        levels(vals$v.DEGList.filtered.norm$targets$group) 
+    shiny::validate(shiny::need(all(error.targets.validNames), 
+                                message = "At least one target name doesn't match available life stages. Please check inputs for spelling mistakes or incorrect capitalization.")) 
+    
+    ## Do all contrast elements match a life stage in this dataset?
+    error.contrast.validNames <- contrastStage[contrastStage != ""] %in% 
+        levels(vals$v.DEGList.filtered.norm$targets$group) 
+    shiny::validate(shiny::need(all(error.contrast.validNames), 
+                                message = "At least one contrast name doesn't match available life stages. Please check inputs for spelling mistakes or incorrect capitalization.")) 
+    
+    # 3. Are there repeated elements within a contrast.
+    ## Produce error message if there are repeated elements in any of the target and contrast pairings. Using *apply and vectorized string detection to search rows of target/contrast stage arrays for matching elements located in the columns.
+    error.matches <- sapply(seq(1,nrow(targetStage)), function(x){
+        tar.row <- x
+        targets.clean <- targetStage[tar.row, targetStage[tar.row,] != ""] #remove any blank values
+        sapply(seq(1,length(targets.clean)), function(x, tar.row, targets.clean){
+            tar.col <- x
+            contrasts.clean <- contrastStage[tar.row, (contrastStage[tar.row,] != "")] #remove any blank values
+            targetStage[tar.row, tar.col]
+            str_detect(contrasts.clean, paste0('\\b',targets.clean[tar.col],'\\b'))
+        }, tar.row, targets.clean) %>%
+            any()
+    })
+    
+    shiny::validate(shiny::need(!any(error.matches), 
+                                message = "There are repeated elements in at least one target/contrast pairing. Please input new pairings.")) 
     
     vals$targetStage_GW <- targetStage 
     vals$contrastStage_GW <- contrastStage
