@@ -1,5 +1,16 @@
 #' ggplot heatmap equivalent to heatmaply
 #' 
+#' This is a local version separated from the heatmaply package
+#' Separation by Astra S. Bryant, PhD for the purpose of greater control over 
+#' ggplot graphical output. Specifically, this local version differs from the
+#' main pacakge version of ggheatmap in two major ways:
+#' 1. New input showticklabels passed into the function by the user that
+#' determines whether x and y tick labels are included in the plot. 
+#' 2. Users can specify a main title for heatmap plot - done by 
+#'    passing the main variable from the main ggheatmap function call through
+#'    to the ggheatmap call.
+#' 3. Margins are also hard coded around the plot to provide some addional spacing.
+#' 
 #' This function produces a ggplot analogue of heatmaply figures 
 #' using \link[egg]{ggarrange}. This function may not always support the same
 #' set of features as , and exporting the heatmaply object with, for example,
