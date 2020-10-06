@@ -37,7 +37,7 @@ observeEvent(input$speciesGW, {
         
         setProgress(value = .5)
         
-        # Parse vDEGList into a tibble containing Log2CPM information
+        # Parse vDGEList into a tibble containing Log2CPM information
         vals$Log2CPM<-v.DEGList.filtered.norm$E %>%
             as_tibble(rownames = "geneID")%>%
             setNames(nm = c("geneID", 
@@ -75,13 +75,13 @@ observeEvent(input$speciesGW, {
      Info.type <- switch(input$which.Experimental.Info.GW,
             `Study Design` = '_studyDesign.txt',
             `Log2CPM Gene Counts` = 'RNAseq_log2cpm_filtered_norm.csv',
-            `vDEGList` = "_vDEGList",
+            `vDGEList` = "_vDGEList",
             `Discarded Gene Counts` = "RNAseq_discardedGene_counts.csv")
      
      file.location <- switch(input$which.Experimental.Info.GW,
                              `Study Design` = './www/',
                              `Log2CPM Gene Counts` = './www/',
-                             `vDEGList` = "./Data/",
+                             `vDGEList` = "./Data/",
                              `Discarded Gene Counts` = "./www/"
                              )
      Info.file <- paste0(file.location,species, Info.type)
@@ -96,7 +96,7 @@ observeEvent(input$speciesGW, {
              file.location <- switch(input$which.Experimental.Info.GW,
                                      `Study Design` = './www/',
                                      `Log2CPM Gene Counts` = './www/',
-                                     `vDEGList` = "./Data/",
+                                     `vDGEList` = "./Data/",
                                      `Discarded Gene Counts` = "./www/"
              )
              str_remove(Info.file, file.location)
@@ -130,7 +130,7 @@ observeEvent(input$speciesLS, {
     withProgress({
         # Import a variance-stabilized DEGList created by voom transformation command.
         # Outputs: E = normalized CPMexpression values on the log2 scale
-        load(file = paste0("./Data/",species,"_vDEGList"))
+        load(file = paste0("./Data/",species,"_vDGEList"))
         vals$v.DEGList.filtered.norm <- v.DEGList.filtered.norm
         
         setProgress(value = .25)
@@ -141,7 +141,7 @@ observeEvent(input$speciesLS, {
         
         setProgress(value = .5)
         
-        # Parse vDEGList into a tibble containing Log2CPM information
+        # Parse vDGEList into a tibble containing Log2CPM information
         vals$Log2CPM<-v.DEGList.filtered.norm$E %>%
             as_tibble(rownames = "geneID")%>%
             setNames(nm = c("geneID", 
@@ -178,13 +178,13 @@ observeEvent(input$speciesLS, {
      Info.type <- switch(input$which.Experimental.Info.LS,
                          `Study Design` = '_studyDesign.txt',
                          `Log2CPM Gene Counts` = 'RNAseq_log2cpm_filtered_norm.csv',
-                         `vDEGList` = "_vDEGList",
+                         `vDGEList` = "_vDGEList",
                          `Discarded Gene Counts` = "RNAseq_discardedGene_counts.csv")
      
      file.location <- switch(input$which.Experimental.Info.LS,
                              `Study Design` = './www/',
                              `Log2CPM Gene Counts` = './www/',
-                             `vDEGList` = "./Data/",
+                             `vDGEList` = "./Data/",
                              `Discarded Gene Counts` = "./www/"
      )
      Info.file <- paste0(file.location,species, Info.type)
@@ -199,7 +199,7 @@ observeEvent(input$speciesLS, {
              file.location <- switch(input$which.Experimental.Info.LS,
                                      `Study Design` = './www/',
                                      `Log2CPM Gene Counts` = './www/',
-                                     `vDEGList` = "./Data/",
+                                     `vDGEList` = "./Data/",
                                      `Discarded Gene Counts` = "./www/"
              )
              str_remove(Info.file, file.location)
