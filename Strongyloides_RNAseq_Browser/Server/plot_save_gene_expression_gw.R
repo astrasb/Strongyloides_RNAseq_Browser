@@ -307,6 +307,19 @@ output$downloadGenePlot <- downloadHandler(
                 setProgress(0.6)
 
                 showticklabels <- if(length(vals$gene_of_interest)<20){c(TRUE,TRUE)} else {c(TRUE,FALSE)}
+                
+                # p<-heatmaply::ggheatmap(subset.diffGenes,
+                #                    colors = rev(myheatcolors),
+                #                    Rowv= ladderize(as.dendrogram(clustRows)),
+                #                    Colv=ladderize(as.dendrogram(clustColumns)),
+                #                    show_dendrogram = c(TRUE, TRUE),
+                #                    key.title = "Row Z Score",
+                #                    branches_lwd = 0.5,
+                #                    showticklabels = showticklabels,
+                #                    scale='row',
+                #                    cexRow=1.2, cexCol=1.2,
+                #                    #margin = c(50,1000),
+                #                    main = "Log2 Counts Per Million (CPM) Expression Across Life Stages")
 
 
                 p<-ggheatmap_local(subset.diffGenes,
