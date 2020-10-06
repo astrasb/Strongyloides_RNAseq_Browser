@@ -307,8 +307,7 @@ output$downloadGenePlot <- downloadHandler(
                 setProgress(0.6)
 
                 showticklabels <- if(length(vals$gene_of_interest)<20){c(TRUE,TRUE)} else {c(TRUE,FALSE)}
-
-
+                
                 p<-ggheatmap_local(subset.diffGenes,
                                    colors = rev(myheatcolors),
                                    Rowv= ladderize(as.dendrogram(clustRows)),

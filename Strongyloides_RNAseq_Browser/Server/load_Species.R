@@ -75,7 +75,7 @@ observeEvent(input$speciesGW, {
      Info.type <- switch(input$which.Experimental.Info.GW,
             `Study Design` = '_studyDesign.txt',
             `Log2CPM Gene Counts` = 'RNAseq_log2cpm_filtered_norm.csv',
-            `vDEGList` = "_vDEGList",
+            `vDEGList` = "_vDGEList",
             `Discarded Gene Counts` = "RNAseq_discardedGene_counts.csv")
      
      file.location <- switch(input$which.Experimental.Info.GW,
@@ -130,7 +130,7 @@ observeEvent(input$speciesLS, {
     withProgress({
         # Import a variance-stabilized DEGList created by voom transformation command.
         # Outputs: E = normalized CPMexpression values on the log2 scale
-        load(file = paste0("./Data/",species,"_vDEGList"))
+        load(file = paste0("./Data/",species,"_vDGEList"))
         vals$v.DEGList.filtered.norm <- v.DEGList.filtered.norm
         
         setProgress(value = .25)
@@ -178,7 +178,7 @@ observeEvent(input$speciesLS, {
      Info.type <- switch(input$which.Experimental.Info.LS,
                          `Study Design` = '_studyDesign.txt',
                          `Log2CPM Gene Counts` = 'RNAseq_log2cpm_filtered_norm.csv',
-                         `vDEGList` = "_vDEGList",
+                         `vDEGList` = "_vDGEList",
                          `Discarded Gene Counts` = "RNAseq_discardedGene_counts.csv")
      
      file.location <- switch(input$which.Experimental.Info.LS,
