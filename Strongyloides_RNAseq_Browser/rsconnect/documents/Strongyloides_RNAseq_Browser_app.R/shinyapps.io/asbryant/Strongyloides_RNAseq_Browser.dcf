@@ -1,0 +1,13 @@
+name: Strongyloides_RNAseq_Browser
+title: Strongyloides_RNAseq_Browser
+username:
+account: asbryant
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2689885
+bundleId: 3707136
+url: https://asbryant.shinyapps.io/Strongyloides_RNAseq_Browser/
+when: 1601965584.07724
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: UI/.DS_Store|UI/St-RNAseq_Browser UI Example.png

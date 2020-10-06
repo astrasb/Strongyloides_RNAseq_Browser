@@ -309,8 +309,8 @@ myDGEList <- DGEList(Txi_gene$counts,
                      genes = annotations)
 
 # Save DGEList of raw counts for import back into R----
-save(myDGEList,
-     file = "../Outputs/SsRNAseq_DGEList")
+# save(myDGEList,
+#      file = "../Outputs/SsRNAseq_DGEList")
 
 ```
 
@@ -339,7 +339,7 @@ suppressPackageStartupMessages({
 })
 
 # Load digital gene expression list ----
-load(file = "../Outputs/SsRNAseq_DGEList")
+# load(file = "../Outputs/SsRNAseq_DGEList")
 
 # If it's not available, read in the study design file ----
 if (!exists("targets")){
