@@ -1,10 +1,9 @@
 ---
-title: Offline Data Analysis of Strongyloides ratti bulk RNAseq data
+title: Offline Data Analysis of *Strongyloides ratti* bulk RNAseq data
 output:
   html_document:
     df_print: paged
-    toc: yes
-  html_notebook:
+    code_folding: hide
     toc: yes
 ---
 
@@ -12,7 +11,7 @@ output:
 The goal of this file is to pre-process the *Strongyloides ratti* RNAseq dataset originally published by [Hunt *et al* 2016](https://www.nature.com/articles/ng.3495).
 
 ### Data Pre-Processing    
-A description of Kallisto alignment and data filtering/normalization steps can be found in `Sr_RNAseq_Data_Processing.rmd`. 
+A description of Kallisto alignment and data filtering/normalization steps can be found in `Sr_RNAseq_Data_Preprocessing.rmd`. 
 
 ### Data Analysis   
 The limma package ( [Ritchie *et al* 2015](https://pubmed.ncbi.nlm.nih.gov/25605792/), [Phipson *et al* 2016](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5373812/)) is used to conduct pairwise differential gene expression analyses between life stages. An example pairwise comparisons between two life stages is displayed as a volcano plot and interactive DataTable. 
@@ -21,7 +20,7 @@ The limma package ( [Ritchie *et al* 2015](https://pubmed.ncbi.nlm.nih.gov/25605
 All code is echoed under descriptive headers; code chunks are hidden from view by default. Users may show hidden R code by clicking the Show buttons. In addition, all code chunks are collated at the end of the document in an Appendix. 
 
 ## Load and Parse Preprocessed Data
-This code loads R data objects that has been preproprocessed by `Sr_RNAseq_Data_Processing.rmd`.  
+This code loads R data objects that has been preproprocessed by `Sr_RNAseq_Data_Preprocessing.rmd`.  
 ```{r loadBaseData}
 load (file = "../Outputs/SrRNAseq_data_preprocessed")
 targets <- SrRNAseq.preprocessed.data$targets
@@ -31,7 +30,13 @@ myDGEList.filtered.norm <-SrRNAseq.preprocessed.data$myDGEList.filtered.norm
 
 rm(SrRNAseq.preprocessed.data)
 
-load(file = "../Strongyloides_RNAseq_Browser/Data/Sr_vDGEList")
+load(file = "../Outputs/Sr_vDGEList")
+
+# Check for presence of output plots folder, generate if it doesn't exist
+output.path <- "../Outputs/Plots"
+if (!dir.exists(output.path)){
+  dir.create(output.path)
+}
 
 ```
 
@@ -163,12 +168,12 @@ p3<-ggplot(pca.res.df) +
   theme(text = element_text(size = 10),
         title = element_text(size = 10))
 
-ggsave("Sr_Multivariate_Plots_PCA.pdf",
+suppressMessages(ggsave("Sr_Multivariate_Plots_PCA.pdf",
        plot = p3,
        device = "pdf",
        height = 4,
        #width = 7,
-       path = './Plots')
+       path = output.path))
 
 ```
 
@@ -221,12 +226,12 @@ p6<-ggplot(pca.pivot) +
         title = element_text(size = 10)) +
   coord_flip()
 
-ggsave("Sr_Multivariate_Plots_Small_Multiples.pdf",
+suppressMessages(ggsave("Sr_Multivariate_Plots_Small_Multiples.pdf",
        plot = p6,
        device = "pdf",
        height = 4,
        width = 8,
-       path = './Plots')
+       path = output.path))
 
 ```
 
@@ -293,7 +298,7 @@ suppressPackageStartupMessages({
   library(plotly)
   library(ggthemes)
   library(RColorBrewer)
-  source("../Strongyloides_RNAseq_Browser/Server/theme_Publication.R")
+  source("./theme_Publication.R")
 })
 
 diffGenes.df <- v.DEGList.filtered.norm$E %>%
@@ -603,12 +608,12 @@ p.benchmark <- ggplot(plotting.all, aes(x = logFC.x, y = logFC.y)) +
   theme(text = element_text(size = 10),
         title = element_text(size = 10))
 
-ggsave("Sr_Benchmarking.pdf",
+suppressMessages(ggsave("Sr_Benchmarking.pdf",
        plot = p.benchmark,
        device = "pdf",
        height = 4,
        #width = 8,
-       path = './Plots')
+       path = output.path))
 
 p.benchmark 
 
@@ -635,7 +640,7 @@ suppressPackageStartupMessages({
   library(ggplot2)
   library(egg)
   library(dendextend)
-  source("../Strongyloides_RNAseq_Browser/Server/ggheatmap_local.R")
+  source("./ggheatmap_local.R")
 })
 
 # Choose a color pallette ----
@@ -701,7 +706,7 @@ diffGenes.heatmap <- heatmap.2(diffGenes.thresh,
 #                    scale='row',
 #                    cexRow=1, cexCol=1)
 
-# ggsave("./heatmap.pdf", plot = gg.heatmap, width = 11, height = 8, units = "in", device = "pdf")
+# suppressMessages(ggsave("./heatmap.pdf", plot = gg.heatmap, width = 11, height = 8, units = "in", device = "pdf")
 # Make an interactive version
 # interactive.diffGenes.heatmap <- heatmaply(diffGenes.thresh,
 #                                  colors = rev(myheatcolors),
