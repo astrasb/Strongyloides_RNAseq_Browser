@@ -2,3 +2,5 @@ Data/*/Reads
 .RData
 .Rhistory
 .Rproj.user/
+*/.RData
+*/R.history
