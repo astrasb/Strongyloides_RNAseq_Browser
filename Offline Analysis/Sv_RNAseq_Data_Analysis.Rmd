@@ -1,11 +1,9 @@
 ---
-title: Offline Data Analysis of Strongyloides venezuelensis bulk RNAseq data
+title: Offline Data Analysis of *Strongyloides venezuelensis* bulk RNAseq data
 output:
   html_document:
     code_folding: hide
     df_print: paged
-    toc: yes
-  html_notebook:
     toc: yes
 ---
 
@@ -20,7 +18,7 @@ Thus, we define two functional groups for processing and analysis:
 Here, only the first group (FLF_PF) is analyzed, as the lack of biological replicates in Group iL3_extended requires a significant adjustment to the analysis pipeline. Specifically, the use of empirical bayes smoothing of gene-wise standard deviations to [provide increased power](https://www.degruyter.com/doi/10.2202/1544-6115.1027) is not possible without biological replicates. 
 
 ### Data Pre-Processing    
-A full description of Kallisto alignment and data filtering/normalization steps can be found in `Sv_RNAseq_Data_Processing.rmd`.
+A full description of Kallisto alignment and data filtering/normalization steps can be found in `Sv_RNAseq_Data_Preprocessing.rmd`.
 
 ### Data Analysis   
 The limma package ( [Ritchie *et al* 2015](https://pubmed.ncbi.nlm.nih.gov/25605792/), [Phipson *et al* 2016](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5373812/)) is used to conduct pairwise differential gene expression analyses between life stages. The results of the pairwise comparison is displayed as a volcano plot and interactive DataTable. 
@@ -28,7 +26,8 @@ The limma package ( [Ritchie *et al* 2015](https://pubmed.ncbi.nlm.nih.gov/25605
 # Code
 All code is echoed under descriptive headers; code chunks are hidden from view by default. Users may show hidden R code by clicking the Show buttons. In addition, all code chunks are collated at the end of the document in an Appendix.  
 
-## Load and Parse Preprocessed Data
+## Load and Parse Preprocessed Data  
+This code loads R data objects that has been preproprocessed by `Sv_RNAseq_Data_Preprocessing.rmd`.  
 ```{r loadBaseData}
 # Load and Parse Preprocessed Data
 load (file = "../Outputs/SvRNAseq_group_FLF_PF_data_preprocessed")
@@ -39,7 +38,14 @@ myDGEList.filtered.norm <-SvRNAseq.preprocessed.data$myDGEList.filtered.norm
 
 rm(SvRNAseq.preprocessed.data)
 
-load(file = "../Strongyloides_RNAseq_Browser/Data/Sv_vDGEList")
+load(file = "../Outputs/Sv_vDGEList")
+
+# Check for presence of output plots folder, generate if it doesn't exist
+output.path <- "../Outputs/Plots"
+if (!dir.exists(output.path)){
+  dir.create(output.path)
+}
+
 
 ```
 
@@ -170,12 +176,12 @@ p3<-ggplot(pca.res.df) +
   theme(text = element_text(size = 10),
         title = element_text(size = 10))
 
-ggsave("Sv_Multivariate_Plots_PCA.pdf",
+suppressMessages(ggsave("Sv_Multivariate_Plots_PCA.pdf",
        plot = p3,
        device = "pdf",
        height = 4,
        #width = 7,
-       path = './Plots')
+       path = output.path))
 ```
 
 ### PCA Plot
@@ -225,12 +231,12 @@ p6<-ggplot(pca.pivot) +
         title = element_text(size = 10)) +
   coord_flip()
 
-ggsave("Sv_Multivariate_Plots_Small_Multiples.pdf",
+suppressMessages(ggsave("Sv_Multivariate_Plots_Small_Multiples.pdf",
        plot = p6,
        device = "pdf",
        height = 4,
        width = 8,
-       path = './Plots')
+       path = output.path))
 ```
 
 ### PCA "Small Multiples" Plot
@@ -293,7 +299,7 @@ suppressPackageStartupMessages({
   library(plotly)
   library(ggthemes)
   library(RColorBrewer)
-  source("../Strongyloides_RNAseq_Browser/Server/theme_Publication.R")
+  source("./theme_Publication.R")
 })
 
 diffGenes.df <- v.DEGList.filtered.norm$E %>%
@@ -574,7 +580,7 @@ suppressPackageStartupMessages({
   library(ggplot2)
 })
 # Load Hunt Dataset: iL3 vs FLF comparison
-temp.dat <-  read.xlsx ("../Benchmarking/41598_2018_23514_MOESM2_ESM.xlsx", 
+temp.dat <-  read.xlsx ("../Data/Benchmarking/41598_2018_23514_MOESM2_ESM.xlsx", 
                         sheet = 1, startRow = 4)
 
 Hunt.dat <- tibble(geneID = temp.dat$QUERY_GENE, logFC = temp.dat$logFC)
@@ -604,12 +610,12 @@ p.benchmark <- ggplot(plotting.all, aes(x = logFC.x, y = logFC.y)) +
   theme(text = element_text(size = 10),
         title = element_text(size = 10))
 
-ggsave("Sv_Benchmarking.pdf",
+suppressMessages(ggsave("Sv_Benchmarking.pdf",
        plot = p.benchmark,
        device = "pdf",
        height = 4,
        #width = 8,
-       path = './Plots')
+       path = output.path))
 
 p.benchmark 
 
@@ -635,7 +641,7 @@ suppressPackageStartupMessages({
   library(ggplot2)
   library(egg)
   library(dendextend)
-  source("../Strongyloides_RNAseq_Browser/Server/ggheatmap_local.R")
+  source("./ggheatmap_local.R")
 })
 
 # Choose a color pallette ----
@@ -1171,6 +1177,11 @@ p3
 
 # Appendix II: All code for this report  
 ```{r ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
+```
+
+# Appendix III: Session Info
+```{r sessionInfo, message = TRUE}
+sessionInfo()
 ```
 
 

@@ -1,11 +1,9 @@
 ---
-title: Offline Data Analysis of Strongyloides papillosus bulk RNAseq data
+title: Offline Data Analysis of *Strongyloides papillosus* bulk RNAseq data
 output:
   html_document:
     code_folding: hide
     df_print: paged
-    toc: yes
-  html_notebook:
     toc: yes
 ---
 
@@ -15,7 +13,7 @@ The goal of this file is to lay out proof-of-concept analyses of the *Strongyloi
 This dataset includes samples representing 5 life stages, each with 2 biological replicates: L1/L2s, FLF, FLM, iL3, PF.  
 
 ### Data Pre-Processing    
-A full description of Kallisto alignment and data filtering/normalization steps can be found in `Sp_RNAseq_Data_Processing.rmd`.
+A full description of Kallisto alignment and data filtering/normalization steps can be found in `Sp_RNAseq_Data_Preprocessing.rmd`.
 
 ### Data Analysis   
 The limma package ( [Ritchie *et al* 2015](https://pubmed.ncbi.nlm.nih.gov/25605792/), [Phipson *et al* 2016](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5373812/)) is used to conduct pairwise differential gene expression analyses between life stages. The results of the pairwise comparison is displayed as a volcano plot and interactive DataTable. 
@@ -24,7 +22,7 @@ The limma package ( [Ritchie *et al* 2015](https://pubmed.ncbi.nlm.nih.gov/25605
 All code is echoed under descriptive headers; code chunks are hidden from view by default. Users may show hidden R code by clicking the Show buttons. In addition, all code chunks are collated at the end of the document in an Appendix.  
 
 ## Load and Parse Preprocessed Data
-This code loads R data objects that has been preproprocessed by `Sp_RNAseq_Data_Processing.rmd`.  
+This code loads R data objects that has been preproprocessed by `Sp_RNAseq_Data_Preprocessing.rmd`.  
 ```{r loadBaseData}
 # Load and Parse Preprocessed Data
 load (file = "../Outputs/SpRNAseq_data_preprocessed")
@@ -35,7 +33,13 @@ myDGEList.filtered.norm <-SpRNAseq.preprocessed.data$myDGEList.filtered.norm
 
 rm(SpRNAseq.preprocessed.data)
 
-load(file = "../Strongyloides_RNAseq_Browser/Data/Sp_vDGEList")
+load(file = "../Outputs/Sp_vDGEList")
+
+# Check for presence of output plots folder, generate if it doesn't exist
+output.path <- "../Outputs/Plots"
+if (!dir.exists(output.path)){
+  dir.create(output.path)
+}
 
 ```
 
@@ -164,12 +168,12 @@ p3<-ggplot(pca.res.df) +
   theme(text = element_text(size = 10),
         title = element_text(size = 10))
 
-ggsave("Sp_Multivariate_Plots_PCA.pdf",
+suppressMessages(ggsave("Sp_Multivariate_Plots_PCA.pdf",
        plot = p3,
        device = "pdf",
        height = 4,
        #width = 7,
-       path = './Plots')
+       path = output.path))
 ```
 
 ### PCA Plot
@@ -217,12 +221,12 @@ p6<-ggplot(pca.pivot) +
         title = element_text(size = 10)) +
   coord_flip()
 
-ggsave("Sp_Multivariate_Plots_Small_Multiples.pdf",
+suppressMessages(ggsave("Sp_Multivariate_Plots_Small_Multiples.pdf",
        plot = p6,
        device = "pdf",
        height = 4,
        width = 8,
-       path = './Plots')
+       path = output.path))
 ```
 
 ### PCA "Small Multiples" Plot
@@ -284,7 +288,7 @@ suppressPackageStartupMessages({
   library(plotly)
   library(ggthemes)
   library(RColorBrewer)
-  source("../Strongyloides_RNAseq_Browser/Server/theme_Publication.R")
+  source("./theme_Publication.R")
 })
 
 diffGenes.df <- v.DEGList.filtered.norm$E %>%
