@@ -1,7 +1,4 @@
-.Rproj.user
-.Rhistory
+Data/*/Reads
 .RData
-.Ruserdata
-Data
-PRJEB3116_ImpulseDE2_pfL1_to_PF_design.txt
-geneList.csv
+.Rhistory
+.Rproj.user/

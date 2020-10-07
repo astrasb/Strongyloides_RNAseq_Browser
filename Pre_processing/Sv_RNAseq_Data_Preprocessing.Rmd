@@ -13,7 +13,7 @@ output:
 The goal of this file is to pre-process the *Strongyloides venezuelensis* RNAseq dataset originally published by [Hunt *et al* 2018](https://www.nature.com/articles/s41598-018-23514-z). 
 
 # Pre-processing Methods Overview 
-Raw reads are aligned to the *S. venezuelensis* reference transcriptome (PRJEB530.WBPS14.mRNA_transcripts, downloaded from [WormBase Parasite](https://parasite.wormbase.org/Strongyloides_venezuelensis_PRJEB530/Info/Index) on 17 August 2020), using Kallisto. Kallisto alignments are imported into the R environment and annotated with information imported via the Wormbase ParaSite BioMaRT. Annotation information includes: *C. elegans* homologs/percent homology, *S. stercoralis* homologs/percent homology, UniProtKB number, Interpro terms, GO terms, and general Description information. Annotation information is saved as an R object that is passed to a Shiny Web App for downstream browsing and on-demand analysis. Note: Raw count data could be saved as a digitial gene expression list if desired (not currently done).   
+Raw reads are aligned to the *S. venezuelensis* reference transcriptome (PRJEB530.WBPS14.mRNA_transcripts, downloaded from [WormBase Parasite](https://parasite.wormbase.org/Strongyloides_venezuelensis_PRJEB530/Info/Index) on 17 August 2020), using Kallisto. Kallisto alignments are imported into the R environment and annotated with information imported via the Wormbase ParaSite BioMaRT.Annotation information includes: *C. elegans* homologs/percent homology, UniProtKB number, Interpro terms, GO terms, and general Description information. [Hunt *et al* 2016](https://www.nature.com/articles/ng.3495) establishes two distinct subclades from the four sequenced *Strongyloides* species: *S. venezuelensis-S. papillosus* and *S. ratti-S. stercoralis*. Thus, we also include annotation information for the appropriate in-group (here, *S. papillosus*), and a reference member of the out-group (*S. stercoralis*). Annotation information is saved as an R object that is passed to a Shiny Web App for downstream browsing and on-demand analysis. Raw count data is saved as an R object.   
 
 Samples included in this database were prepared using different libary construction methods (amplified vs non-amplified), sequencing run batches, and machines ([Hunt *et al* 2018](https://www.nature.com/articles/s41598-018-23514-z)). All samples are filed under the same study accession number, PRJDB3457, but they have different SRA study numbers. Dividing the experiments based on sequencing instrument produces two batches, both of which contain data from Free-living females and thereotically permit batch correction. However, following limma-based batch correction there were still substantial differences between FLF groups from the two batches. We therefore take the conservative approach of treating these two batches separately.   
 Thus, we define two functional groups for processing and analysis:  
@@ -153,7 +153,7 @@ multiqc -d .
 ```
 
 ## Import Kallisto reads into R  
-Imports study design file and Kallisto reads into the R environment. At this stage, we separate the two experimental groups, such that differences in library size and transcript length between the two groups are not corrected when calculating counts from abudnance (we use the lengthScaledTPM option in `tximport`).    
+Imports study design file and Kallisto reads into the R environment. At this stage, we separate the two experimental groups, such that differences in library size and transcript length between the two groups are not corrected when calculating counts from abudnance (we use the lengthScaledTPM option in `tximport`). This code chunk is not evaluated each time, instead it was run once and an object containing the transcripts per million data is saved. In subsequent chunks, that file is loaded, and analysis progresses. The point of this is so that folks attempting to rerun this analysis do not need to have abundance files loaded on their local machines (and we do not have to upload abundance files to github).  
 ```{r txImport}
 # load packages ----
 suppressPackageStartupMessages({
@@ -201,12 +201,17 @@ Txi_gene <- tximport(path,
                      countsFromAbundance = "lengthScaledTPM",
                      ignoreTxVersion = FALSE)
 
+# Save the raw transcript counts ----
+save(Txi_gene,
+     file = file.path("../Data/S_venezuelensis",
+                      "SvRNAseq_Group_FLF_PF_TPM"))
+
 ```
 ## Gene Annotation   
 This chunk imports gene annotation information for *S. venezuelensis* genes, including:  
 * *C. elegans* homologs/percent homology  
-* *S. papillosus* homologs/percent homology 
-* *S. stercoralis* homologs/percent homology  
+* *S. papillosus* homologs/percent homology  
+* *S. stercoralis* homologs/percent homology   
 * UniProtKB number  
 * Interpro terms  
 * GO terms  
@@ -214,8 +219,19 @@ This chunk imports gene annotation information for *S. venezuelensis* genes, inc
 
 ```{r geneAnnotation}
 # Load packages ------
-library(biomaRt) # annotate genes using bioMart
+suppressPackageStartupMessages({
+  library(tidyverse) 
+  library(tximport)
+  library(ensembldb)
+  library(biomaRt)
+  library(magrittr)
+})
+# Load data & study design for group FLF_PF----
+load(file = file.path("../Data/S_venezuelensis",
+                      "SvRNAseq_Group_FLF_PF_TPM"))
 
+targets <- read_tsv("../Data/S_venezuelensis/Study_Design/Svene_Group_FLF_PF_study_design.txt",
+                    na = c("", "NA", "na"))
 # Get In-subclade group homologs for S. venezuelensis genes 
 # from BioMart and filter -----
 Annt.temp.1 <- getBM(attributes=c('wbps_gene_id',
@@ -711,9 +727,9 @@ save(v.DEGList.filtered.norm,
 
 
 # Appendix I: Replicate above chunks for Group iL3_extended  
-## Import Data
-Collecting code for reading in Kallisto reads through Generating a DGEList. Gene annoations are not re-imported.  
-```{r iL3_extended.preprocessing.1, message = FALSE, warning=FALSE}
+## Import Kallisto Reads
+Collecting code for reading in Kallisto reads through Generating a DGEList. Gene annotations are not re-imported. This code chunk is not evaluated each time, instead it was run once and an object containing the transcripts per million data is saved. In subsequent chunks, that file is loaded, and analysis progresses. The point of this is so that folks attempting to rerun this analysis do not need to have abundance files loaded on their local machines (and we do not have to upload abundance files to github).   
+```{r iL3_extended.preprocessing.1, eval = FALSE}
 targets <- read_tsv("../Data/S_venezuelensis/Study_Design/Svene_Group_iL3_extended_study_design.txt",
                     na = c("", "NA", "na"))
 path <- file.path("../Data/S_venezuelensis/Reads",targets$sample, "abundance.tsv")
@@ -739,6 +755,19 @@ Txi_gene <- tximport(path,
                      txOut = FALSE, #How does the result change if this =FALSE vs =TRUE?
                      countsFromAbundance = "lengthScaledTPM",
                      ignoreTxVersion = FALSE)
+# Save the raw transcript counts ----
+save(Txi_gene,
+     file = file.path("../Data/S_venezuelensis",
+                      "SvRNAseq_Group_iL3_extended_TPM"))
+```
+
+```{r iL3_extended.preprocessing.2}
+# Load data & study design ----
+load(file = file.path("../Data/S_venezuelensis",
+                      "SvRNAseq_Group_iL3_extended_TPM"))
+targets <- read_tsv("../Data/S_venezuelensis/Study_Design/Svene_Group_iL3_extended_study_design.txt",
+                    na = c("", "NA", "na"))
+
 myTPM.stats <- transform(Txi_gene$abundance, 
                          SD=rowSds(Txi_gene$abundance), 
                          AVG=rowMeans(Txi_gene$abundance),
@@ -762,7 +791,7 @@ myDGEList <- DGEList(Txi_gene$counts,
 ```
 
 ## Data Filtering and Normalization.   
-```{r iL3.extended.preprocessing.2}
+```{r iL3.extended.preprocessing.3}
 
 ids <- rep(cbind(targets$group), 
            times = nrow(myDGEList$counts)) %>%
@@ -793,7 +822,7 @@ p2 <- ggplot(log2.cpm.df.pivot) +
 
 ### Plot of unfiltered, non-normalized log2CPM data by life stage  
 
-```{r iL3.extended.preprocessing.3}
+```{r iL3.extended.preprocessing.4}
 p2
 keepers <- cpm(myDGEList) %>%
     rowSums(.>1)>=1
@@ -829,7 +858,7 @@ p3 <- ggplot(log2.cpm.filtered.df.pivot) +
 
 ### Plot of filtered, non-normalized log2CPM data by life stage  
 
-```{r iL3.extended.preprocessing.4}
+```{r iL3.extended.preprocessing.5}
 p3
 
 myDGEList.discarded <- myDGEList[!keepers,]
@@ -867,7 +896,7 @@ p.discarded <- ggplot(log2.cpm.discarded.df.pivot) +
 ### Plot of genes discarded by low-copy filtering step  
 The low copy number filtering step excluded a total of `dim(myDGEList.discarded)[[1]]` genes.  
 
-```{r iL3.extended.preprocessing.5}
+```{r iL3.extended.preprocessing.6}
 p.discarded
 # discarded.geneID <- unique(log2.cpm.discarded.df.pivot$geneID)
 # gost.res <- gost(list(Discarded_genes = discarded.geneID), 
@@ -911,7 +940,7 @@ p4 <- ggplot(log2.cpm.filtered.norm.df.pivot) +
 ```
 
 ### Plot of filtered, normalized log2CPM data by life stage    
-```{r iL3.extended.preprocessing.6}
+```{r iL3.extended.preprocessing.7}
 p4
 
 # Compute Variance-Stabilized DGEList Object  
@@ -945,7 +974,7 @@ colnames(v.DEGList.filtered.norm$E) <- paste(
 
 ## Save Data  
 This code chunk saves data generated in Appendix I.    
-```{r iL3.extended.preprocessing.7, eval = FALSE}
+```{r iL3.extended.preprocessing.8, eval = FALSE}
 
 # Check for presence of output folder, generate if it doesn't exist
 output.path <- "../Outputs"
@@ -989,7 +1018,10 @@ save(v.DEGList.filtered.norm,
 
 # Appendix II: Process all life stages together  
 Saving critical elements needed for demonstrating the existence of substantial batch effects during downstream analyses.  
-```{r allSamples.processing.1}
+
+## Import Kallisto Reads  
+This code chunk is not evaluated each time, instead it was run once and an object containing the transcripts per million data is saved. In subsequent chunks, that file is loaded, and analysis progresses. The point of this is so that folks attempting to rerun this analysis do not need to have abundance files loaded on their local machines (and we do not have to upload abundance files to github).  
+```{r allSamples.processing.1, eval = FALSE}
 ## Import Kallisto reads into R ----
 suppressPackageStartupMessages({
   library(tidyverse) 
@@ -1036,8 +1068,33 @@ Txi_gene <- tximport(path,
                      txOut = FALSE,
                      countsFromAbundance = "lengthScaledTPM",
                      ignoreTxVersion = FALSE)
+# Save the raw transcript counts ----
+save(Txi_gene,
+     file = file.path("../Data/S_venezuelensis",
+                      "SvRNAseq_allSamples_TPM"))
 
+```
+
+## Data Filtering and Normalization  
+```{r allSamples.processing.2}
 ## Generate Digital Gene Expression List ----
+# Load packages ------
+suppressPackageStartupMessages({
+  library(tidyverse) 
+  library(tximport)
+  library(ensembldb)
+  library(biomaRt)
+  library(magrittr)
+})
+
+# Load data & study design ----
+load(file = file.path("../Data/S_venezuelensis",
+                      "SvRNAseq_allSamples_TPM"))
+
+targets <- read_tsv(
+  "../Data/S_venezuelensis/Study_Design/PRJDB3457_study_design.txt",
+                    na = c("", "NA", "na"))
+
 suppressPackageStartupMessages({
   library(tidyverse)
   library(edgeR) 
@@ -1177,7 +1234,7 @@ colnames(v.DEGList.filtered.norm$E) <- paste(
 
 ## Save Data and Annotations  
 This code chunk saves data, generated in Appendix II.  
-```{r allSamples.processing.2, eval = FALSE}
+```{r allSamples.processing.3, eval = FALSE}
 
 # Check for presence of output folder, generate if it doesn't exist
 output.path <- "../Outputs"
@@ -1187,7 +1244,7 @@ if (!dir.exists(output.path)){
 
 discarded.gene.df %>%    
 write.csv(file = file.path(output.path,
-  "SvRNAseq_Group_iL3_extended_discardedGene_counts.csv"))
+  "SvRNAseq_allSamples_discardedGene_counts.csv"))
 
 # Save v.DEGList
 # This file will be imported into Shiny App

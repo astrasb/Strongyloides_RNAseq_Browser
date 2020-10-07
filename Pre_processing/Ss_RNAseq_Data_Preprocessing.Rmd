@@ -128,8 +128,8 @@ echo "Finished"
 ```
 
 ## Import Kallisto reads into R  
-Import Kallisto transcript counts into R using Tximport. Counts are generated from abundance files using the `lengthScaledTPM` option.  
-```{r txImport, eval=TRUE, message=FALSE, warning=FALSE}
+Import Kallisto transcript counts into R using Tximport. Counts are generated from abundance files using the `lengthScaledTPM` option. This code chunk is not evaluated each time, instead it was run once and an object containing the transcripts per million data is saved. In subsequent chunks, that file is loaded, and analysis progresses. The point of this is so that folks attempting to rerun this analysis do not need to have abundance files loaded on their local machines (and we do not have to upload abundance files to github).    
+```{r txImport, eval=FALSE}
 # load packages ----
 suppressPackageStartupMessages({
   library(tidyverse) 
@@ -172,17 +172,22 @@ Txi_gene <- tximport(path,
                      txOut = FALSE,
                      countsFromAbundance = "lengthScaledTPM",
                      ignoreTxVersion = FALSE)
+
+# Save the raw transcript counts ----
+save(Txi_gene,
+     file = file.path("../Data/S_stercoralis",
+                      "SsRNAseq_TPM"))
 ```
 
 ## Gene Annotation 
-Import gene annotation information for *S. stercoralis* genes, including: 
-* *C. elegans* homologs/percent homology
-* *S. ratti* homologs/percent homology
-* *S. papillosus* homologs/percent homology
-* UniProtKB number
-* Interpro terms
-* GO terms
-* general Description information using biomart.  
+Import gene annotation information for *S. stercoralis* genes, including:  
+* *C. elegans* homologs/percent homology  
+* *S. ratti* homologs/percent homology  
+* *S. papillosus* homologs/percent homology  
+* UniProtKB number  
+* Interpro terms  
+* GO terms  
+* general Description information using biomart.   
 
 ```{r geneAnnotation}
 # Introduction to this chunk -----------
@@ -196,7 +201,20 @@ Import gene annotation information for *S. stercoralis* genes, including:
 # It will generate a table that can be saved.
 
 # Load packages ------
-library(biomaRt) # annotate genes using bioMart
+suppressPackageStartupMessages({
+  library(tidyverse) 
+  library(tximport)
+  library(ensembldb)
+  library(biomaRt)
+  library(magrittr)
+})
+
+# Load data & study design ----
+load(file = file.path("../Data/S_stercoralis",
+                      "SsRNAseq_TPM"))
+
+targets <- read_tsv("../Data/S_stercoralis/Study_Design/PRJEB3116_study_design.txt",
+                    na = c("", "NA", "na"))
 
 # Get In-subclade group homologs for S. stercoralis 
 # genes from BioMart and filter -----

@@ -13,7 +13,7 @@ output:
 The goal of this file is to pre-process the *Strongyloides papillosus* RNAseq dataset originally analyzed by [Hunt *et al* 2016](https://www.nature.com/articles/ng.3495). 
 
 # Pre-processing Methods Overview  
-Raw reads are aligned to the *S. papillosus* reference transcriptome (PRJEB525.WBPS14.mRNA_transcripts, downloaded from [WormBase Parasite](https://parasite.wormbase.org/Strongyloides_papillosus_prjeb525/Info/Index) on 17 August 2020), using Kallisto. Kallisto alignments are imported into the R environment and annotated with information imported via the Wormbase ParaSite BioMaRT. Annotation information includes: *C. elegans* homologs/percent homology, UniProtKB number, Interpro terms, GO terms, and general Description information. [Hunt *et al* 2016](https://www.nature.com/articles/ng.3495) establishes two distinct subclades from the four sequenced *Strongyloides* species: *S. venezuelensis-S. papillosus* and *S. ratti-S. stercoralis*. Thus, we also include annotation information for the appropriate in-group (here, *S. venezuelensis*), and a reference member of the out-group (*S. stercoralis*. Annotation information is saved as an R object that is passed to a Shiny Web App for downstream browsing and on-demand analysis. Note: Raw count data could be saved as a digitial gene expression list if desired (not currently done).   
+Raw reads are aligned to the *S. papillosus* reference transcriptome (PRJEB525.WBPS14.mRNA_transcripts, downloaded from [WormBase Parasite](https://parasite.wormbase.org/Strongyloides_papillosus_prjeb525/Info/Index) on 17 August 2020), using Kallisto. Kallisto alignments are imported into the R environment and annotated with information imported via the Wormbase ParaSite BioMaRT. Annotation information includes: *C. elegans* homologs/percent homology, UniProtKB number, Interpro terms, GO terms, and general Description information. [Hunt *et al* 2016](https://www.nature.com/articles/ng.3495) establishes two distinct subclades from the four sequenced *Strongyloides* species: *S. venezuelensis-S. papillosus* and *S. ratti-S. stercoralis*. Thus, we also include annotation information for the appropriate in-group (here, *S. venezuelensis*), and a reference member of the out-group (*S. stercoralis*. Annotation information is saved as an R object that is passed to a Shiny Web App for downstream browsing and on-demand analysis. Note: Raw count data is be saved as a digitial gene expression list.     
 
 Raw reads were quantified as counts per million using the EdgeR package, then filtered to remove transcripts with low counts (less than 1 count-per-million in at least 2 samples). A list of discarded genes and their expression values across life stages is saved. Non-discarded gene values are normalized using the trimmed mean of M-values method (TMM, [Robinson and Oshlack](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-3-r25) ) to permit between-samples comparisons. The mean-variance relationship was modeled using a precision weights approach [Law *et al* 2014](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29).   
 
@@ -88,8 +88,8 @@ echo "Finished"
 ```
 
 ## Import Kallisto reads into R  
-Import Kallisto transcript counts into R using Tximport. Counts are generated from abundance files using the `lengthScaledTPM` option.  
-```{r txImport, eval=TRUE}
+Import Kallisto transcript counts into R using Tximport. Counts are generated from abundance files using the `lengthScaledTPM` option. This code chunk is not evaluated each time, instead it was run once and an object containing the transcripts per million data is saved. In subsequent chunks, that file is loaded, and analysis progresses. The point of this is so that folks attempting to rerun this analysis do not need to have abundance files loaded on their local machines (and we do not have to upload abundance files to github).  
+```{r txImport, eval=FALSE}
 # load packages ----
 suppressPackageStartupMessages({
   library(tidyverse) 
@@ -134,17 +134,23 @@ Txi_gene <- tximport(path,
                      countsFromAbundance = "lengthScaledTPM",
                      ignoreTxVersion = FALSE)
 
+
+# Save the raw transcript counts ----
+save(Txi_gene,
+     file = file.path("../Data/S_papillosus",
+                      "SpRNAseq_TPM"))
+
 ```
 
 ## Gene Annotation  
-Import gene annotation information for *S. papillosus* genes, including: 
-* *C. elegans* homologs/percent homology
-* *S. venezuelensis* homologs/percent homology
-* *S. stercoralis* homologs/percent homology
-* UniProtKB number
-* Interpro terms
-* GO terms
-* general Description information using biomart.
+Import gene annotation information for *S. papillosus* genes, including:  
+* *C. elegans* homologs/percent homology  
+* *S. venezuelensis* homologs/percent homology  
+* *S. stercoralis* homologs/percent homology  
+* UniProtKB number  
+* Interpro terms  
+* GO terms  
+* general Description information using biomart.  
 
 ```{r geneAnnotation}
 # Introduction to this chunk -----------
@@ -158,9 +164,20 @@ Import gene annotation information for *S. papillosus* genes, including:
 # It will generate a table that can be saved.
 
 # Load packages ------
-library(biomaRt) # annotate genes using bioMart
-#library(biomartr) # extending biomart annotation language
+suppressPackageStartupMessages({
+  library(tidyverse) 
+  library(tximport)
+  library(ensembldb)
+  library(biomaRt)
+  library(magrittr)
+})
 
+# Load data & study design ----
+load(file = file.path("../Data/S_papillosus",
+                      "SpRNAseq_TPM"))
+
+targets <- read_tsv("../Data/S_papillosus/Study_Design/PRJEB14543_study_design.txt",
+                    na = c("", "NA", "na"))
 
 # Get In-subclade group homologs for S. papillosus genes 
 # from BioMart and filter -----
@@ -337,7 +354,6 @@ p1<-ggplot(myTPM.stats) +
   aes(x = SD, y = MED) +
   geom_point(shape=16, size=2, alpha = 0.2) +
   geom_smooth(method=lm) +
-  #geom_hex(show.legend = FALSE) +
   labs(y="Median", x = "Standard deviation",
        title="S. papillosus: Transcripts per million (TPM)",
        subtitle="unfiltered, non-normalized data",

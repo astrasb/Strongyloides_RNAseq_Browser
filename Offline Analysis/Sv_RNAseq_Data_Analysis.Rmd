@@ -580,7 +580,7 @@ suppressPackageStartupMessages({
   library(ggplot2)
 })
 # Load Hunt Dataset: iL3 vs FLF comparison
-temp.dat <-  read.xlsx ("../Benchmarking/41598_2018_23514_MOESM2_ESM.xlsx", 
+temp.dat <-  read.xlsx ("../Data/Benchmarking/41598_2018_23514_MOESM2_ESM.xlsx", 
                         sheet = 1, startRow = 4)
 
 Hunt.dat <- tibble(geneID = temp.dat$QUERY_GENE, logFC = temp.dat$logFC)
