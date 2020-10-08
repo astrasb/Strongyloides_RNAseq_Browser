@@ -214,5 +214,79 @@ output$StudyInfo.panel.LS <- renderUI({
                    class = "btn-default")
 })
 
+# About Tab: Download experiment information ----
+StudyInfo.filename.About <- reactive({
+    Info.type <- switch(input$which.Experimental.Info.About,
+                        `Ss Study Design` = 'Ss_studyDesign.txt',
+                        `Ss Log2CPM Gene Counts` = 'SsRNAseq_log2cpm_filtered_norm.csv',
+                        `Ss vDGEList` = "Ss_vDGEList",
+                        `Ss Discarded Gene Counts` = "SsRNAseq_discardedGene_counts.csv",
+                        `Sr Study Design` = 'Sr_studyDesign.txt',
+                        `Sr Log2CPM Gene Counts` = 'SrRNAseq_log2cpm_filtered_norm.csv',
+                        `Sr vDGEList` = "Sr_vDGEList",
+                        `Sr Discarded Gene Counts` = "SrRNAseq_discardedGene_counts.csv",
+                        `Sp Study Design` = 'Sp_studyDesign.txt',
+                        `Sp Log2CPM Gene Counts` = 'SpRNAseq_log2cpm_filtered_norm.csv',
+                        `Sp vDGEList` = "Sp_vDGEList",
+                        `Sp Discarded Gene Counts` = "SpRNAseq_discardedGene_counts.csv",
+                        `Sv Study Design` = 'Sv_studyDesign.txt',
+                        `Sv Log2CPM Gene Counts` = 'SvRNAseq_log2cpm_filtered_norm.csv',
+                        `Sv vDGEList` = "Sv_vDGEList",
+                        `Sv Discarded Gene Counts` = "SvRNAseq_discardedGene_counts.csv")
+    
+    file.location <- switch(input$which.Experimental.Info.About,
+                            `Ss Study Design` = './www/',
+                            `Ss Log2CPM Gene Counts` = './www/',
+                            `Ss vDGEList` = "./Data/",
+                            `Ss Discarded Gene Counts` = "./www/",
+                            `Sr Study Design` = './www/',
+                            `Sr Log2CPM Gene Counts` = './www/',
+                            `Sr vDGEList` = "./Data/",
+                            `Sr Discarded Gene Counts` = "./www/",
+                            `Sp Study Design` = './www/',
+                            `Sp Log2CPM Gene Counts` = './www/',
+                            `Sp vDGEList` = "./Data/",
+                            `Sp Discarded Gene Counts` = "./www/",
+                            `Sv Study Design` = './www/',
+                            `Sv Log2CPM Gene Counts` = './www/',
+                            `Sv vDGEList` = "./Data/",
+                            `Sv Discarded Gene Counts` = "./www/"  
+    )
+    Info.file <- paste0(file.location, Info.type)
+    Info.file
+    
+})
 
-
+output$StudyInfo.panel.About <- renderUI({
+    output$StudyInfo.file.About <- downloadHandler(
+        filename = function() {
+            Info.file <- StudyInfo.filename.About()
+            file.location <- switch(input$which.Experimental.Info.About,
+                                    `Ss Study Design` = './www/',
+                                    `Ss Log2CPM Gene Counts` = './www/',
+                                    `Ss vDGEList` = "./Data/",
+                                    `Ss Discarded Gene Counts` = "./www/",
+                                    `Sr Study Design` = './www/',
+                                    `Sr Log2CPM Gene Counts` = './www/',
+                                    `Sr vDGEList` = "./Data/",
+                                    `Sr Discarded Gene Counts` = "./www/",
+                                    `Sp Study Design` = './www/',
+                                    `Sp Log2CPM Gene Counts` = './www/',
+                                    `Sp vDGEList` = "./Data/",
+                                    `Sp Discarded Gene Counts` = "./www/",
+                                    `Sv Study Design` = './www/',
+                                    `Sv Log2CPM Gene Counts` = './www/',
+                                    `Sv vDGEList` = "./Data/",
+                                    `Sv Discarded Gene Counts` = "./www/"  
+            )
+            str_remove(Info.file, file.location)
+        },
+        content = function(file){
+            Info.file <- StudyInfo.filename.About()
+            file.copy(Info.file, file)
+        }
+    )
+    
+    downloadButton("StudyInfo.file.About","Download",
+                   class = "btn-primary")
+})

@@ -248,12 +248,12 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                       p('This app was created by', 
                                         tags$a(
                                             href = "https://scholar.google.com/citations?user=uSGqqakAAAAJ&hl=en", 
-                                            'Astra S. Bryant, PhD'),'with assistance from Stephanie DeMarco, PhD for the ',
-                                        tags$a(href="http://www.hallemlab.com/",'Hallem Lab'), 'at UCLA.', 
+                                            'Astra S. Bryant, PhD',target="blank"),'with assistance from Stephanie DeMarco, PhD for the ',
+                                        tags$a(href="http://www.hallemlab.com/",'Hallem Lab',target="blank"), 'at UCLA.', 
                                         tags$br(),
                                         'The underlying code is available on Github:', 
                                         tags$a(
-                                            href = 'https://github.com/astrasb/Strongyloides_Bioinformatics/tree/master/Strongyloides_RNAseq_Browser', "Strongyloides RNAseq Browser App Repository"))
+                                            href = 'https://github.com/astrasb/Strongyloides_RNAseq_Browser/tree/master/Strongyloides_RNAseq_Browser_App', "Strongyloides RNAseq Browser App Repository",target="blank"))
                                )
                         )
                     )
