@@ -59,7 +59,7 @@ generateGenePlot <- reactive({
                                          scrollY = '300px',
                                          scrollCollapse = TRUE,
                                          searchHighlight = TRUE, 
-                                         pageLength = 25, 
+                                         pageLength = 10, 
                                          lengthMenu = c("5",
                                                         "10",
                                                         "25",
@@ -72,7 +72,7 @@ generateGenePlot <- reactive({
                                          columnDefs = list(
                                              list(
                                                  targets = ((n_num_cols -
-                                                                 7):(n_num_cols-6)),
+                                                                 8):(n_num_cols-7)),
                                                  render = JS(
                                                      "function(data, type, row, meta) {",
                                                      "return type === 'display' && data.length > 20 ?",

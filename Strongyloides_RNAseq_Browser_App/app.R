@@ -13,7 +13,6 @@ suppressPackageStartupMessages({
     library(edgeR)
     library(gt) 
     library(plotly)
-    library(shinycssloaders)
     library(magrittr)
     library(ggthemes)
     library(gplots)
