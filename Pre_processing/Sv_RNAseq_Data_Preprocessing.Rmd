@@ -208,14 +208,15 @@ save(Txi_gene,
 
 ```
 ## Gene Annotation   
-This chunk imports gene annotation information for *S. venezuelensis* genes, including:  
-* *C. elegans* homologs/percent homology  
-* *S. papillosus* homologs/percent homology  
-* *S. stercoralis* homologs/percent homology   
-* UniProtKB number  
-* Interpro terms  
-* GO terms  
-* general Description information using biomart.  
+Import gene annotation information for *S. venezuelensis* genes, including:
+
+  * *C. elegans* homologs/percent homology
+  * *S. papillosus* homologs/percent homology
+  * *S. stercoralis* homologs/percent homology
+  * UniProtKB number
+  * Interpro terms
+  * GO terms
+  * general Description information using biomart.
 
 ```{r geneAnnotation}
 # Load packages ------
@@ -376,7 +377,7 @@ annotations<-annotations[rownames(annotations) %in% rownames(Txi_gene$counts),]
 ```
 
 ## Generate Digital Gene Expression List  
-This chunk of code generates a digitial gene expression list that 
+Next we generate a digital gene expression list that 
 could be easily shared/loaded for downstream filtering/normalization. It generates a scatter plot of unfiltered and non-normalized transcripts per million data.  
 ```{r generateDGE}
 # Load packages -----
@@ -418,9 +419,10 @@ myDGEList <- DGEList(Txi_gene$counts,
 ```
 
 ## Data Filtering and Normalization   
-Goals of this chunk:  
-1. Filter and normalize data  
-2. Use ggplot2 to visualize the impact of filtering and normalization on the data.  
+Goals of this chunk:
+
+  1. Filter and normalize data
+  2. Use ggplot2 to visualize the impact of filtering and normalization on the data.  
 In this chunk the two experimental groups are separated.
   
 ```{r dataWrangling.1}
@@ -628,7 +630,7 @@ p4
 
 ```
 
-## Compute and Save Variance-Stabilized DGEList Object  
+## Compute Variance-Stabilized DGEList Object  
 This chunk uses a DGEList of filtered and normalized abundance data. It will fit data to a linear model for responsively detecting differentially expressed genes (DEGs).   
 ```{r vDEGList}
 # Load packages ----
@@ -668,7 +670,17 @@ colnames(v.DEGList.filtered.norm$E) <- paste(
 ```
 
 ## Save Data and Annotations  
-This code chunk saves data and annotations, generated in code chunks above. The filtered data and annotation information is required for downstream analyses. It enables users to not have to re-import and re-align raw read files every time the code is run. The variance-stabilized vDGEList can be imported into a Shiny data browsing/analysis app.  
+Finally, we save data and annotations generated in code chunks above. We can separate these saving actions into two groups:
+
+1. Data saved for downstream offline analyses, including the `SvRNAseq_group_FLF_PF_data_preprocessed` file which saves filtered, normalized (but not voom adjusted) log2CPM values, gene annotation information, and sample information.
+2. Files that are required inputs to the *Strongyloides* RNAseq Browser App, including:
+
+    i) a gene annotation R object (`Sv_geneAnnotations`)
+    ii)  the variance-stabilized vDGEList, saved as an R object (`Sv_vDGEList`)
+    iii) a matrix of discarded genes and their raw counts (`SvRNAseq_discardedGene_counts.csv`) - this data is downloadable from within the Browser App
+    iv) a matrix of variance-stabilized gene expression data, extracted from the vDGEList (`SvRNAseq_log2cpm_filtered_norm_voom.csv`) - this data is downloadable from within the Browser App
+    
+By default, this code chunk will not be evaluated. To save the files described above, change the chunk option from `eval = FALSE` to `eval = TRUE`. These files are saved in an Outputs folder; in order to make them accessible to a local version of the Shiny browser they need to be moved to appropriate subfolders within the App folder - the www sub folder (for .csv files) or the Data subfolder (for R objects). Stable copies are already located within those folders and do not need to be replaced unless the pre-processing steps change.      
 ```{r saveBaseData, eval = FALSE}
 
 # Check for presence of output folder, generate if it doesn't exist
@@ -682,17 +694,23 @@ save(annotations,
 file = file.path(output.path,
                  "Sv_geneAnnotations"))
 
-# Save DGEList of raw counts ----
-save(myDGEList,
-     file = file.path(output.path,
-                      "SvRNAseq_DGEList"))
-
 # Save a matrix of discarded genes and their raw counts ----
 discarded.gene.df %>%    
 write.csv(file = 
             file.path(output.path,
                       "SvRNAseq_discardedGene_counts.csv"))
 
+# Save matrix of genes and their filtered, normalized, voom-transformed counts ----
+# This is the count data that underlies the differential expression analyses in the Shiny app. 
+# Saving it here so that users of the app can access the input information.
+write.csv(v.DEGList.filtered.norm$E, 
+          file = file.path(output.path,
+                           "SvRNAseq_log2cpm_filtered_norm_voom.csv"))
+# Save v.DEGList ----
+# This file can be imported into Shiny App 
+
+save(v.DEGList.filtered.norm,
+     file = file.path(output.path, "Sv_vDGEList"))
 
 # This data is required for downstream analyses in this file. 
 # It enables users to not have to re-import and re-align 
@@ -706,20 +724,6 @@ SvRNAseq.preprocessed.data <- list(
 save(SvRNAseq.preprocessed.data,
      file = file.path(output.path,
                       "SvRNAseq_group_FLF_PF_data_preprocessed"))
-
-# Save matrix of genes and their filtered, normalized counts ----
-colnames(log2.cpm.filtered.norm)<-paste(targets$group, 
-                                        targets$sample, 
-                                        sep = "-")
-write.csv(log2.cpm.filtered.norm, 
-          file = file.path(output.path,
-                           "SvRNAseq_log2cpm_filtered_norm.csv"))
-
-# Save v.DEGList ----
-# This file can be imported into Shiny App 
-
-save(v.DEGList.filtered.norm,
-     file = file.path(output.path, "Sv_vDGEList"))
 
 
 ```
@@ -973,7 +977,7 @@ colnames(v.DEGList.filtered.norm$E) <- paste(
 ```
 
 ## Save Data  
-This code chunk saves data generated in Appendix I.    
+This code chunk saves data generated in Appendix I. However, it only save data required for downstream offline analyses, as this data is not included in the *Strongyloides* RNAseq browser. Thus, code for generating elements necessary for the browser are commented out.      
 ```{r iL3.extended.preprocessing.8, eval = FALSE}
 
 # Check for presence of output folder, generate if it doesn't exist
@@ -982,16 +986,18 @@ if (!dir.exists(output.path)){
   dir.create(output.path)
 }
 
-# Save DGEList of raw counts ----
-save(myDGEList,
-      file = file.path(output.path,
-                       "SvRNAseq_Group_iL3_extended_DGEList"))
-
 # Save a matrix of discarded genes and their raw counts ----
-discarded.gene.df %>%    
-write.csv(
-  file = file.path(output.path,
-                   "SvRNAseq_Group_iL3_extended_discardedGene_counts.csv"))
+# discarded.gene.df %>%    
+# write.csv(
+#   file = file.path(output.path,
+#                    "SvRNAseq_Group_iL3_extended_discardedGene_counts.csv"))
+
+# Save matrix of genes and their filtered, normalized, voom-transformed counts ----
+# This is the count data that underlies the differential expression analyses in the Shiny app. 
+# Saving it here so that users of the app can access the input information.
+# write.csv(v.DEGList.filtered.norm$E, 
+#           file = file.path(output.path,
+#                            "SvRNAseq_group_iL3_extended_log2cpm_filtered_norm_voom.csv"))
 
 # This data is required for downstream analyses in this file. 
 # It enables users to not have to re-import and re-align 
@@ -1000,14 +1006,6 @@ save(SvRNAseq.preprocessed.data,
      file = file.path(output.path,
                       "SvRNAseq_group_iL3_extended_data_preprocessed"))
 
-# Save matrix of genes and their filtered, normalized counts ----
-colnames(log2.cpm.filtered.norm)<-paste(targets$group, 
-                                        targets$sample, 
-                                        sep = "-")
-write.csv(log2.cpm.filtered.norm, 
-          file = file.path(
-            output.path,
-            "SvRNAseq_group_iL3_extended_log2cpm_filtered_norm.csv"))
 
 save(v.DEGList.filtered.norm,
      file = file.path(output.path,
@@ -1233,7 +1231,7 @@ colnames(v.DEGList.filtered.norm$E) <- paste(
 ```
 
 ## Save Data and Annotations  
-This code chunk saves data, generated in Appendix II.  
+This code chunk saves data, generated in Appendix II. This code chunk saves data generated in Appendix I. However, it only save data required for downstream offline analyses, as this data is not included in the *Strongyloides* RNAseq browser. Thus, code for generating elements necessary for the browser are commented out.   
 ```{r allSamples.processing.3, eval = FALSE}
 
 # Check for presence of output folder, generate if it doesn't exist
@@ -1242,9 +1240,16 @@ if (!dir.exists(output.path)){
   dir.create(output.path)
 }
 
-discarded.gene.df %>%    
-write.csv(file = file.path(output.path,
-  "SvRNAseq_allSamples_discardedGene_counts.csv"))
+# discarded.gene.df %>%    
+# write.csv(file = file.path(output.path,
+#   "SvRNAseq_allSamples_discardedGene_counts.csv"))
+
+# Save matrix of genes and their filtered, normalized, voom-transformed counts ----
+# This is the count data that underlies the differential expression analyses in the Shiny app. 
+# Saving it here so that users of the app can access the input information.
+# write.csv(v.DEGList.filtered.norm$E, 
+#           file = file.path(output.path,
+#                            "SsRNAseq_allSamples_log2cpm_filtered_norm_voom.csv"))
 
 # Save v.DEGList
 # This file will be imported into Shiny App
@@ -1252,10 +1257,6 @@ save(v.DEGList.filtered.norm,
      file = file.path(output.path,
                       "Sv_allSamples_vDGEList"))
 
-# Save DGEList of raw counts for import back into R
-save(myDGEList,
-     file = file.path(output.path,
-                      "Sv_allSamples_RNAseq_DGEList"))
 #      
 ## Save Filtered Data and Annotations ----
 SvRNAseq.preprocessed.data <- list(targets = targets,
@@ -1268,14 +1269,6 @@ SvRNAseq.preprocessed.data <- list(targets = targets,
 save(SvRNAseq.preprocessed.data,
      file = file.path(output.path,
                       "SvRNAseq_allSamples_data_preprocessed"))
-
-# Save matrix of genes and their filtered, normalized counts ----
-colnames(log2.cpm.filtered.norm)<-paste(targets$group, 
-                                        targets$sample, 
-                                        sep = "-")
-write.csv(log2.cpm.filtered.norm, 
-          file = file.path(output.path,
-                           "Sv_allSamples_RNAseq_log2cpm_filtered_norm.csv"))
 
 
 ```

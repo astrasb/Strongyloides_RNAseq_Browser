@@ -74,7 +74,7 @@ StudyInfo.filename.GW <- reactive({
     
     Info.type <- switch(input$which.Experimental.Info.GW,
                         `Study Design` = '_studyDesign.txt',
-                        `Log2CPM Gene Counts` = 'RNAseq_log2cpm_filtered_norm.csv',
+                        `Log2CPM Gene Counts` = 'RNAseq_log2cpm_filtered_norm_voom.csv',
                         `vDGEList` = "_vDGEList",
                         `Discarded Gene Counts` = "RNAseq_discardedGene_counts.csv")
     
@@ -177,7 +177,7 @@ StudyInfo.filename.LS <- reactive({
     
     Info.type <- switch(input$which.Experimental.Info.LS,
                         `Study Design` = '_studyDesign.txt',
-                        `Log2CPM Gene Counts` = 'RNAseq_log2cpm_filtered_norm.csv',
+                        `Log2CPM Gene Counts` = 'RNAseq_log2cpm_filtered_norm_voom.csv',
                         `vDGEList` = "_vDGEList",
                         `Discarded Gene Counts` = "RNAseq_discardedGene_counts.csv")
     
@@ -218,19 +218,19 @@ output$StudyInfo.panel.LS <- renderUI({
 StudyInfo.filename.About <- reactive({
     Info.type <- switch(input$which.Experimental.Info.About,
                         `Ss Study Design` = 'Ss_studyDesign.txt',
-                        `Ss Log2CPM Gene Counts` = 'SsRNAseq_log2cpm_filtered_norm.csv',
+                        `Ss Log2CPM Gene Counts` = 'SsRNAseq_log2cpm_filtered_norm_voom.csv',
                         `Ss vDGEList` = "Ss_vDGEList",
                         `Ss Discarded Gene Counts` = "SsRNAseq_discardedGene_counts.csv",
                         `Sr Study Design` = 'Sr_studyDesign.txt',
-                        `Sr Log2CPM Gene Counts` = 'SrRNAseq_log2cpm_filtered_norm.csv',
+                        `Sr Log2CPM Gene Counts` = 'SrRNAseq_log2cpm_filtered_norm_voom.csv',
                         `Sr vDGEList` = "Sr_vDGEList",
                         `Sr Discarded Gene Counts` = "SrRNAseq_discardedGene_counts.csv",
                         `Sp Study Design` = 'Sp_studyDesign.txt',
-                        `Sp Log2CPM Gene Counts` = 'SpRNAseq_log2cpm_filtered_norm.csv',
+                        `Sp Log2CPM Gene Counts` = 'SpRNAseq_log2cpm_filtered_norm_voom.csv',
                         `Sp vDGEList` = "Sp_vDGEList",
                         `Sp Discarded Gene Counts` = "SpRNAseq_discardedGene_counts.csv",
                         `Sv Study Design` = 'Sv_studyDesign.txt',
-                        `Sv Log2CPM Gene Counts` = 'SvRNAseq_log2cpm_filtered_norm.csv',
+                        `Sv Log2CPM Gene Counts` = 'SvRNAseq_log2cpm_filtered_norm_voom.csv',
                         `Sv vDGEList` = "Sv_vDGEList",
                         `Sv Discarded Gene Counts` = "SvRNAseq_discardedGene_counts.csv")
     

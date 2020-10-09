@@ -200,7 +200,7 @@ assemble_DEGs_GW <- reactive({
                                      order = list(n_num_cols-1, 
                                                   'desc'),
                                      searchHighlight = TRUE, 
-                                     pageLength = 25, 
+                                     pageLength = 10, 
                                      lengthMenu = c("5",
                                                     "10",
                                                     "25",
