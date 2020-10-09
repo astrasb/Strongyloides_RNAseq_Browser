@@ -53,6 +53,9 @@ server <- function(input, output, session) {
     ## Initialize Species ----
     ## GW: Load species data in Gene-wise tab
     ## LS: Load species data in Life-stage tab
+    ## GW: Generate UI for downloading study information for loaded species
+    ## LS: Generate UI for downloading study information for loaded species
+    ## About Tab: Generate UI for downloading study information for all species
     source('Server/load_Species.R', local = T)$value
     
     ## GW: Gene Expression Across Life Stage ----
