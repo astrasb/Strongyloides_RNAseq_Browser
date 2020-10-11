@@ -1,5 +1,5 @@
 # Data Pre-processing 
-This folder contains RMarkdown files for each species; these files contain code for the alignment of raw reads, data filtering and normalization, voom variance-normalization of count data, and collection of gene annotation information. RMarkdown files generate outputs that act as essential inputs to the *Strongyloides* RNAseq Browser App. RMarkdown files are knitted into PDF files; see those PDF files for plots illustrating the effect of filtering and normallization on raw data inputs. See the Data Pre-processing section below for details on the how we process raw read data.  
+This folder contains RMarkdown files for each species; these files contain code for the alignment of raw reads, data filtering and normalization, voom variance-normalization of count data, and collection of gene annotation information. RMarkdown files generate outputs that act as essential inputs to the *Strongyloides* RNAseq Browser App. RMarkdown files are knitted into PDF files; see those PDF files for plots illustrating the effect of filtering and normallization on raw data inputs.  
 
 Our goal is to pre-process previously published RNAseq datasets downloaded from online repositories, for subsequent analysis by the Shiny web app. Use the sections below to view details for the pre-processing of each *Strongyloides spp.* dataset.  
 
