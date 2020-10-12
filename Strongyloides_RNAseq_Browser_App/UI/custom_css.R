@@ -119,11 +119,13 @@ tags$head(
     #About_Overview h3 {
     font-size: 15px;
     text-decoration: underline;
+    font-weight: bold;
     }
     
     #About_Preprocess h3 {
     font-size: 15px;
     text-decoration: underline;
+    font-weight: bold;
     }
     
     #About_Data h3 {
@@ -135,6 +137,7 @@ tags$head(
     #About_Analysis_Methods h3 {
     font-size: 15px;
     text-decoration: underline;
+    font-weight: bold;
     }
     
     .nav-pills li {

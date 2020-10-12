@@ -41,7 +41,7 @@ source('Server/preprocess_data.R', local = T)
 
 ui <- fluidPage(
     
-    source('UI/Str_RNAseqBrowser_navbar-ui.R', local = T)$value,
+    source('UI/Str_RNAseqBrowser_ui.R', local = T)$value,
     
     source('UI/custom_css.R', local = T)$value
     
