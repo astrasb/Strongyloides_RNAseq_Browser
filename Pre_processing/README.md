@@ -146,7 +146,7 @@ The *S. venezuelensis* data included in this repository was originally published
 ### Data Sources and Details  
 Raw reads were downloaded from the European Nucleotide Archive - study accession number [PRJDB3457](https://www.ebi.ac.uk/ena/browser/view/PRJDB3457). 
 
-Samples included in study PRJDB3457 were prepared using different libary construction methods (amplified vs non-amplified), sequencing run batches, and machines [(Hunt *et al* 2018)](https://www.nature.com/articles/s41598-018-23514-z). All samples are filed under the same study accession number, PRJDB3457, but they have different SRA study numbers. Dividing the experiments based on sequencing instrument produces two batches, both of which contain data from Free-living females and thereotically permit batch correction. However, following limma-based batch correction there were still substantial differences between FLF groups from the two batches. We therefore take the conservative approach of treating these two batches separately.   
+Samples included in study PRJDB3457 were prepared using different libary construction methods (amplified vs non-amplified), sequencing run batches, and machines [(Hunt *et al* 2018)](https://www.nature.com/articles/s41598-018-23514-z). Dividing the experiments based on sequencing instrument produces two batches, both of which contain data from Free-living females and thereotically permit batch correction. However, following limma-based batch correction there were still substantial differences between FLF groups from the two batches. We therefore take the conservative approach of treating these two batches separately.   
 Thus, we define three functional groups for processing and analysis:
 
   1. Group FLF_PF: This set includes 2 life stages with 3 biological replicates and two technical replicates per life stage:  
@@ -162,7 +162,7 @@ Thus, we define three functional groups for processing and analysis:
     vii) Young free-living adult females (Young_FLF): 1 biological replicate and two technical replicates  
     viii) Free-living adult females (FLF): 1 biological replicate and two technical replicates    
 
-Note: Currently, only Group FLF_PF is included in the *Strongyloides* RNAseq Browser. However, the Offline Analysis RMarkdown file does include both functional groups, as PCA analysis of the full dataset after unsuccessful batch correction.
+Note: Currently, only Group FLF_PF is included in the *Strongyloides* RNAseq Browser. However, the Offline Analysis RMarkdown file does include both functional groups, and a PCA analysis of the full dataset after unsuccessful batch correction.
 
 ### Kallisto Alignment and Gene Annotation  
 Raw reads are aligned to the *S. venezuelensis* reference transcriptome (PRJEB530.WBPS14.mRNA_transcripts, downloaded from [WormBase Parasite](https://parasite.wormbase.org/Strongyloides_venezuelensis_PRJEB530/Info/Index) on 17 August 2020), using Kallisto. Kallisto alignments are imported into the R environment using `Tximport`. Counts are generated from abundance files using the `lengthScaledTPM` option; an R object containing this data is saved into each species' subfolder in the primary Data folder. In subsequent chunks, that file is loaded, and analysis progresses. The point of this is so that folks attempting to rerun this analysis do not need to have abundance files loaded on their local machines (and we do not have to upload abundance files to github).  

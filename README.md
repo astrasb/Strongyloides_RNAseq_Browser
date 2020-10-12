@@ -31,7 +31,7 @@ This folder contains RMarkdown files for each species; these files contain code 
 This folder contains the infrastructure for a Shiny application that permits browsing and analysis of RNAseq datasets. This app is deployed via Shinyapps.io but can also be run locally. See App Setup and App Features sections below for additional details.  
 
 ## App Setup & Deployment
-To access a stable deployment of the *Strongyloides* RNAseq Browser Web App, please visit: asbryant.shinyapps.io/strongyloides_rnaseq_browser/  
+To access a stable deployment of the *Strongyloides* RNAseq Browser Web App, please visit:   [asbryant.shinyapps.io/strongyloides_rnaseq_browser/](asbryant.shinyapps.io/strongyloides_rnaseq_browser/)  
 
 
 To run the latest version locally from Github, use the following command in R/RStudio:  
