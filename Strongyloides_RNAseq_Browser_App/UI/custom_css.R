@@ -16,56 +16,59 @@ tags$head(
     padding: 10px 15px;
     }
     
+    
     h4 {
-    font-size: 13px;
-    font-weight: bold;
+    font-size: 15px;
     }
     
     h5 {
-    font-size: 13px;
-    font-weight: bold;
+    font-size: 15px;
     margin: 5px 0px;
     }
     
     h6 {
-    font-size: 12px;
+    font-size: 13px;
     margin: 0px;
     font-weight: 550;
     line-height: 1.4;
     }
     
     strong {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: bold;
     }
     
     p{
-    font-size: 12px;
+    font-size: 13px;
     font-weight: normal;
     }
     
     ol{
-    font-size: 12px
+    font-size: 13px
+    }
+    
+    li{
+    font-size: 13px
     }
     
     .selectize-input {
     word-wrap: break-word;
-    font-size: 12px;
+    font-size: 13px;
     overflow-x: auto;
     }
     
     .selectize-dropdown {
     word-wrap: break-word;
-    font-size: 12px;
+    font-size: 13px;
     }
     
     .form-control {
-    font-size: 12px;
+    font-size: 13px;
     height: 40px;
     }
     
     .btn {
-    font-size: 12px;
+    font-size: 13px;
     height: 40px;
     }
     
@@ -75,7 +78,7 @@ tags$head(
     }
     
     .shiny-output-error-validation {
-    font-size: 14px;
+    font-size: 15px;
     color: #E74C3C
     }
     
@@ -92,10 +95,10 @@ tags$head(
     }
     
     #lifeStageLegend_GW .shiny-html-output {
-    font-size: 12px}
+    font-size: 13px}
     
     #lifeStageLegend_LS .shiny-html-output {
-    font-size: 12px}
+    font-size: 13px}
     
     #speciesPanelID_GW .selectize-input {
     font-style: italic;
@@ -111,6 +114,36 @@ tags$head(
     
     #speciesPanelID_LS .selectize-dropdown-content {
     font-style: italic;
+    }
+    
+    #About_Overview h3 {
+    font-size: 15px;
+    text-decoration: underline;
+    }
+    
+    #About_Preprocess h3 {
+    font-size: 15px;
+    text-decoration: underline;
+    }
+    
+    #About_Data h3 {
+    font-size: 15px;
+    text-decoration: underline;
+    font-weight: bold;
+    }
+    
+    #About_Analysis_Methods h3 {
+    font-size: 15px;
+    text-decoration: underline;
+    }
+    
+    .nav-pills li {
+    font-size: 14px;
+    font-weight: bold;
+    }
+    
+    .nav-pills {
+    border-bottom: 1px solid #2C3E50;
     }
 
                     "))
