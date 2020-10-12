@@ -33,6 +33,7 @@ This folder contains the infrastructure for a Shiny application that permits bro
 ## App Setup & Deployment
 To access a stable deployment of the *Strongyloides* RNAseq Browser Web App, please visit: asbryant.shinyapps.io/strongyloides_rnaseq_browser/  
 
+
 To run the latest version locally from Github, use the following command in R/RStudio:  
 `library(shiny)`  
 `shiny::runGithub(repo = 'Strongyloides_RNAseq_Browser', username = 'astrasb', subdir = 'Strongyloides_RNAseq_Browser_App')`  
@@ -61,4 +62,3 @@ This project is licensed under the MIT License.
 ## Authors  
 * [Astra Bryant, PhD](https://github.com/astrasb)
 * [Stephanie DeMarco, PhD](https://github.com/sfdemarco)
-
