@@ -43,3 +43,6 @@ rsconnect/
 */rsconnect/*.dcf
 .Rproj.user
 inst/doc
+
+# MacOSX Files
+.DS_Store
