@@ -841,14 +841,14 @@ diffGenes.heatmap <- heatmap.2(diffGenes.thresh,
 ```
 
 ## Functional Enrichment Analysis
-This code prerform GSEA using the clusterProfiler library. Ability to do this depends on the availability of gene sets. Major databases (e.g. msigdb don't seem to have *Strongyloides* information. They do have *C. elegans* gene sets, but I'm not convinced the homology information is good enough for the comparison to be unbiased/meaningful. In Hunt et al 2016, there is an Ensembl Compara protein family set; we will use this as the basis for our gene set libraries.  
+This code performs GSEA using the clusterProfiler library. Ability to do this depends on the availability of gene sets. Major databases (e.g. msigdb don't seem to have *Strongyloides* information. They do have *C. elegans* gene sets, but I'm not convinced the homology information is good enough for the comparison to be unbiased/meaningful. In Hunt et al 2016, there is an Ensembl Compara protein family set; we will use this as the basis for our gene set libraries.  
 Note that this uses specific transcript information, which I throw out (e.g. SSTP_0001137400.2 is recoded as SSTP_0001137400).
 
 Given a priori defined set of gene S (e.g., genes shareing the same DO category), the goal of GSEA is to determine whether the members of S are randomly distributed throughout the ranked gene list (L) or primarily found at the top or bottom.  
 There are three key elements of the GSEA method:  
 **Calculation of an Enrichment Score.**  
 The enrichment score (ES) represent the degree to which a set S is over-represented at the top or bottom of the ranked list L. The score is calculated by walking down the list L, increasing a running-sum statistic when we encounter a gene in S and decreasing when it is not. The magnitude of the increment depends on the gene statistics (e.g., correlation of the gene with phenotype). The ES is the maximum deviation from zero encountered in the random walk; it corresponds to a weighted Kolmogorov-Smirnov-like statistic (Subramanian et al. 2005).  
-**Esimation of Significance Level of ES.**  
+**Estimation of Significance Level of ES.**  
 The p-value of the ES is calculated using permutation test. Specifically, we permute the gene labels of the gene list L and recompute the ES of the gene set for the permutated data, which generate a null distribution for the ES. The p-value of the observed ES is then calculated relative to this null distribution.  
 **Adjustment for Multiple Hypothesis Testing.**  
 When the entire gene sets were evaluated, DOSE adjust the estimated significance level to account for multiple hypothesis testing and also q-values were calculated for FDR control.  

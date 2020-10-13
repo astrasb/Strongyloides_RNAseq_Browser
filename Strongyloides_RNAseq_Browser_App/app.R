@@ -15,6 +15,7 @@ suppressPackageStartupMessages({
     library(plotly)
     library(magrittr)
     library(ggthemes)
+    library(shinycssloaders)
     library(gplots)
     library(svglite)
     library(Cairo)
@@ -25,6 +26,7 @@ suppressPackageStartupMessages({
     library(dendextend)
     library(vctrs)
     library(clusterProfiler)
+    library(markdown)
     source("Server/ggheatmap_local.R")
     source("Server/calc_DEG_tbl.R")
     source("Server/theme_Publication.R")
@@ -39,7 +41,7 @@ source('Server/preprocess_data.R', local = T)
 
 ui <- fluidPage(
     
-    source('UI/Str_RNAseqBrowser_navbar-ui.R', local = T)$value,
+    source('UI/Str_RNAseqBrowser_ui.R', local = T)$value,
     
     source('UI/custom_css.R', local = T)$value
     

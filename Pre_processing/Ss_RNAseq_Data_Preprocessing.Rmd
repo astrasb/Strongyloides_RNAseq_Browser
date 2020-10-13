@@ -102,7 +102,7 @@ ERR146954 -t 14 ERR146954_1.fastq.gz ERR146954_2.fastq.gz&> ERR146954.log
 kallisto quant -i strongyloides_stercoralis.PRJEB528.WBPS14.mRNA_transcripts.index -o 
 ERR146955 -t 14 ERR146955_1.fastq.gz ERR146955_2.fastq.gz&> ERR146955.log
 
-# Post-Parasitic L1s
+# Post-Parasitic L3s
 kallisto quant -i strongyloides_stercoralis.PRJEB528.WBPS14.mRNA_transcripts.index -o 
 ERR146956 -t 14 ERR146956_1.fastq.gz ERR146956_2.fastq.gz&> ERR146956.log
 kallisto quant -i strongyloides_stercoralis.PRJEB528.WBPS14.mRNA_transcripts.index -o 
