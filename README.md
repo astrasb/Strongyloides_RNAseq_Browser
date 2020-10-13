@@ -36,7 +36,7 @@ To access a stable deployment of the *Strongyloides* RNAseq Browser Web App, ple
 
 To run the latest version locally from Github, use the following command in R/RStudio:  
 `library(shiny)`  
-`shiny::runGithub(repo = 'Strongyloides_RNAseq_Browser', username = 'astrasb', subdir = 'Strongyloides_RNAseq_Browser_App')`  
+`shiny::runGitHub(repo = 'Strongyloides_RNAseq_Browser', username = 'astrasb', subdir = 'Strongyloides_RNAseq_Browser_App')`  
 
 To run a specific release locally use the following commands in R/RStudio:  
   * For PCs --  
@@ -47,7 +47,7 @@ To run a specific release locally use the following commands in R/RStudio:
     `library(shiny)`  
     `shiny::runUrl('https://github.com/astrasb/Strongyloides_RNAseq_Browser/archive/<RELEASE_VERSION>.tar.gz', subdir = 'Strongyloides_RNAseq_Browser_App/')`  
 
-Please note: the download step for runURL takes a substantial amount of time. We recommend downloading this archive and running the application locally. Note that full app functionality only requires the *Strongyloides*_RNAseq_Browser_App subdirectory.
+Please note: the download step for runURL/runGitHub takes a substantial amount of time. We recommend downloading this archive and running the application locally. Note that full app functionality only requires the *Strongyloides*_RNAseq_Browser_App subdirectory.
 
 ## App Features  
 The *Strongyloides* RNAseq Shiny App enables users to browse publically available *Strongyloides* bulk RNAseq datasets and perform on-demand analyses including differential expression and gene set enrichment. Data from the following species are currently included: *S. stercoralis*, *S. ratti*, *S. papillosus*, and *S. venezuelensis*. The app permits browsing RNAseq data in two modes:
