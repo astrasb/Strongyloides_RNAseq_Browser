@@ -43,6 +43,5 @@ gene set.
 ### Data Visualization
 
 For heatmaps of Log2 Counts per Million gene expression values, columns
-(life stages) are ordered using Spearman clustering of expression in all
-genes (not just the user-defined subset). Rows are ordered using Pearson
+(life stages) are ordered using Spearman clustering of the user-defined subset. Rows are ordered using Pearson
 clustering of expression of the user-selected gene subset.

@@ -115,9 +115,10 @@ generateGenePlot <- reactive({
             dplyr::select(!geneID) %>%
             as.matrix()
         rownames(diffGenes) <- rownames(vals$v.DEGList.filtered.norm$E)
-        setProgress(0.2)
-        clustColumns <- hclust(as.dist(1-cor(diffGenes, method="spearman")), method="complete")
         subset.diffGenes<- diffGenes[vals$gene_of_interest,]
+        
+        setProgress(0.2)
+        clustColumns <- hclust(as.dist(1-cor(subset.diffGenes, method="spearman")), method="complete")
         
         colnames(subset.diffGenes) <- paste0(vals$v.DEGList.filtered.norm$targets$group,
                                              "...",
@@ -163,7 +164,6 @@ generateGenePlot <- reactive({
                        branches_lwd = 0.2,
                        key.title = "Row-scaled Z Score",
                        cexRow=1.2, cexCol=1.2,
-                       xlab = "Column clustering performed across all genes",
                        margins = c(100, 50, 10, 0),
                        colorbar_len = 0.5,
                        colorbar_ypos = 0.5,
@@ -280,13 +280,23 @@ output$downloadGenePlot <- downloadHandler(
                     dplyr::select(!geneID) 
                 colnames(diffGenes) <- vals$v.DEGList.filtered.norm$target$group
                 diffGenes <- diffGenes %>%
-                    avearrays() %>%
                     as.matrix()
                 
                 rownames(diffGenes) <- rownames(vals$v.DEGList.filtered.norm$E)
-                clustColumns <- hclust(as.dist(1-cor(diffGenes, method="spearman")), method="complete")
-                setProgress(0.4)
                 subset.diffGenes<- diffGenes[vals$gene_of_interest,]
+                
+                clustColumns <- hclust(as.dist(1-cor(subset.diffGenes, method="spearman")), method="complete")
+                
+                colnames(subset.diffGenes) <- paste0(vals$v.DEGList.filtered.norm$targets$group,
+                                                     "...",
+                                                     substr(vals$v.DEGList.filtered.norm$targets$samples, 
+                                                            nchar(
+                                                                as.character(vals$v.DEGList.filtered.norm$targets$samples[1]))-2, nchar(
+                                                                    as.character(vals$v.DEGList.filtered.norm$targets$samples[1])))
+                )
+                
+                setProgress(0.4)
+                
                 clustRows <- hclust(as.dist(1-cor(t(subset.diffGenes), 
                                                   method="pearson")), 
                                     method="complete") 

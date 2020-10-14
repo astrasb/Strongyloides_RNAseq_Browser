@@ -8,6 +8,7 @@ output$genePanelinputs <- renderUI({
             ### GeneID (text box)
             h5('Pick Genes', class = 'text-danger', style = "margin: 0px 0px 5px 0px"),
             p(tags$em('Users may type gene stable IDs or keywords that will be matched against Wormbase Parasite Gene Descriptions, known C. elegans homologs, InterPro terms, and an Ensembl Compara database of gene families. Please separate search terms by a comma. Users may also upload a .csv file containing comma-separated gene stable IDs.', style = "color: #7b8a8b")),
+            p(tags$em("Type 'everything' or 'all genes' to display all genes in the genome. Warning: this will take a long time to process.", style = "color: #7b8a8b")),
             p(tags$em(tags$b('Note: Please hit the Clear button if switching between typing and uploading inputs.', style = "color: #F39C12"))),
             textAreaInput('idtext',
                           h6('Gene Stable IDs or Keyword'),
@@ -49,6 +50,10 @@ parse_ids <- eventReactive(input$goGW,{
                     gsub("\\s+", "", .) %>% #remove any number of whitespace
                     str_split(pattern = ",") %>%
                     unlist() %>%
+                    as_tibble_col(column_name = "geneID")
+            } else if (any(grepl('everything|all genes', input$idtext, ignore.case = TRUE))) {
+                # Text input matches the strings 'everything' or 'all genes'
+                genelist <- rownames(vals$v.DEGList.filtered.norm$genes) %>%
                     as_tibble_col(column_name = "geneID")
             } else {
                 
