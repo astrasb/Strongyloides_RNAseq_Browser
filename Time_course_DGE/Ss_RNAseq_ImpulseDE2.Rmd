@@ -1,29 +1,68 @@
 ---
 title: Time course analysis of a *Strongyloides stercoralis* bulk RNAseq dataset
 output:
-  html_document:
+   html_document:
     df_print: paged
-    toc: yes
-    code_folding: hide
+    toc: true
+    toc_depth: 3
+    number_sections: true
 ---
 
-# Introduction
-As an alternative to limma-voom based pairwise differential gene analysis, here we analyze the Stolzfus bulk RNAseq dataset using differential expression alogrithms for longitudinal count data.
+# Introduction and Methods Overview
+As an alternative to limma-voom based pairwise differential gene analysis, here we analyze a *Strongyloides stercoralis* bulk RNAseq dataset using differential expression alogrithms for longitudinal count data. This dataset included was originaly published by [Stolzfus *et al* 2012](https://journals.plos.org/plosntds/article?id=10.1371/journal.pntd.0001854).  
 
 ### ImpulseDE2
 ImpulseDE2 is a method for testing differential expression with longitudinal datasets. In the introductory journal article, the authors point out the distinction between DE algorithms that treat time points independently (e.g. those motly based on linear models, like edgeR, limma, DESeq), and those that explicitly model the dependence between time points. This latter group "constrain the sequence of measured expression levels to a continuous function of time, thus capturing the dependence of expression levels between time points" ( [Fischer, Theis and Yosef, 2018](https://academic.oup.com/nar/article/46/20/e119/5068248) ).  
 ImpulseDE2 presents the option of case-only differential expression analysis, that seeks to identify "genes that have non-constant expression trajectories over trim from samples of a single condition." Mathematically, the impulse algorithm scales the product of two sigmoid functions (thus yielding three state-specific expression values: initial, peak, and steady state). Furthermore, ImpulseDE2 allows users to add additional functionality for determining whether genes are transiently or permanently altered. Thus, an Impulse model can capture 4 different expression trajectories: monotonous decrease, monotonous increase, transient decrease (valley), and transient increase (peak) ([see Figure 1A of Fischer, Theis and Yosef (2018) for a schematic of these trajectories](https://oup.silverchair-cdn.com/oup/backfile/Content_public/Journal/nar/46/20/10.1093_nar_gky675/1/gky675fig1.jpeg?Expires=1602438787&Signature=KnHds3-x5sKEZ-8ET~4urvVWfOgFTf6h6OvONbo~x25W3JnxnhZlkUYN-BMvTuSUk7XMVWFO4pvu~8s5s2TSk51-yUV92IPU-qAzcRnrM9uLX0VcBuPkZxOAAZ0JKvJyja2HHa1uWGHOfGQTeO~yAnAvOJCcSIZM166X-gXyQRH2Ct4J8aqsEXwQBEZ9doKv01yhq5k7Vz3Y7R9ieLq4DHrj-jmXD3~wV2swOukcu~~V1MXEwRCuQbVt8sd2Ft7VMCr4xXN7O0y70HzGfwnNPObE9v4~x33KybgPn56hYOpAM~haoAebyYCR3VHraw9er0ou4RcGgW~dZXqgjGvORg__&Key-Pair-Id=APKAIE5G5CRDK6RD3PGA)). For a tutorial, see this [BioConductor vignette](https://bioconductor.org/packages/release/bioc/vignettes/ImpulseDE2/inst/doc/ImpulseDE2_Tutorial.html).  
 For benchmarking of ImpulseDE2 against other options, see [Spies et al 2017](https://academic.oup.com/bib/article/20/1/288/4364840), which found that in general, pairwise differential expression often outperforms longitudinal algorithms in terms of identifying true differentially expressed genes. Nevertheless, they find that ImpulseDE2 does a reasonable job. However, they do recommend controlling for discovery of false positives by using both ImpulseDE2 and another longitudinal method, SplineTC, and taking the intersection of their results. Note that a third option is to capture contintuous dependence on time using a linear models based on a spline basis transform of the time coordinate; this would be accomplished using a linear model based method such as limma or DESeq2 Instructions for running DESeq2 with settings for splines are included in the supplemental materials for [Fischer, Theis and Yosef, 2018](https://academic.oup.com/nar/article/46/20/e119/5068248). However, I don't think this option would identify transiently altered gene expression, which is the most useful feature of ImpulseDE2.  
 
-### Data Pre-Processing  
-Kallisto and custom R scripts were used to perform ultra-fast read mapping of raw reads to the *S. stercoalis* reference transcriptome (PRJEB528.WBPS14.mRNA_transcripts, downloaded from [WormBase Parasite](https://parasite.wormbase.org/Strongyloides_stercoralis_prjeb528/Info/Index/) on 16 June 2020).   
+### Data Sources and Details 
+Raw reads were downloaded from the European Nucleotide Archive - study accession number [PRJEB3116](https://www.ebi.ac.uk/ena/browser/view/PRJEB3116). This dataset consists of 21 samples, representing 7 life stages with 3 biological replicates for each life stage:
 
-Kallisto alignments are imported into the R environment and annotated with information imported via the Wormbase ParaSite BioMaRT. Annotation information includes: *C. elegans* homologs/percent homology, *S. ratti* homologs/percent homology, UniProtKB number, Interpro terms, GO terms, and general Description information. Annotation information is saved as an R object that is passed to a Shiny Web App for downstream browsing and on-demand analysis.  
+  * Free-living adult females (FLF)
+  * Parasitic adult females (PF)
+  * Infective third-stage larvae (iL3)
+  * Activated iL3s (iL3a)
+  * Post-parasitic 1st stage larvae (ppL1)
+  * Post-parasitic 3rd stage larvae (ppL3)
+  * Post-free-living 1st stage larvae (pfL1)
 
-Raw reads (unfiltered and non-normalized) are used to generate a `DESeqDataSet object`, which is used to generate a matric of integer count data. This matrix is passed into `ImpulseDE2`, for trajectory analysis. Also passed into `ImpulseDE2` is a design file that specifies the time points associated with each sample. Note: the numerical time values affect the curve fitting processes within `ImpulseDE2` such that it appears the most robust way to temporally code the set of life stages {FLF, iL3, iL3a, PF} is as values 0 - 4 (rather than calculating the amount of time that passes between life stages). Here, `ImpulseDE2` is run with the following parameters: no correction for batch, case-only analysis, and searching for transient expression.  
+### Kallisto Alignment   
+Kallisto was used to perform ultra-fast read mapping of raw reads to the *S. stercoalis* reference transcriptome (PRJEB528.WBPS14.mRNA_transcripts, downloaded from [WormBase Parasite](https://parasite.wormbase.org/Strongyloides_stercoralis_prjeb528/Info/Index/) on 16 June 2020). Kallisto alignments are imported into the R environment using `Tximport`. 
 
-# Import Kallisto reads into R  
-This process uses a different project design than the primary data pre-processing script. The ImpulseDE2 design file includes temporal assignments for each sample. Depending on the version of the design file, only a subset of samples from PRJEB3116 might be included. Kallisto reads are imported using different `tximport` parameters - here, abundance values are imported as is whereas the pre-processing script calculates counts from abundance using a `lengthScaledTPM` process that generates estimated counts that are scaled by average transcript length and then library size. In this code, those normalization steps occur in subsequent chunks.  
+### ImpulseDE2 Implementation Overview
+Raw reads (unfiltered and non-normalized) are used to generate a `DESeqDataSet object`, which is used to generate a matrix of integer count data. This matrix is passed into `ImpulseDE2`, for trajectory analysis. Also passed into `ImpulseDE2` is a design file that specifies the time points associated with each sample.  
+
+Note: the numerical time values affect the curve fitting processes within `ImpulseDE2` such that it appears the most robust way to temporally code a set of life stages {e.g. FLF, iL3, iL3a, PF} is as a sequence of integer values (e.g. 0 - 3), rather than calculating the amount of time that passes between life stages. Here, `ImpulseDE2` is run with the following parameters: no correction for batch, case-only analysis, and searching for transient expression.  
+
+# Results
+Note: Code chunks are collated and echoed at the end of the document in the Appendix.
+```{r setup, echo = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+suppressPackageStartupMessages({
+  library(tidyverse) 
+  library(tximport)
+  library(ImpulseDE2)
+  library(magrittr)
+  library(ggplot2)
+  library(DESeq2)
+  library(ensembldb)
+  library(biomaRt)
+  library(ComplexHeatmap)
+  library(compiler)
+  library(knitr)
+  library(pheatmap)
+  library(RColorBrewer)
+  library(ComplexHeatmap)
+  library(circlize)
+  #source("./Pre_processing/plotHeatmap_local.R")
+})
+
+```
+
+## Import Kallisto reads into R  
+This process uses a different project design than the primary `limma-voom` analysis pipeline. The ImpulseDE2 design file includes temporal assignments for each sample. Depending on the version of the design file, only a subset of samples from PRJEB3116 might be included. Kallisto reads are imported using different `tximport` parameters - here, abundance values are imported as is whereas the pre-processing script calculates counts from abundance using a `lengthScaledTPM` process that generates estimated counts that are scaled by average transcript length and then library size. In this code, those normalization steps occur in subsequent chunks.  
 
 ```{r txImport, include = FALSE, cache=TRUE}
 # load packages ----
@@ -41,7 +80,7 @@ suppressPackageStartupMessages({
   #source("./Pre_processing/plotHeatmap_local.R")
 })
 # read in the ImpulseDE2 design ----
-dfAnnotation <- read_tsv("../Data/S_stercoralis/Study_Design/PRJEB3116_ImpulseDE2_all_stages_design.txt",
+dfAnnotation <- read_tsv("../Data/S_stercoralis/Study_Design/PRJEB3116_ImpulseDE2_design.txt",
                          col_types = "ccncc",
                          na = c("", "NA", "na"))
 
@@ -72,9 +111,16 @@ Txi_gene_DE <- tximport(path,
                         ignoreTxVersion = FALSE)
 ```
 
-# Gene Annotation
-Import gene annotation information for S. stercoralis genes, including:
-C. elegans homologs/percent homology, S. ratti homologs/percent homology, UniProtKB number, Interpro terms, GO terms, and general Description information using biomart.  
+## Import Gene Annotations  
+Import gene annotation information for *S. stercoralis* genes, including:
+
+  * *C. elegans* homologs/percent homology
+  * *S. ratti* homologs/percent homology
+  * UniProtKB number
+  * Interpro terms
+  * GO terms
+  * general Description information using biomart.
+ 
 
 ```{r geneAnnotation, include = FALSE, cache=TRUE}
 # Introduction to this chunk -----------
@@ -163,9 +209,8 @@ annotations<-dplyr::left_join(Annt.logs, Annt.interpro) %>%
 
 ```
 
-# Local copy of plotHeatmap
+## Local copy of plotHeatmap
 Include code for local version of plotHeatmap, from the ImpulseDE2 library.  
-
 ```{r plotHeatmap_local, include=FALSE}
 suppressPackageStartupMessages({
   library(compiler)
@@ -465,7 +510,7 @@ evalImpulse_comp <- cmpfun(evalImpulse)
 ```
 
 
-# Run ImpulseDE2
+## Run ImpulseDE2
 Case-only diffferential expression, without batch effects, with detection of transiently regulated genes. Note that here, the gene counts are rounded to the nearest integer, and the data are neither normalized or filtered for low expression when they are passed into ImpulseDE2 (which will do a normalization step internally, and will remove genes that have no expression at any stage). This code generates a heatmap, which plots genes with differential expression across life stages with a BH-adjusted p-value of less than 0.01. Running ImpulseDE2 on *S. stercoralis* dataset with 4 life stages takes 15-20 minutes on a Macbook Pro.   
 
 ```{r impulseDE2, cache = TRUE, echo=FALSE, message=FALSE, dependson = 'txImport'}
@@ -501,8 +546,14 @@ draw(lsHeatmaps$complexHeatmapRaw,
      column_title = "ImpulseDE2 Transiently-Regulated Genes")
 ```
 
-# Pull, Annotate, and Collate Trajectory Profiles
-Generate annotated lists of genes displaying different trajectory profiles. ImpulseDE2 can identify 4 life-varying expression profiles: transient upregulation, transient downregulation, permanent upregulation, and permanent downregulation.  
+## Pull, Annotate, and Collate Trajectory Profiles
+Generate annotated lists of genes displaying different trajectory profiles. ImpulseDE2 can identify 4 life-varying expression profiles:
+
+  * transient upregulation
+  * transient downregulation
+  * permanent upregulation
+  * and permanent downregulation.  
+  
 ```{r gatherTrajectories, cache = FALSE, include = FALSE}
 suppressPackageStartupMessages({
   library(limma)
@@ -533,37 +584,36 @@ trajectory.results.df <- trajectory.results.list %>% bind_rows(.id = "class") %>
 ```
   
   
-# Search for Genes of Interest   
+## Search for Genes of Interest   
 Here, a proof of concept code chunk that searches the list of trajectory results for a specific subset of genes, the Ss-AFD-rGCs and Ss-tax-4.  
   
-### Plot Impulse Fits   
-Plot the impulse fit for each gene of interest.  
+<!-- ### Plot Impulse Fits    -->
+<!-- Plot the impulse fit for each gene of interest. The values on the x-axis default to the pseudo time values assigned to each life stage; replacing those values is at the moment not worth the coding effort as it's a bit of a tricky problem. Assignments are as follows: -->
 
-```{r genes.of.interest.1, cache = FALSE, echo = FALSE}
-suppressPackageStartupMessages({
-  library(pheatmap)
-  library(RColorBrewer)
-  library(ComplexHeatmap)
-  library(circlize)
-})
+<!--   * 0 = Free-living females (FLF) -->
+<!--   * 1 = iL3s -->
+<!--   * 2 = activated iL3s (iL3a) -->
+<!--   * 3 = Parasitic females (PF) -->
 
-# Genes of Interest ----
-genes_of_interest <- c('SSTP_0000354300','SSTP_0000775800','SSTP_0000846800','SSTP_0000981000')
+<!-- ```{r genes.of.interest.1, cache = FALSE, echo = FALSE, message = FALSE} -->
 
-# Plot the impulse fit for each gene of interest ----
-suppressWarnings({
-plotGenes(
-  vecGeneIDs       = genes_of_interest,
-  scaNTopIDs       = NULL,
-  objectImpulseDE2 = objectImpulseDE2,
-  boolCaseCtrl     = FALSE,
-  dirOut           = NULL,
-  strFileName      = NULL,
-  boolMultiplePlotsPerPage = TRUE,
-  boolSimplePlot=TRUE)
-})
-```
-   
+<!-- # Genes of Interest ---- -->
+<!-- genes_of_interest <- c('SSTP_0000354300','SSTP_0000775800','SSTP_0000846800','SSTP_0000981000') -->
+
+<!-- # # Plot the impulse fit for each gene of interest ---- -->
+<!-- # suppressWarnings({ -->
+<!-- # plotGenes( -->
+<!-- #   vecGeneIDs       = genes_of_interest, -->
+<!-- #   scaNTopIDs       = NULL, -->
+<!-- #   objectImpulseDE2 = objectImpulseDE2, -->
+<!-- #   boolCaseCtrl     = FALSE, -->
+<!-- #   dirOut           = NULL, -->
+<!-- #   strFileName      = NULL, -->
+<!-- #   boolMultiplePlotsPerPage = TRUE, -->
+<!-- #   boolSimplePlot=TRUE) -->
+<!-- # }) -->
+<!-- ``` -->
+
    
 ### Generate Annotated Results Table   
 Print the ImpulseDE2 results table, annotated with gene information from BioMaRT. Table displays average count data for each life stage. Benjamini-Hochberg false-discovery rate corrected p-values are provided for two hypothesis testing schemes used to identify transient gene expression trajectories:  
@@ -572,12 +622,15 @@ Print the ImpulseDE2 results table, annotated with gene information from BioMaRT
 From [Fischer, Theis and Yosef (2018)](https://academic.oup.com/nar/article/46/20/e119/5068248), the way this works is that ImpulseDE2 "compares the fit of a monotonous sigmoid model (i.e. maintained modulation of expression) to an impulse model and a constant model". Transiently regulated genes are defined as "genes that are significantly better fit by an impulse model than by a sigmoid model and which do not have a monotonous impulse model fit". Permanently regulated genes are definted as "genes that are not transient but that are significantly better fit by a sigmoid than by a constant model".  
 The effect of these test results on the catergorization of a specific gene is reported by the boolean columns `isTransient` and `isMonotonous`. The table is grouped by the transient identity assginment for each gene (i.e. transiently downregulated genes are printed together, monotonously upregulated genes are printed together).  
 
-```{r genes.of.interest.2, cache = FALSE, echo = FALSE}
+```{r genes.of.interest.2, cache=FALSE}
+# Genes of Interest ----
+genes_of_interest <- c('SSTP_0000354300','SSTP_0000775800','SSTP_0000846800','SSTP_0000981000')
+
 goi.trajectory.results.df <- trajectory.results.df %>%
   dplyr::filter(geneID %in% genes_of_interest)
 
 # Make a table for the genes of interest ----
-goi.trajectory.results.df[,1:19] %>%
+goi.trajectory.results.df[,1:17] %>%
   gt(rowname_col = "geneID") %>%
   tab_stubhead(label = "geneID") %>%
   tab_header (title = md("**Results of ImpulseDE2 analysis for transient gene expression**"),
@@ -586,26 +639,31 @@ goi.trajectory.results.df[,1:19] %>%
   opt_table_outline() %>%
   opt_row_striping() %>%
   tab_source_note(
-    source_note = md("Reference: Soltzfus *et al*, 2012. DOI: 10.1371/journal.pone.0038587") 
+    source_note = md("Reference: Soltzfus *et al*, 2012. DOI: 10.1371/journal.pone.0038587")
   ) %>%
   fmt_number(
-    columns = c(3:9),
+    columns = c(3:6),
     decimals = 2
-  )%>%
+  ) %>%
   fmt_scientific(
-    columns = c(10:11),
+    columns = c(7:8),
     decimals = 2
-  )
+  ) 
 ```
   
   
 ### Generate Annotated Heatmap   
-Create and annotated heatmap (using `ComplexHeatmap` library) that shows the expression of the gene set.  
-
+Create an annotated heatmap (using `ComplexHeatmap` library) that shows the expression of the gene set. Values in each heatmap box are average count values. The trajectory annotation represents the  transient identity assginment for each gene (possible values are: transiently downregulated/upregulated, monotonously downregulated/upregulated).        
 ```{r genes.of.interest.3, cache = FALSE, echo = FALSE}
+# Genes of Interest ----
+genes_of_interest <- c('SSTP_0000354300','SSTP_0000775800','SSTP_0000846800','SSTP_0000981000')
+
+goi.trajectory.results.df <- trajectory.results.df %>%
+  dplyr::filter(geneID %in% genes_of_interest)
+
 goi.geneIDs <- c('Ss-AFD-rGC(35)','Ss-AFD-rGC(77)','Ss-AFD-rGC(84)','Ss-tax-4')
 # Make a heatmap for the genes of interest using the average count values
-goi.matrix <- goi.trajectory.results.df[,3:9] %>%
+goi.matrix <- goi.trajectory.results.df[,3:6] %>%
   as.matrix()
 rownames(goi.matrix) <- goi.trajectory.results.df$geneID
 #rownames(goi.matrix) <- goi.geneIDs
