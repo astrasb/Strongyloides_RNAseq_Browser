@@ -104,14 +104,16 @@ limma_ranking <- function(comparison, targetStage, contrastStage, multipleCorrec
     },
     simplify = FALSE)
     
-    comparison <- gsub("/[0-9]*","", comparison)
+    comparison <- gsub("/[0-9]*","", comparison) %>%
+        gsub("\\(|\\)","",.)
     names(vals$list.highlight.tbl) <- comparison
     
     vals$list.highlight.tbl <- sapply(comparison, function(y){
         vals$list.highlight.tbl[[y]] %>%
             dplyr::mutate(DEG_Desc = case_when(DEG_Desc == "Up" ~ paste0("Up in ", str_split(y,'-',simplify = T)[1,1]),
                                                DEG_Desc == "Down" ~ paste0("Down in ", str_split(y,'-',simplify = T)[1,1]),
-                                               DEG_Desc == "NotSig" ~ "NotSig")) 
+                                               DEG_Desc == "NotSig" ~ "NotSig")) %>%
+            dplyr::mutate(DEG_Desc = as.factor(DEG_Desc))
     },
     simplify = FALSE, 
     USE.NAMES = TRUE)

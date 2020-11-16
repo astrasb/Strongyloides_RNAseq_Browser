@@ -31,6 +31,7 @@ output$pairwiseSelector_GW<- renderUI({
             selectInput("selectContrast_GW",
                         h6("Select Contrast"),
                         choices = c('Choose one or more' = ''
+                                    ,'All Others' = 'everythingElse'
                                     ,as.list(levels(vals$target.contrast.options))),
                         selectize = TRUE,
                         multiple = TRUE),
@@ -46,13 +47,8 @@ output$pairwiseSelector_GW<- renderUI({
                           resize = "vertical"),
             
             h6("Correct for Multiple Comparisons?"),
-            switchInput(
-                inputId = "multipleContrastsYN_GW",
-                onLabel = "Yes",
-                offLabel = "No",
-                size = "small",
-                onStatus = "success"
-            ),
+            checkboxInput("multipleContrastsYN_GW",
+                          p("Yes, correct p-values for multiple pairwise comparisons")),
             
             tags$hr(style="border-color: #2C3E50;"),
             
@@ -125,8 +121,23 @@ parse_contrasts_GW <- eventReactive(input$goLifeStage_GW,{
         if (input$multipleContrastsYN_GW == T) {
             vals$multipleCorrection_GW <- T
         } else vals$multipleCorrection_GW <- F
-    } else if (length(input$selectTarget_GW) > 1 | 
-               length(input$selectContrast_GW) > 1) {
+    } else if (str_detect(input$selectContrast_GW, 'everythingElse')){
+        targetStage <- rbind(input$selectTarget_GW)
+        contrastStage <- setdiff(levels(vals$v.DEGList.filtered.norm$targets$group),targetStage) %>%
+            cbind()
+        targetStage <- rep_len(targetStage,length(contrastStage)) %>%
+            cbind()
+        comparison <- sapply(seq_along(contrastStage), function(x){
+            paste(paste0(input$selectTarget_GW, 
+                         collapse = "+") %>%
+                      paste0("(",.,")/",length(input$selectTarget_GW)),
+                  contrastStage[[x]] %>%
+                      paste0("(",.,")/1"),
+                  sep = "-"
+            )
+        })
+        vals$multipleCorrection_GW <- T
+    } else {
         targetStage <- rbind(input$selectTarget_GW)
         contrastStage <- rbind(input$selectContrast_GW)
         comparison <- paste(paste0(input$selectTarget_GW, 
@@ -135,13 +146,6 @@ parse_contrasts_GW <- eventReactive(input$goLifeStage_GW,{
                             paste0(input$selectContrast_GW, 
                                    collapse = "+") %>%
                                 paste0("(",.,")/",length(input$selectContrast_GW)), 
-                            sep = "-")
-        vals$multipleCorrection_GW <- F
-    } else {
-        targetStage <- rbind(input$selectTarget_GW)
-        contrastStage <- rbind(input$selectContrast_GW)
-        comparison <- paste(input$selectTarget_GW, 
-                            input$selectContrast_GW, 
                             sep = "-")
         vals$multipleCorrection_GW <- F
     }
@@ -200,7 +204,8 @@ parse_contrasts_GW <- eventReactive(input$goLifeStage_GW,{
     vals$targetStage_GW <- targetStage 
     vals$contrastStage_GW <- contrastStage
     vals$limmacontrast_GW <- comparison
-    vals$comparison_GW <- gsub("/[0-9]*","", comparison)
+    vals$comparison_GW <- gsub("/[0-9]*","", comparison) %>%
+        gsub("\\(|\\)","",.)
     
 })
 

@@ -18,7 +18,7 @@ perform_GSEA_LS <-reactive ({
     mydata.gsea <- sort(mydata.gsea, decreasing = TRUE)
     
     # run GSEA using the 'GSEA' function from clusterProfiler
-    # Given a priori defined set of gene S (e.g., genes shareing the same DO category), the goal of GSEA is to determine whether the members of S are randomly distributed throughout the ranked gene list (L) or primarily found at the top or bottom.
+    # Given a priori defined set of gene S (e.g., genes sharing the same DO category), the goal of GSEA is to determine whether the members of S are randomly distributed throughout the ranked gene list (L) or primarily found at the top or bottom.
     # There are three key elements of the GSEA method:
     # **Calculation of an Enrichment Score.**
     # The enrichment score (ES) represent the degree to which a set S is over-represented at the top or bottom of the ranked list L. The score is calculated by walking down the list L, increasing a running-sum statistic when we encounter a gene in S and decreasing when it is not. The magnitude of the increment depends on the gene statistics (e.g., correlation of the gene with phenotype). The ES is the maximum deviation from zero encountered in the random walk; it corresponds to a weighted Kolmogorov-Smirnov-like statistic (Subramanian et al. 2005).
@@ -67,7 +67,7 @@ output$GSEAPlot_LS <- renderPlot({
     perform_GSEA_LS()
 })
 
-## LS: Save Volcano Plot ----
+## LS: Save GSEA Plot ----
 output$downloadGSEAPlot_LS <- downloadHandler(
     filename = function(){
         paste('GSEAplot_',vals$comparison_LS[vals$displayedComparison_LS], '_',Sys.Date(),'.pdf', sep='')

@@ -4,8 +4,7 @@ observeEvent({input$resetLS
         updateSelectInput(session, "selectContrast_LS", selected = "")
         updateSelectInput(session, "selectTarget_LS", selected = "")
         updateTextAreaInput(session,"multiContrasts_LS",value = "")
-        
-    })
+        })
 
 ## LS: Generate Comparison Selection Boxes
 output$pairwiseSelector_LS<- renderUI({
@@ -18,7 +17,6 @@ output$pairwiseSelector_LS<- renderUI({
             status = "primary",
             p(tags$em('Users may set up a single pairwise comparison for differential gene analysis using the selection menus below. Alternatively, users may also input multiple pairwise comparisons by typing a comma-separated list of contrasts into the textbox.', style = "color: #7b8a8b")),
             h5('A: Single Comparison', class = 'text-danger', style = "margin: 0px 0px 10.5px 0px"),
-            
             selectInput("selectTarget_LS",
                         h6("Select Target"),
                         choices = c('Choose one or more' = ''
@@ -29,6 +27,7 @@ output$pairwiseSelector_LS<- renderUI({
             selectInput("selectContrast_LS",
                         h6("Select Contrast"),
                         choices = c('Choose one or more' = ''
+                                    ,'All Others' = 'everythingElse'
                                     ,as.list(levels(vals$v.DEGList.filtered.norm$targets$group))),
                         selectize = TRUE,
                         multiple = TRUE),
@@ -42,14 +41,9 @@ output$pairwiseSelector_LS<- renderUI({
                           resize = "vertical"),
             
             h6("Correct for Multiple Comparisons?"),
-            switchInput(
-                inputId = "multipleContrastsYN_LS",
-                onLabel = "Yes",
-                offLabel = "No",
-                size = "small",
-                onStatus = "success"
-            ),
-            
+           
+            checkboxInput("multipleContrastsYN_LS",
+                          p("Yes, correct p-values for multiple pairwise comparisons")),
             tags$hr(style="border-color: #2C3E50;"),
             
             ### Action Button
@@ -120,8 +114,23 @@ parse_contrasts_LS<-eventReactive(input$goLS,{
         if (input$multipleContrastsYN_LS == T) {
             vals$multipleCorrection_LS <- T
         } else vals$multipleCorrection_LS <- F
-    } else if (length(input$selectTarget_LS) > 1 | 
-               length(input$selectContrast_LS) > 1){
+    } else if (str_detect(input$selectContrast_LS, 'everythingElse')){
+        targetStage <- rbind(input$selectTarget_LS)
+        contrastStage <- setdiff(levels(vals$v.DEGList.filtered.norm$targets$group),targetStage) %>%
+            cbind()
+        targetStage <- rep_len(targetStage,length(contrastStage)) %>%
+            cbind()
+        comparison <- sapply(seq_along(contrastStage), function(x){
+            paste(paste0(input$selectTarget_LS, 
+                         collapse = "+") %>%
+                      paste0("(",.,")/",length(input$selectTarget_LS)),
+                  contrastStage[[x]] %>%
+                      paste0("(",.,")/1"),
+                  sep = "-"
+                  )
+        })
+        vals$multipleCorrection_LS <- T
+    } else {
         targetStage <- rbind(input$selectTarget_LS)
         contrastStage <- rbind(input$selectContrast_LS)
         comparison <- paste(paste0(input$selectTarget_LS, 
@@ -130,13 +139,6 @@ parse_contrasts_LS<-eventReactive(input$goLS,{
                             paste0(input$selectContrast_LS, 
                                    collapse = "+") %>%
                                 paste0("(",.,")/",length(input$selectContrast_LS)), 
-                            sep = "-")
-        vals$multipleCorrection_LS <- F
-    } else {
-        targetStage <- rbind(input$selectTarget_LS)
-        contrastStage <- rbind(input$selectContrast_LS)
-        comparison <- paste(input$selectTarget_LS, 
-                            input$selectContrast_LS, 
                             sep = "-")
         vals$multipleCorrection_LS <- F
     }
@@ -196,7 +198,8 @@ parse_contrasts_LS<-eventReactive(input$goLS,{
     vals$targetStage_LS <- targetStage 
     vals$contrastStage_LS <- contrastStage
     vals$limmacontrast_LS <- comparison
-    vals$comparison_LS <- gsub("/[0-9]*","", comparison)
+    vals$comparison_LS <- gsub("/[0-9]*","", comparison) %>%
+        gsub("\\(|\\)","",.)
     
 })
 
@@ -219,6 +222,8 @@ output$contrastDisplaySelection_LS <- renderUI({
         )
     })
 })
+
+
 
 ## LS: Generate Legend Explaining the Life Stages ----
 output$lifeStageLegend_LS <- renderDT({

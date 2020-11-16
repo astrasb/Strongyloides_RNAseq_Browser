@@ -260,6 +260,59 @@ output$highlight.df <- renderDT ({
     DEG.datatable_GW
 })
 
+##GW: Generate responsive pulldown list for filtering/saving DEG Tables
+output$downloadSelectionMenu_GW <- renderUI({
+    req(input$goGW,vals$list.highlight.tbl_GW,vals$comparison_GW)
+    req(str_detect(names(vals$list.highlight.tbl_GW),paste0(gsub("\\+","\\\\+",vals$comparison_GW) %>%
+                                                                gsub("\\-","\\\\-",.)  ,
+                                                            collapse = "|")))
+    
+    selectInput("download_DGE_Selection_GW",
+                label = h6("Select Contrast(s) to Download"),
+                choices = c('Choose one or more' = ''
+                            ,'Everything' = 'Everything'
+                            ,as.list(vals$comparison_GW)),
+                selected = "Everything",
+                selectize = TRUE,
+                multiple = TRUE)
+})
+
+##GW: Filter DEG Tables Before Saving ----
+filter_DEG_tbl_GW <- reactive({
+    req(input$goLifeStage_GW,vals$displayedComparison_GW,vals$list.highlight.tbl_GW,vals$comparison_GW,input$download_DGE_Selection_GW)
+    req(str_detect(names(vals$list.highlight.tbl_GW),paste0(gsub("\\+","\\\\+",vals$comparison_GW) %>%
+                                                                gsub("\\-","\\\\-",.)  ,
+                                                            collapse = "|")))
+    ## Figure out which datasets to download
+    if (any(str_detect(input$download_DGE_Selection_GW, "Everything"))){
+        download_DT <- vals$list.highlight.tbl_GW
+    } else {
+        subsetContrasts <- str_detect(names(vals$list.highlight.tbl_GW),paste0(input$download_DGE_Selection_GW, collapse = "|"))
+        download_DT<- vals$list.highlight.tbl_GW[subsetContrasts]
+    }
+    
+    if (input$download_DGEdt_across_GW == TRUE) {
+        subsetIDs <-lapply(names(download_DT), function(y){
+            dplyr::filter(download_DT[[y]],str_detect(DEG_Desc,paste0(input$download_DGEdt_direction_GW, collapse = "|")))
+        }) %>%
+            purrr::reduce(inner_join, by = c("geneID", "DEG_Desc")) %>%
+            dplyr::select(geneID)
+        
+        filtered.list.highlight.tbl_GW <- lapply(names(download_DT), function(y){
+            dplyr::filter(download_DT[[y]], geneID %in% subsetIDs$geneID)%>%
+                dplyr::arrange(desc(logFC))
+        })
+        names(filtered.list.highlight.tbl_GW) <- names(download_DT)
+    } else {
+        filtered.list.highlight.tbl_GW <-lapply(names(download_DT), function(y){
+            dplyr::filter(download_DT[[y]],str_detect(DEG_Desc,paste0(input$download_DGEdt_direction_GW, collapse = "|"))) %>%
+                dplyr::arrange(desc(logFC))
+        })
+        names(filtered.list.highlight.tbl_GW)<- names(download_DT)
+    }
+    filtered.list.highlight.tbl_GW
+})
+
 ## GW: Save Excel Tables with DEG Tables ----
 output$downloadbuttonGW <- renderUI({
     req(input$goLifeStage_GW,vals$comparison_GW,vals$genelist)
@@ -270,15 +323,32 @@ output$downloadbuttonGW <- renderUI({
                                        by = "geneID") %>%
         left_join(vals$annotations, by = "geneID") # Add gene annotations
     
+    filtered.tbl_GW <- filter_DEG_tbl_GW()
     
-    downloadablel.tbl_GW <-lapply(vals$list.highlight.tbl_GW, function (x) {
+    downloadablel.tbl_GW <-lapply(filtered.tbl_GW, function (x) {
         suppressMessages(dplyr::full_join(x,excluded.genes))
     })
     
-    output$generate_excel_report_GW <- generate_excel_report(vals$comparison_GW, 
+    ### Generate some text that describes the analysis conditions
+    ### 1. If p-values are adjusted for multiple pairwise comparisons, which comparisons are included in the adjustment parameters? This should be the list of selected contrasts
+    if (vals$multipleCorrection_GW == TRUE){
+        multiplecorrection <- paste0(vals$comparison_GW, collapse = "; ")
+    } else {
+        multiplecorrection <- "n/a"
+    }
+    ### 2. If downloading results are being filtered to show only genes that display consistent differential expression across all comparisons targeted for download, list the pairwise comparisons being used.
+    if (input$download_DGEdt_across_GW == TRUE){
+        filteredacross <- paste0(names(filtered.tbl_GW), collapse = "; ")
+    } else {
+        filteredacross <- "n/a"
+    }
+    
+    output$generate_excel_report_GW <- generate_excel_report(names(downloadablel.tbl_GW), 
                                                              downloadablel.tbl_GW,
                                                              name = paste(input$selectSpecies_GW,
-                                                                          "RNAseq Differential Gene Expression"))
+                                                                          "RNAseq Differential Gene Expression"),
+                                                             multiplecorrection = multiplecorrection,
+                                                             filteredacross = filteredacross)
     
     downloadButton("generate_excel_report_GW",
                    "Download DEG Tables",
