@@ -310,6 +310,25 @@ filter_DEG_tbl_GW <- reactive({
         })
         names(filtered.list.highlight.tbl_GW)<- names(download_DT)
     }
+    
+    # Pass only a specific proportion of genes. Remember, the datatable is grouped by the DEG_Desc value, and ordered by descending logFC value. 
+    filtered.list.highlight.tbl_GW<-lapply(names(filtered.list.highlight.tbl_GW), function(y){
+        
+        filtered.list.highlight.tbl_GW[[y]] %>%
+            dplyr::group_map(~ {
+                if (str_detect(.y, "Up")) {
+                    slice_max(.x, order_by = logFC, prop = as.numeric(input$percentDGE_GW)/100)
+                } else if (str_detect(.y, "NotSig")) {
+                    slice_max(.x, order_by = logFC, prop = as.numeric(input$percentDGE_GW)/100)
+                } else if (str_detect(.y, "Down")) {
+                    slice_min(.x, order_by = logFC, prop = as.numeric(input$percentDGE_GW)/100)
+                }
+            }, .keep = TRUE) %>%
+            bind_rows() %>%
+            dplyr::arrange(desc(logFC))
+    })
+    names(filtered.list.highlight.tbl_GW)<- names(download_DT)
+    
     filtered.list.highlight.tbl_GW
 })
 
@@ -342,13 +361,20 @@ output$downloadbuttonGW <- renderUI({
     } else {
         filteredacross <- "n/a"
     }
+    ### 3. Specify which types of differential expression pattern
+    DEGpattern <- paste0(input$download_DGEdt_direction_GW, collapse = "; ")
+    
+    ### 4. Specify the proportion of genes for each DEG Type that are being saved (e.g. top 10% of upregulated, and top10% of downregulated genes)
+    proportionexport <- paste0("Percentage of genes for each differential expression pattern: ", input$percentDGE_GW)
     
     output$generate_excel_report_GW <- generate_excel_report(names(downloadablel.tbl_GW), 
                                                              downloadablel.tbl_GW,
                                                              name = paste(input$selectSpecies_GW,
                                                                           "RNAseq Differential Gene Expression"),
                                                              multiplecorrection = multiplecorrection,
-                                                             filteredacross = filteredacross)
+                                                             filteredacross = filteredacross,
+                                                             DEGpattern = DEGpattern,
+                                                             proportionexport = proportionexport)
     
     downloadButton("generate_excel_report_GW",
                    "Download DEG Tables",

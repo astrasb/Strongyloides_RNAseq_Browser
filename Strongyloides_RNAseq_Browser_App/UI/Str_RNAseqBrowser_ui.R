@@ -124,9 +124,13 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                                                            selected = c("Up",
                                                                                         "Down",
                                                                                         "NotSig")),
+                                                       
+                                                        textInput("percentDGE_GW",
+                                                                  h6("Select Top % of genes, filtered by LogFC value"),
+                                                                  "100"),
                                                         h6("Filter across all comparisons?"),
                                                         checkboxInput("download_DGEdt_across_GW",
-                                                                      "Yes, only download genes with selected expression types in all searched pairwise comparisons."),
+                                                                      p("Yes, only download genes with selected expression types in all searched pairwise comparisons.")),
                                                         uiOutput('downloadbuttonGW')
                                                     )
                                                     
@@ -237,9 +241,13 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                                                            selected = c("Up",
                                                                                         "Down",
                                                                                         "NotSig")),
+                                                        textInput("percentDGE_LS",
+                                                                  h6("Select Top % of genes, filtered by LogFC value"),
+                                                                  "100"),
                                                         h6("Filter across all comparisons?"),
                                                         checkboxInput("download_DGEdt_across_LS",
-                                                                      "Yes, only download genes with selected expression types in all searched pairwise comparisons."),
+                                                                      p("Yes, only download genes with selected expression types in all searched pairwise comparisons.")),
+                                                        
                                                     uiOutput('downloadbuttonLS')
                                                     )
                                        

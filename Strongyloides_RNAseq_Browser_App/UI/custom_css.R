@@ -148,6 +148,14 @@ tags$head(
     .nav-pills {
     border-bottom: 1px solid #2C3E50;
     }
+    
+    #download_DGEdt_direction_LS .shiny-options-group{
+    font-size: 13px;
+    }
+    
+    #download_DGEdt_direction_GW .shiny-options-group{
+    font-size: 13px;
+    }
 
                     "))
     

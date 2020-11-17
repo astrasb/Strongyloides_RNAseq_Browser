@@ -113,7 +113,8 @@ limma_ranking <- function(comparison, targetStage, contrastStage, multipleCorrec
             dplyr::mutate(DEG_Desc = case_when(DEG_Desc == "Up" ~ paste0("Up in ", str_split(y,'-',simplify = T)[1,1]),
                                                DEG_Desc == "Down" ~ paste0("Down in ", str_split(y,'-',simplify = T)[1,1]),
                                                DEG_Desc == "NotSig" ~ "NotSig")) %>%
-            dplyr::mutate(DEG_Desc = as.factor(DEG_Desc))
+            #dplyr::mutate(DEG_Desc = as.factor(DEG_Desc)) %>%
+            dplyr::group_by(DEG_Desc)
     },
     simplify = FALSE, 
     USE.NAMES = TRUE)
