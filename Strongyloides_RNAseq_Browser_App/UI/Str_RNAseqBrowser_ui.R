@@ -83,7 +83,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                             )
                             
                         ),
-                        ## Fluid Row 3: Input Pairwise Comparisons Panel + Volcano Plot Panel + Contrasts Dropdown Menu + Differential Gene Expression Table  ----
+                        ## Fluid Row 3: Input Pairwise Comparisons Panel + Volcano Plot Panel + Contrasts Dropdown Menu ----
                         fluidRow(
                             column(3,
                                    conditionalPanel(condition = "(output.downloadbuttonsGenes || output.volcano_GW)",
@@ -91,19 +91,50 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                                     uiOutput("pairwiseSelector_GW")
                                    )
                             ),
-                            
-                            column(7,
-                                   conditionalPanel(condition = "(output.downloadbuttonsGenes && input.goLifeStage_GW != 0)",
-                                                    uiOutput("volcano_GW")
-                                   )
-                            ),
-                            column(2,
+                            column(3,
                                    conditionalPanel(condition = "output.downloadbuttonsGenes && input.goLifeStage_GW !=0",
                                                     id = "contrastSelectionPanel_GW",
                                                     uiOutput('contrastDisplaySelection_GW')
                                    )
                                    
                             ),
+                            
+                            column(9,
+                                   conditionalPanel(condition = "(output.downloadbuttonsGenes && input.goLifeStage_GW != 0)",
+                                                    uiOutput("volcano_GW")
+                                   )
+                            )),
+                        ## Fluid Row 4: Download Options for Saving DGE Table Results Panel + Differential Gene Expression Table ----
+                        fluidRow(
+                            column(3,
+                                   conditionalPanel(condition = "output.downloadbuttonsGenes && input.goLifeStage_GW != 0 && output.contrastDisplaySelection_GW && output.volcano_GW",
+                                                    panel(
+                                                        heading = tagList(h5(shiny::icon("fas fa-file-download"),
+                                                                             "DGE Table Download Options")),
+                                                        status = "primary",
+                                                        uiOutput('downloadSelectionMenu_GW'),
+                                                        checkboxGroupInput("download_DGEdt_direction_GW",
+                                                                           h6("Differential Expression Type"),
+                                                                           choiceNames = c("Upregulated",
+                                                                                           "Downregulated",
+                                                                                           "No difference"),
+                                                                           choiceValues = c("Up",
+                                                                                            "Down",
+                                                                                            "NotSig"),
+                                                                           selected = c("Up",
+                                                                                        "Down",
+                                                                                        "NotSig")),
+                                                       
+                                                        textInput("percentDGE_GW",
+                                                                  h6("Select Top % of genes, filtered by LogFC value"),
+                                                                  "100"),
+                                                        h6("Filter across all comparisons?"),
+                                                        checkboxInput("download_DGEdt_across_GW",
+                                                                      p("Yes, only download genes with selected expression types in all searched pairwise comparisons.")),
+                                                        uiOutput('downloadbuttonGW')
+                                                    )
+                                                    
+                                   )),
                             column(9,
                                    conditionalPanel(condition = "output.downloadbuttonsGenes && input.goLifeStage_GW != 0 && output.contrastDisplaySelection_GW && output.volcano_GW",
                                                     panel(
@@ -111,8 +142,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                                                              "Pairwise Differential Gene Expression: Table")),
                                                         status = "primary",
                                                         
-                                                        DTOutput('highlight.df'),
-                                                        uiOutput("downloadbuttonGW")        
+                                                        DTOutput('highlight.df')        
                                                         
                                                     )
                                    )
@@ -171,7 +201,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                         ),
                         
                         
-                        ## Fluid Row 2: Input Pairwise Comparisons Panel + Volcano Plot Panel + Contrasts Dropdown Menu + Differential Gene Expression Table ----    
+                        ## Fluid Row 2: Input Pairwise Comparisons Panel + Volcano Plot Panel + Contrasts Dropdown Menu ----    
                         fluidRow(
                             column(3,
                                    
@@ -188,22 +218,53 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                    conditionalPanel(condition = "output.pairwiseSelector_LS && input.goLS != 0",
                                                     uiOutput('volcano_LS')               
                                    )
-                            ),
-                            
+                            )),
+                        
+                        ## Fluid Row 3: Download Options for Saving DGE Table Results Panel + Differential Gene Expression Table ----
+                        
+                        fluidRow(
+                            column(3,
+                                   conditionalPanel(condition = "output.pairwiseSelector_LS && input.goLS != 0 && output.volcano_LS",
+                                                    panel(
+                                                        heading = tagList(h5(shiny::icon("fas fa-file-download"),
+                                                                             "DGE Table Download Options")),
+                                                        status = "primary",
+                                                        uiOutput('downloadSelectionMenu_LS'),
+                                                        checkboxGroupInput("download_DGEdt_direction_LS",
+                                                                           h6("Differential Expression Type"),
+                                                                           choiceNames = c("Upregulated",
+                                                                                       "Downregulated",
+                                                                                       "No difference"),
+                                                                           choiceValues = c("Up",
+                                                                                            "Down",
+                                                                                            "NotSig"),
+                                                                           selected = c("Up",
+                                                                                        "Down",
+                                                                                        "NotSig")),
+                                                        textInput("percentDGE_LS",
+                                                                  h6("Select Top % of genes, filtered by LogFC value"),
+                                                                  "100"),
+                                                        h6("Filter across all comparisons?"),
+                                                        checkboxInput("download_DGEdt_across_LS",
+                                                                      p("Yes, only download genes with selected expression types in all searched pairwise comparisons.")),
+                                                        
+                                                    uiOutput('downloadbuttonLS')
+                                                    )
+                                       
+                                   )),
                             column(9,
                                    conditionalPanel(condition = "output.pairwiseSelector_LS && input.goLS != 0 && output.volcano_LS",
                                                     panel(
                                                         heading = tagList(h5(shiny::icon("fas fa-table"),
                                                                              "Pairwise Differential Gene Expression: Table")),
                                                         status = "primary",
-                                                        DTOutput('tbl_LS'),
-                                                        uiOutput('downloadbuttonLS')
+                                                        DTOutput('tbl_LS')
                                                     )
                                    )
                             )
                             
                         ),
-                        ## Fluid Row 3: Gene Set Enrichment Analysis Plot and Table Panels ----
+                        ## Fluid Row 4: Gene Set Enrichment Analysis Plot and Table Panels ----
                         fluidRow(
                             
                             column(6,

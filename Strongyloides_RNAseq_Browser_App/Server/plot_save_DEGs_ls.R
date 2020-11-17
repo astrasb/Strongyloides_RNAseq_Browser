@@ -48,15 +48,15 @@ output$volcano_LS <- renderUI({
         set_linear_model_LS()
         withProgress(pull_DEGs_LS(), message = "Calculating...")
     })
-   
+    
     panel(
         heading = tagList(h5(shiny::icon("fas fa-mountain"),
                              "Pairwise Differential Gene Expression: Volcano Plot")),
         status = "primary",
         plotOutput('volcano_UI_LS',
-                               hover = hoverOpts("plot_hover_LS",
-                                                 delay = 100,
-                                                 delayType = "debounce")),
+                   hover = hoverOpts("plot_hover_LS",
+                                     delay = 100,
+                                     delayType = "debounce")),
         
         uiOutput("hover_info_LS"),
         
@@ -148,88 +148,88 @@ output$hover_info_LS <- renderUI({
 assemble_DEGs_LS <- reactive({
     req(vals$comparison_LS,vals$displayedComparison_LS)
     
-        tS<- vals$targetStage_LS[vals$displayedComparison_LS,
-                                 ][vals$targetStage_LS[vals$displayedComparison_LS,
+    tS<- vals$targetStage_LS[vals$displayedComparison_LS,
+                             ][vals$targetStage_LS[vals$displayedComparison_LS,
+                                                   ]!=""]
+    cS<- vals$contrastStage_LS[vals$displayedComparison_LS,
+                               ][vals$contrastStage_LS[vals$displayedComparison_LS,
                                                        ]!=""]
-        cS<- vals$contrastStage_LS[vals$displayedComparison_LS,
-                                   ][vals$contrastStage_LS[vals$displayedComparison_LS,
-                                                           ]!=""]
-        sample.num.tS <- sapply(tS, function(x) {colSums(vals$v.DEGList.filtered.norm$design)[[x]]}) %>% sum()
-        sample.num.cS <- sapply(cS, function(x) {colSums(vals$v.DEGList.filtered.norm$design)[[x]]}) %>% sum()
-        
-        
-        n_num_cols <- sample.num.tS + sample.num.cS + 5
-        index_homologs <- length(colnames(vals$list.highlight.tbl_LS[[vals$displayedComparison_LS]])) - 5
-        
-        LS.datatable <- vals$list.highlight.tbl_LS[[vals$displayedComparison_LS]] %>%
-            DT::datatable(rownames = FALSE,
-                          caption = htmltools::tags$caption(
-                              style = 'caption-side: top; text-align: left; color: black',
-                              htmltools::tags$b('Differentially Expressed Genes in', 
-                                                htmltools::tags$em(input$selectSpecies_LS), 
-                                                gsub('-',' vs ',vals$comparison_LS[vals$displayedComparison_LS])),
-                              htmltools::tags$br(),
-                              "Threshold: p < ",
-                              adj.P.thresh, "; log-fold change > ",
-                              lfc.thresh,
-                              htmltools::tags$br(),
-                              'Values = log2 counts per million'),
-                          options = list(autoWidth = TRUE,
-                                         scrollX = TRUE,
-                                         scrollY = '300px',
-                                         scrollCollapse = TRUE,
-                                         order = list(n_num_cols-1, 
-                                                      'desc'),
-                                         searchHighlight = TRUE, 
-                                         pageLength = 10, 
-                                         lengthMenu = c("5",
-                                                        "10",
-                                                        "25",
-                                                        "50",
-                                                        "100"),
-                                         initComplete = htmlwidgets::JS(
-                                             "function(settings, json) {",
-                                             paste0("$(this.api().table().container()).css({'font-size': '", "10pt", "'});"),
-                                             "}"),
-                                         columnDefs = list(
-                                             list(
-                                                 targets = ((n_num_cols + 
-                                                                 1)),
-                                                 render = JS(
-                                                     "function(data, row) {",
-                                                     "data.toExponential(1);",
-                                                     "}")
-                                             ),
-                                             list(
-                                                 targets = ((n_num_cols + 
-                                                                 4):(n_num_cols + 
-                                                                         5)),
-                                                 render = JS(
-                                                     "function(data, type, row, meta) {",
-                                                     "return type === 'display' && data.length > 20 ?",
-                                                     "'<span title=\"' + data + '\">' + data.substr(0, 20) + '...</span>' : data;",
-                                                     "}")
-                                             ),
-                                             list(targets = "_all",
-                                                  class="dt-right")
-                                         )
-                                         
-                          )) 
-        LS.datatable <- LS.datatable %>%
-            DT::formatRound(columns=c(3:n_num_cols), 
-                            digits=3)
-        
-        LS.datatable <- LS.datatable %>%
-            DT::formatRound(columns=c(n_num_cols+2, 
-                                      index_homologs+1,
-                                      index_homologs+3), 
-                            digits=2)
-        
-        LS.datatable <- LS.datatable %>%
-            DT::formatSignif(columns=c(n_num_cols+1), 
-                             digits=3)
-        
-        LS.datatable
+    sample.num.tS <- sapply(tS, function(x) {colSums(vals$v.DEGList.filtered.norm$design)[[x]]}) %>% sum()
+    sample.num.cS <- sapply(cS, function(x) {colSums(vals$v.DEGList.filtered.norm$design)[[x]]}) %>% sum()
+    
+    
+    n_num_cols <- sample.num.tS + sample.num.cS + 5
+    index_homologs <- length(colnames(vals$list.highlight.tbl_LS[[vals$displayedComparison_LS]])) - 5
+    
+    LS.datatable <- vals$list.highlight.tbl_LS[[vals$displayedComparison_LS]] %>%
+        DT::datatable(rownames = FALSE,
+                      caption = htmltools::tags$caption(
+                          style = 'caption-side: top; text-align: left; color: black',
+                          htmltools::tags$b('Differentially Expressed Genes in', 
+                                            htmltools::tags$em(input$selectSpecies_LS), 
+                                            gsub('-',' vs ',vals$comparison_LS[vals$displayedComparison_LS])),
+                          htmltools::tags$br(),
+                          "Threshold: p < ",
+                          adj.P.thresh, "; log-fold change > ",
+                          lfc.thresh,
+                          htmltools::tags$br(),
+                          'Values = log2 counts per million'),
+                      options = list(autoWidth = TRUE,
+                                     scrollX = TRUE,
+                                     scrollY = '300px',
+                                     scrollCollapse = TRUE,
+                                     order = list(n_num_cols-1, 
+                                                  'desc'),
+                                     searchHighlight = TRUE, 
+                                     pageLength = 10, 
+                                     lengthMenu = c("5",
+                                                    "10",
+                                                    "25",
+                                                    "50",
+                                                    "100"),
+                                     initComplete = htmlwidgets::JS(
+                                         "function(settings, json) {",
+                                         paste0("$(this.api().table().container()).css({'font-size': '", "10pt", "'});"),
+                                         "}"),
+                                     columnDefs = list(
+                                         list(
+                                             targets = ((n_num_cols + 
+                                                             1)),
+                                             render = JS(
+                                                 "function(data, row) {",
+                                                 "data.toExponential(1);",
+                                                 "}")
+                                         ),
+                                         list(
+                                             targets = ((n_num_cols + 
+                                                             4):(n_num_cols + 
+                                                                     5)),
+                                             render = JS(
+                                                 "function(data, type, row, meta) {",
+                                                 "return type === 'display' && data.length > 20 ?",
+                                                 "'<span title=\"' + data + '\">' + data.substr(0, 20) + '...</span>' : data;",
+                                                 "}")
+                                         ),
+                                         list(targets = "_all",
+                                              class="dt-right")
+                                     )
+                                     
+                      )) 
+    LS.datatable <- LS.datatable %>%
+        DT::formatRound(columns=c(3:n_num_cols), 
+                        digits=3)
+    
+    LS.datatable <- LS.datatable %>%
+        DT::formatRound(columns=c(n_num_cols+2, 
+                                  index_homologs+1,
+                                  index_homologs+3), 
+                        digits=2)
+    
+    LS.datatable <- LS.datatable %>%
+        DT::formatSignif(columns=c(n_num_cols+1), 
+                         digits=3)
+    
+    LS.datatable
     
 })
 
@@ -241,14 +241,110 @@ output$tbl_LS <- renderDT ({
     DEG.datatable_LS
 })
 
+##LS: Generate responsive pulldown list for filtering/saving DEG Tables
+output$downloadSelectionMenu_LS <- renderUI({
+  req(input$goLS,vals$list.highlight.tbl_LS,vals$comparison_LS)
+  req(str_detect(names(vals$list.highlight.tbl_LS),paste0(gsub("\\+","\\\\+",vals$comparison_LS) %>%
+                                                            gsub("\\-","\\\\-",.)  ,
+                                                          collapse = "|")))
+  
+  selectInput("download_DGE_Selection_LS",
+              label = h6("Select Contrast(s) to Download"),
+              choices = c('Choose one or more' = ''
+                          ,'Everything' = 'Everything'
+                          ,as.list(vals$comparison_LS)),
+              selected = "Everything",
+              selectize = TRUE,
+              multiple = TRUE)
+  })
+
+##LS: Filter DEG Tables Before Saving ----
+filter_DEG_tbl_LS <- reactive({
+    req(input$goLS,vals$displayedComparison_LS,vals$list.highlight.tbl_LS,vals$comparison_LS,input$download_DGE_Selection_LS)
+    req(str_detect(names(vals$list.highlight.tbl_LS),paste0(gsub("\\+","\\\\+",vals$comparison_LS) %>%
+                                                            gsub("\\-","\\\\-",.)  ,
+                                                            collapse = "|")))
+    ## Figure out which datasets to download
+    if (any(str_detect(input$download_DGE_Selection_LS, "Everything"))){
+      download_DT <- vals$list.highlight.tbl_LS
+    } else {
+      subsetContrasts <- str_detect(names(vals$list.highlight.tbl_LS),paste0(input$download_DGE_Selection_LS, collapse = "|"))
+      download_DT<- vals$list.highlight.tbl_LS[subsetContrasts]
+    }
+    
+    if (input$download_DGEdt_across_LS == TRUE) {
+        subsetIDs <-lapply(names(download_DT), function(y){
+            dplyr::filter(download_DT[[y]],str_detect(DEG_Desc,paste0(input$download_DGEdt_direction_LS, collapse = "|")))
+        }) %>%
+            purrr::reduce(inner_join, by = c("geneID", "DEG_Desc")) %>%
+            dplyr::select(geneID)
+        
+        filtered.list.highlight.tbl_LS <- lapply(names(download_DT), function(y){
+            dplyr::filter(download_DT[[y]], geneID %in% subsetIDs$geneID)%>%
+                dplyr::arrange(desc(logFC))
+        })
+        names(filtered.list.highlight.tbl_LS) <- names(download_DT)
+    } else {
+        filtered.list.highlight.tbl_LS <-lapply(names(download_DT), function(y){
+            dplyr::filter(download_DT[[y]],str_detect(DEG_Desc,paste0(input$download_DGEdt_direction_LS, collapse = "|"))) %>%
+                dplyr::arrange(desc(logFC))
+        })
+        names(filtered.list.highlight.tbl_LS)<- names(download_DT)
+    }
+    
+    # Pass only a specific proportion of genes. Remember, the datatable is grouped by the DEG_Desc value, and ordered by descending logFC value. 
+    filtered.list.highlight.tbl_LS<-lapply(names(filtered.list.highlight.tbl_LS), function(y){
+     
+      filtered.list.highlight.tbl_LS[[y]] %>%
+        dplyr::group_map(~ {
+        if (str_detect(.y, "Up")) {
+          slice_max(.x, order_by = logFC, prop = as.numeric(input$percentDGE_LS)/100)
+        } else if (str_detect(.y, "NotSig")) {
+          slice_max(.x, order_by = logFC, prop = as.numeric(input$percentDGE_LS)/100)
+        } else if (str_detect(.y, "Down")) {
+          slice_min(.x, order_by = logFC, prop = as.numeric(input$percentDGE_LS)/100)
+        }
+      }, .keep = TRUE) %>%
+        bind_rows() %>%
+        dplyr::arrange(desc(logFC))
+    })
+    names(filtered.list.highlight.tbl_LS)<- names(download_DT)
+    filtered.list.highlight.tbl_LS
+})
+
 ## LS: Save Excel Tables with DEG Tables ----
 output$downloadbuttonLS <- renderUI({
     req(input$goLS,vals$comparison_LS)
-    output$generate_excel_report_LS <- generate_excel_report(vals$comparison_LS, 
-                                                             vals$list.highlight.tbl_LS,
+    filtered.tbl_LS <- filter_DEG_tbl_LS()
+    
+    ### Generate some text that describes the analysis conditions
+    ### 1. If p-values are adjusted for multiple pairwise comparisons, which comparisons are included in the adjustment parameters? This should be the list of selected contrasts
+    if (vals$multipleCorrection_LS == TRUE){
+      multiplecorrection <- paste0(vals$comparison_LS, collapse = "; ")
+    } else {
+      multiplecorrection <- "n/a"
+    }
+    ### 2. If downloading results are being filtered to show only genes that display consistent differential expression across all comparisons targeted for download, list the pairwise comparisons being used.
+    if (input$download_DGEdt_across_LS == TRUE){
+      filteredacross <- paste0(names(filtered.tbl_LS), collapse = "; ")
+    } else {
+      filteredacross <- "n/a"
+    }
+    ### 3. Specify which types of differential expression pattern
+    DEGpattern <- paste0(input$download_DGEdt_direction_LS, collapse = "; ")
+    ### 4. Specify the proportion of genes for each DEG Type that are being saved (e.g. top 10% of upregulated, and top10% of downregulated genes)
+    proportionexport <- paste0("Percentage of genes for each differential expression pattern: ", input$percentDGE_LS)
+    output$generate_excel_report_LS <- generate_excel_report(names(filtered.tbl_LS), 
+                                                             filtered.tbl_LS,
                                                              name = paste(input$selectSpecies_LS,
-                                                                          "RNAseq Differential Gene Expression"))
+                                                                          "RNAseq Differential Gene Expression"),
+                                                             multiplecorrection = multiplecorrection,
+                                                             filteredacross = filteredacross,
+                                                             DEGpattern = DEGpattern,
+                                                             proportionexport = proportionexport)
+    
     downloadButton("generate_excel_report_LS",
-                   "Download DEG Tables",
+                   "Download .XLSX",
                    class = "btn-primary")
+  
 })

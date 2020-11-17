@@ -1,0 +1,744 @@
+---
+title: Time course analysis of a *Strongyloides stercoralis* bulk RNAseq dataset
+output:
+   html_document:
+    df_print: paged
+    toc: true
+    toc_depth: 3
+    number_sections: true
+---
+
+# Introduction and Methods Overview
+As an alternative to limma-voom based pairwise differential gene analysis, here we analyze a *Strongyloides stercoralis* bulk RNAseq dataset using differential expression alogrithms for longitudinal count data. This dataset included was originaly published by [Stolzfus *et al* 2012](https://journals.plos.org/plosntds/article?id=10.1371/journal.pntd.0001854).  
+
+### ImpulseDE2
+ImpulseDE2 is a method for testing differential expression with longitudinal datasets. In the introductory journal article, the authors point out the distinction between DE algorithms that treat time points independently (e.g. those motly based on linear models, like edgeR, limma, DESeq), and those that explicitly model the dependence between time points. This latter group "constrain the sequence of measured expression levels to a continuous function of time, thus capturing the dependence of expression levels between time points" ( [Fischer, Theis and Yosef, 2018](https://academic.oup.com/nar/article/46/20/e119/5068248) ).  
+
+ImpulseDE2 presents the option of case-only differential expression analysis, that seeks to identify "genes that have non-constant expression trajectories over time from samples of a single condition." Mathematically, the impulse algorithm scales the product of two sigmoid functions (thus yielding three state-specific expression values: initial, peak, and steady state). Furthermore, ImpulseDE2 allows users to add additional functionality for determining whether genes are transiently or permanently altered. Thus, an Impulse model can capture 4 different expression trajectories: monotonous decrease, monotonous increase, transient decrease (valley), and transient increase (peak) ([see Figure 1A of Fischer, Theis and Yosef (2018) for a schematic of these trajectories](https://oup.silverchair-cdn.com/oup/backfile/Content_public/Journal/nar/46/20/10.1093_nar_gky675/1/gky675fig1.jpeg?Expires=1602438787&Signature=KnHds3-x5sKEZ-8ET~4urvVWfOgFTf6h6OvONbo~x25W3JnxnhZlkUYN-BMvTuSUk7XMVWFO4pvu~8s5s2TSk51-yUV92IPU-qAzcRnrM9uLX0VcBuPkZxOAAZ0JKvJyja2HHa1uWGHOfGQTeO~yAnAvOJCcSIZM166X-gXyQRH2Ct4J8aqsEXwQBEZ9doKv01yhq5k7Vz3Y7R9ieLq4DHrj-jmXD3~wV2swOukcu~~V1MXEwRCuQbVt8sd2Ft7VMCr4xXN7O0y70HzGfwnNPObE9v4~x33KybgPn56hYOpAM~haoAebyYCR3VHraw9er0ou4RcGgW~dZXqgjGvORg__&Key-Pair-Id=APKAIE5G5CRDK6RD3PGA)). For a tutorial, see this [BioConductor vignette](https://bioconductor.org/packages/release/bioc/vignettes/ImpulseDE2/inst/doc/ImpulseDE2_Tutorial.html).  
+
+For benchmarking of ImpulseDE2 against other options, see [Spies et al 2017](https://academic.oup.com/bib/article/20/1/288/4364840), which found that in general, pairwise differential expression often outperforms longitudinal algorithms in terms of identifying true differentially expressed genes. Nevertheless, they find that ImpulseDE2 does a reasonable job. However, they do recommend controlling for discovery of false positives by using both ImpulseDE2 and another longitudinal method, SplineTC, and taking the intersection of their results. Note that a third option is to capture contintuous dependence on time using a linear models based on a spline basis transform of the time coordinate; this would be accomplished using a linear model based method such as limma or DESeq2 Instructions for running DESeq2 with settings for splines are included in the supplemental materials for [Fischer, Theis and Yosef, 2018](https://academic.oup.com/nar/article/46/20/e119/5068248). However, I don't think this option would identify transiently altered gene expression, which is the most useful feature of ImpulseDE2.  
+
+### Data Sources and Details 
+Raw reads were downloaded from the European Nucleotide Archive - study accession number [PRJEB3116](https://www.ebi.ac.uk/ena/browser/view/PRJEB3116). This dataset consists of 21 samples, representing 7 life stages with 3 biological replicates for each life stage:
+
+  * Free-living adult females (FLF)
+  * Parasitic adult females (PF)
+  * Infective third-stage larvae (iL3)
+  * Activated iL3s (iL3a)
+  * Post-parasitic 1st stage larvae (ppL1)
+  * Post-parasitic 3rd stage larvae (ppL3)
+  * Post-free-living 1st stage larvae (pfL1)
+
+### Kallisto Alignment   
+Kallisto was used to perform ultra-fast read mapping of raw reads to the *S. stercoalis* reference transcriptome (PRJEB528.WBPS14.mRNA_transcripts, downloaded from [WormBase Parasite](https://parasite.wormbase.org/Strongyloides_stercoralis_prjeb528/Info/Index/) on 16 June 2020). Kallisto alignments are imported into the R environment using `Tximport`. 
+
+### ImpulseDE2 Implementation Overview
+Raw reads (unfiltered and non-normalized) are used to generate a `DESeqDataSet object`, which is used to generate a matrix of integer count data. This matrix is passed into `ImpulseDE2`, for trajectory analysis. Also passed into `ImpulseDE2` is a design file that specifies the time points associated with each sample.  
+
+Note: the numerical time values affect the curve fitting processes within `ImpulseDE2` such that it appears the most robust way to temporally code a set of life stages {e.g. FLF, iL3, iL3a, PF} is as a sequence of integer values (e.g. 0 - 3), rather than calculating the amount of time that passes between life stages. Here, `ImpulseDE2` is run with the following parameters: no correction for batch, case-only analysis, and searching for transient expression.  
+
+# Results
+Note: Code chunks are collated and echoed at the end of the document in the Appendix.
+```{r setup, echo = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+suppressPackageStartupMessages({
+  library(tidyverse) 
+  library(tximport)
+  library(ImpulseDE2)
+  library(magrittr)
+  library(ggplot2)
+  library(DESeq2)
+  library(ensembldb)
+  library(biomaRt)
+  library(ComplexHeatmap)
+  library(compiler)
+  library(knitr)
+  library(pheatmap)
+  library(RColorBrewer)
+  library(ComplexHeatmap)
+  library(circlize)
+  #source("./Pre_processing/plotHeatmap_local.R")
+})
+
+```
+
+## Import Kallisto reads into R  
+This process uses a different project design than the primary `limma-voom` analysis pipeline. The ImpulseDE2 design file includes temporal assignments for each sample. Depending on the version of the design file, only a subset of samples from PRJEB3116 might be included. Kallisto reads are imported using different `tximport` parameters - here, abundance values are imported as is whereas the pre-processing script calculates counts from abundance using a `lengthScaledTPM` process that generates estimated counts that are scaled by average transcript length and then library size. In this code, those normalization steps occur in subsequent chunks.  
+
+```{r txImport, include = FALSE, cache=TRUE}
+# load packages ----
+suppressPackageStartupMessages({
+  library(tidyverse) 
+  library(tximport)
+  library(ImpulseDE2)
+  library(magrittr)
+  library(ggplot2)
+  library(DESeq2)
+  library(ensembldb)
+  library(biomaRt)
+  library(ComplexHeatmap)
+  library(compiler)
+  #source("./Pre_processing/plotHeatmap_local.R")
+})
+# read in the ImpulseDE2 design ----
+dfAnnotation <- read_tsv("../Data/S_stercoralis/Study_Design/PRJEB3116_ImpulseDE2_design.txt",
+                         col_types = "ccncc",
+                         na = c("", "NA", "na"))
+
+# get annotations using organism-specific package ----
+Tx.Ss <- getBM(attributes=c('wbps_transcript_id',
+                            'wbps_gene_id'),
+               # grab the ensembl annotations for Wormbase Parasite genes
+               mart = useMart(biomart="parasite_mart", 
+                              dataset = "wbps_gene", 
+                              host="https://parasite.wormbase.org", 
+                              port = 443),
+               filters = c('species_id_1010'),
+               value = list('ststerprjeb528')) %>%
+  as_tibble() %>%
+  #we need to rename the columns retreived from biomart
+  dplyr::rename(target_id = wbps_transcript_id,
+                gene_name = wbps_gene_id) 
+
+# create file paths to the abundance files generated by Kallisto using the 'file.path' function
+path <- file.path("../Data/S_stercoralis/Reads",dfAnnotation$Sample, "abundance.tsv")
+
+# import Kallisto transcript counts into R using Tximport ----
+# copy the abundance files to the working directory and rename so that each sample has a unique name
+Txi_gene_DE <- tximport(path, 
+                        type = "kallisto", 
+                        tx2gene = Tx.Ss[,1:2], 
+                        txOut = FALSE, #How does the result change if this =FALSE vs =TRUE?
+                        ignoreTxVersion = FALSE)
+```
+
+## Import Gene Annotations  
+Import gene annotation information for *S. stercoralis* genes, including:
+
+  * *C. elegans* homologs/percent homology
+  * *S. ratti* homologs/percent homology
+  * UniProtKB number
+  * Interpro terms
+  * GO terms
+  * general Description information using biomart.
+ 
+
+```{r geneAnnotation, include = FALSE, cache=TRUE}
+# Introduction to this chunk -----------
+# This chunk imports gene annotation information for S. stercoralis genes, including:
+# C. elegans homologs/percent homology, S. ratti homologs/percent homology, UniProtKB number, Interpro terms, GO terms, and general Description information using biomart.
+
+# Load packages ------
+library(biomaRt) # annotate genes using bioMart
+#library(biomartr) # extending biomart annotation language
+
+
+# Get C. elegans homologs for S. stercoralis genes from BioMart and filter -----
+Annt.import <- getBM(attributes=c('wbps_gene_id', 
+                                  'strattprjeb125_gene',
+                                  'strattprjeb125_gene_name',
+                                  'strattprjeb125_homolog_perc_id_r1',
+                                  'caelegprjna13758_gene_name',
+                                  'caelegprjna13758_homolog_perc_id_r1',
+                                  'description',
+                                  'interpro_short_description',
+                                  'go_name_1006',
+                                  'uniprot_sptrembl'),
+                     # grab the ensembl annotations for Wormbase Parasite genes
+                     mart = useMart(biomart="parasite_mart", 
+                                    dataset = "wbps_gene", 
+                                    host="https://parasite.wormbase.org", 
+                                    port = 443),
+                     filters = c('species_id_1010'),
+                     value = list('ststerprjeb528')) %>%
+  as_tibble() %>%
+  # rename columns
+  dplyr::rename(geneID = wbps_gene_id,
+                Str_WBgeneID = strattprjeb125_gene,
+                Str_geneID = strattprjeb125_gene_name,
+                Str_percent_homology = strattprjeb125_homolog_perc_id_r1,
+                Ce_geneID = caelegprjna13758_gene_name,
+                Ce_percent_homology = caelegprjna13758_homolog_perc_id_r1,
+                Description = description,
+                GO_term = go_name_1006,
+                UniProtKB = uniprot_sptrembl
+  ) %>%
+  dplyr::group_by(geneID)
+
+# Replace empty string values (mostly in Ce_geneID column) with NAs
+Annt.import[Annt.import == ""]<-NA
+
+# Remove any duplications in the possible C. elegans or S. ratti gene homolog matches. Select based on highest % homology.
+Annt.import$Ce_percent_homology[is.na(Annt.import$Ce_percent_homology)] <- 1000 #Give fake value here to make sure genes without a Ce homolog aren't filtered out
+Annt.import$Str_percent_homology[is.na(Annt.import$Str_percent_homology)] <- 1000
+
+
+Annt.logs <-Annt.import %>%
+  dplyr::select(!c(interpro_short_description:GO_term))%>%
+  group_by(geneID) %>%
+  slice_max(n = 1, order_by = Ce_percent_homology, with_ties = FALSE) %>%
+  slice_max(n = 1, order_by = Str_percent_homology, with_ties = FALSE) %>%
+  group_by(geneID, Ce_geneID) 
+
+# Remove source code to shorten the description
+Annt.logs$Description<- Annt.logs$Description %>%
+  str_replace_all(string = ., pattern = "  \\[Source:.*\\]", replacement = "") %>%
+  cbind()
+
+Annt.logs$Ce_percent_homology[Annt.logs$Ce_percent_homology == 1000] <- NA
+Annt.logs$Str_percent_homology[Annt.logs$Str_percent_homology == 1000]<- NA
+
+# Clean up interprotKB terms, removing duplications and collapsing to one line
+Annt.interpro<-Annt.import %>%
+  dplyr::select(geneID, Ce_geneID, interpro_short_description) %>%
+  group_by(geneID, Ce_geneID) %>%
+  dplyr::distinct(interpro_short_description, .keep_all = TRUE) %>%
+  dplyr::summarise(InterPro = paste(interpro_short_description, 
+                                    collapse = ', ')) 
+# Clean up GO terms, removing duplications and collapsing to one line
+Annt.goterms<-Annt.import %>%
+  dplyr::select(geneID, Ce_geneID, GO_term) %>%
+  group_by(geneID, Ce_geneID) %>%
+  dplyr::distinct(GO_term, .keep_all = TRUE) %>%
+  dplyr::summarise(GO_term = paste(GO_term, collapse = ', '))
+
+annotations<-dplyr::left_join(Annt.logs, Annt.interpro) %>%
+  dplyr::left_join(.,Annt.goterms) %>%
+  ungroup() %>%
+  dplyr::relocate(Str_geneID, Str_WBgeneID,Str_percent_homology, .after = geneID) %>%
+  column_to_rownames(var = "geneID")
+
+```
+
+## Local copy of plotHeatmap
+Include code for local version of plotHeatmap, from the ImpulseDE2 library.  
+```{r plotHeatmap_local, include=FALSE}
+suppressPackageStartupMessages({
+  library(compiler)
+})
+### Plot z-value heatmaps
+
+#' Plot structured z-value heatmaps of differentially expressed genes
+#' 
+#' Creates a complexHeatmap heatmap structured into 
+#' subsets of genes according to their behaviour and 
+#' sorted by peak time for raw counts and for the
+#' fitted signal.
+#' 
+#' @seealso Called seperately by used.
+#' 
+#' @param objectImpulseDE2 (instance of class ImpulseDE2Object)
+#' ImpulseDE2 output object to create heatmap from.
+#' @param strCondition (str) {'case','control','combined}
+#' Heatmap is created from samples of this condition.
+#' @param boolIdentifyTransients (bool) 
+#' Whether to structure heatmap into transient and transition
+#' trajectories, only possible if sigmoids were fit to the
+#' indicated condition.
+#' @param scaQThres (scalar) FDR-corrected p-value threshold
+#' for calling differentially expressed genes: Only genes
+#' below this threshold are included in the heatmap.
+#' 
+#' @return (list length 3)
+#' \itemize{
+#' \item complexHeatmapRaw (complexHeatmap plot)
+#' Heatmap of raw data by time point: Average of the
+#' size factor (and batch factor) normalised counts 
+#' per time point and gene.
+#' Plot with draw(complexHeatmapRaw).
+#' \item complexHeatmapFit (complexHeatmap plot)
+#' Heatmap of impulse-fitted data by time point.
+#' Plot with draw(complexHeatmapFit).
+#' \item lsvecGeneGroups (list)
+#' List of gene ID vectors: One per heatmap group 
+#' with all gene IDs of the the profiles displayed
+#' in the heatmap.
+#' }
+#' 
+#' @examples
+#' library(ComplexHeatmap)
+#' lsSimulatedData <- simulateDataSetImpulseDE2(
+#' vecTimePointsA   = rep(seq(1,8),3),
+#' vecTimePointsB   = NULL,
+#' vecBatchesA      = NULL,
+#' vecBatchesB      = NULL,
+#' scaNConst        = 0,
+#' scaNImp          = 50,
+#' scaNLin          = 0,
+#' scaNSig          = 50)
+#' objectImpulseDE2 <- runImpulseDE2(
+#' matCountData    = lsSimulatedData$matObservedCounts, 
+#' dfAnnotation    = lsSimulatedData$dfAnnotation,
+#' boolCaseCtrl    = FALSE,
+#' vecConfounders  = NULL,
+#' boolIdentifyTransients = TRUE,
+#' scaNProc        = 1 )
+#' lsHeatmaps <- plotHeatmap(
+#' objectImpulseDE2=objectImpulseDE2,
+#' strCondition='case',
+#' boolIdentifyTransients=TRUE,
+#' scaQThres=0.01)
+#' draw(lsHeatmaps$complexHeatmapRaw)
+#' 
+#' @author David Sebastian Fischer
+#' @author Astra Shamgar Bryant (editing local copy)
+#' 
+#' @import ComplexHeatmap
+#' @import circlize
+#' 
+#' @export
+#' 
+plotHeatmap_local <- function(
+  objectImpulseDE2, strCondition, boolIdentifyTransients, 
+  scaQThres = 0.01, col_names) {
+  
+  dfAnnot <- get_dfAnnotationProc(obj=objectImpulseDE2)
+  
+  scaNGenes <- dim(get_matCountDataProc(obj=objectImpulseDE2))[1]
+  # Order genes by time of extremum (peak/valley)
+  vecSignificantIDs <- rownames(objectImpulseDE2$dfImpulseDE2Results[
+    !is.na(objectImpulseDE2$dfImpulseDE2Results$padj) & 
+      objectImpulseDE2$dfImpulseDE2Results$padj < scaQThres, ])
+  vecTimePointsToEval <- sort(unique(dfAnnot$Time), 
+                              decreasing = FALSE)
+  scaNTPtoEvaluate <- length(vecTimePointsToEval)
+  matImpulseValue <- do.call(rbind, lapply(
+    vecSignificantIDs, function(x) {
+      evalImpulse_comp(
+        vecImpulseParam = 
+          get_lsModelFits(obj=objectImpulseDE2)[[strCondition]][[x]]$
+          lsImpulseFit$vecImpulseParam, 
+        vecTimepoints = vecTimePointsToEval)
+    }))
+  rownames(matImpulseValue) <- vecSignificantIDs
+  matidxMaxTimeSort <- t(apply(matImpulseValue, 1, function(genevalues) {
+    sort(genevalues, decreasing = TRUE, index.return = TRUE)$ix
+  }))
+  vecMaxTime <- vecTimePointsToEval[matidxMaxTimeSort[, 1]]
+  matidxMinTimeSort <- t(apply(matImpulseValue, 1, function(genevalues) {
+    sort(genevalues, decreasing = FALSE, index.return = TRUE)$ix
+  }))
+  
+  if (boolIdentifyTransients) {
+    # Group into transients and monotonous
+    vecidxTransient <- which(objectImpulseDE2$dfImpulseDE2Results[vecSignificantIDs, 
+                                                                  ]$isTransient)
+    vecidxMonotonous <- which(objectImpulseDE2$dfImpulseDE2Results[vecSignificantIDs, 
+                                                                   ]$isMonotonous)
+    
+    # Fine sort montonous transition signals into up/down
+    if (length(vecidxMonotonous) == 1) {
+      matImpulseMonot <- t(matImpulseValue[vecidxMonotonous, ])
+    } else { 
+      matImpulseMonot <- matImpulseValue[vecidxMonotonous, ]
+    }
+    vecboolMonotonousUp <- apply(matImpulseMonot, 1, function(gene) {
+      gene[1] < gene[scaNTPtoEvaluate]
+    })
+    vecboolMonotonousDown <- !vecboolMonotonousUp
+    
+    vecidxMonotonousUp <- vecidxMonotonous[vecboolMonotonousUp]
+    vecidxMonotonousUpSort <- vecidxMonotonousUp[
+      do.call(order, as.data.frame(
+        matidxMinTimeSort[vecidxMonotonousUp,1]))]
+    vecidxMonotonousDown <- vecidxMonotonous[vecboolMonotonousDown]
+    vecidxMonotonousDownSort <- vecidxMonotonousDown[
+      do.call(order, as.data.frame(
+        matidxMinTimeSort[vecidxMonotonousDown, 1]))]
+    
+    # Fine sort transitive signals into off/on
+    if (length(vecidxTransient) == 1) {
+      matImpulseTransient <- t(matImpulseValue[vecidxTransient, ]) 
+    } else {
+      matImpulseTransient <- matImpulseValue[vecidxTransient, ]
+    }
+    vecboolTransientValley <- apply(
+      matImpulseTransient, 1, function(genevalues) {
+        boolValley <- any(
+          genevalues[2:(scaNTPtoEvaluate - 1)] < genevalues[1] & 
+            genevalues[2:(scaNTPtoEvaluate - 1)] < 
+            genevalues[scaNTPtoEvaluate])
+        return(boolValley)
+      })
+    vecboolTransientPeak <- !vecboolTransientValley
+    
+    vecidxTransientPeak <- vecidxTransient[vecboolTransientPeak]
+    vecidxTransientPeakSort <- vecidxTransientPeak[
+      do.call(order, as.data.frame(
+        matidxMaxTimeSort[vecidxTransientPeak, 1]))]
+    vecidxTransientValley <- vecidxTransient[vecboolTransientValley]
+    vecidxTransientValleySort <- vecidxTransientValley[
+      do.call(order, as.data.frame(
+        matidxMinTimeSort[vecidxTransientValley,1]))]
+    
+    vecidxAllSort <- c(
+      vecidxMonotonousUpSort, vecidxMonotonousDownSort, 
+      vecidxTransientPeakSort, vecidxTransientValleySort)
+    
+    vecTrajectoryType <- c(
+      rep("up", length(vecidxMonotonousUpSort)), 
+      rep("down", length(vecidxMonotonousDownSort)), 
+      rep("*up", length(vecidxTransientPeakSort)), 
+      rep("*down", length(vecidxTransientValleySort)))
+    lsvecGeneGroups <- list(
+      transition_up = vecSignificantIDs[vecidxMonotonousUpSort], 
+      transition_down =  vecSignificantIDs[vecidxMonotonousDownSort], 
+      transient_up = vecSignificantIDs[vecidxTransientPeakSort], 
+      transient_down = vecSignificantIDs[vecidxTransientValleySort])
+  } else {
+    vecidxAllSort <- sort(vecMaxTime, decreasing = FALSE, 
+                          index.return = TRUE)$ix
+    vecTrajectoryType <- rep(" ", length(vecidxAllSort))
+    lsvecGeneGroups <- list(all = vecSignificantIDs[vecidxAllSort])
+  }
+  
+  vecUniqueTP <- unique(dfAnnot$Time)
+  vecSizeFactors <- computeNormConst(
+    matCountDataProc = get_matCountDataProc(obj=objectImpulseDE2), 
+    vecSizeFactorsExternal = get_vecSizeFactors(obj=objectImpulseDE2))
+  matSizefactors <- matrix(
+    vecSizeFactors, nrow = length(vecSignificantIDs), 
+    ncol = dim(get_matCountDataProc(obj=objectImpulseDE2))[2], byrow = TRUE)
+  
+  # 1. Plot raw data
+  matDataNorm <- get_matCountDataProc(obj=objectImpulseDE2)[vecSignificantIDs, ]/matSizefactors
+  matDataHeat <- do.call(cbind, lapply(vecUniqueTP, function(tp) {
+    vecidxCols <- which(dfAnnot$Time %in% tp)
+    if (length(vecidxCols) > 1) {
+      return(rowMeans(matDataNorm[, vecidxCols], na.rm = TRUE))
+    } else {
+      return(matDataNorm[, vecidxCols])
+    }
+  }))
+  
+  colnames(matDataHeat) <- vecUniqueTP
+  rownames(matDataHeat) <- NULL
+  # Row normalisation: z-scores
+  matDataHeatZ <- do.call(rbind, lapply(
+    seq(1, dim(matDataHeat)[1]), function(i) {
+      (matDataHeat[i, ] - mean(matDataHeat[i, ], na.rm = TRUE))/
+        sd(matDataHeat[i,], na.rm = TRUE)
+    }))
+  
+  # Create heatmap of raw data, ordered by fits
+  complexHeatmapRaw <- Heatmap(
+    matDataHeatZ[vecidxAllSort, ], 
+    gap = unit(5, "mm"), split = vecTrajectoryType, 
+    cluster_rows = FALSE, cluster_columns = FALSE,
+    column_labels = col_names,
+    column_names_rot = 45,
+    heatmap_legend_param = list(title = "z-score"))
+  
+  # 2. Plot fitted data
+  matDataHeat <- matImpulseValue
+  colnames(matDataHeat) <- vecUniqueTP
+  rownames(matDataHeat) <- NULL
+  # Row normalisation: z-scores
+  matDataHeatZ <- do.call(rbind, lapply(
+    seq(1, dim(matDataHeat)[1]), function(i) {
+      (matDataHeat[i, ] - mean(matDataHeat[i, ], na.rm = TRUE))/
+        sd(matDataHeat[i,], na.rm = TRUE)
+    }))
+  
+  # Create heatmap of raw data, ordered by fits
+  complexHeatmapFit <- Heatmap(
+    matDataHeatZ[vecidxAllSort, ], 
+    gap = unit(5, "mm"), split = vecTrajectoryType, 
+    cluster_rows = FALSE, cluster_columns = FALSE,
+    column_labels = col_names,
+    column_names_rot = 45,
+    heatmap_legend_param = list(title = "z-score"))
+  
+  return(list(complexHeatmapRaw = complexHeatmapRaw, 
+              complexHeatmapFit = complexHeatmapFit, 
+              lsvecGeneGroups = lsvecGeneGroups))
+}
+
+### Compute value of impulse model
+
+#' Compute value of impulse function given parameters.
+#' 
+#' Compute value of impulse function given parameters.
+#' Enforces lower bound on value of function to avoid numerical
+#' errors during model fitting.
+#' 
+#' @seealso Compiled version: \link{evalImpulse_comp}
+#' 
+#' @param vecImpulseParam (numeric vector number of impulse model parameters)
+#' \{beta, h0, h1, h2, t1, t2\}
+#' Vector of impulse model parameters.
+#' @param vecTimepoints (numeric vector length number of time points) 
+#' Time points to be evaluated.
+#' 
+#' @return vecImpulseValue (vec number of vecTimepoints) 
+#' Model values for given time points.
+#' 
+#' @author David Sebastian Fischer
+evalImpulse <- function(vecImpulseParam, vecTimepoints) {
+  
+  # beta is vecImpulseParam[1] h0 is vecImpulseParam[2] h1 is
+  # vecImpulseParam[3] h2 is vecImpulseParam[4] t1 is vecImpulseParam[5]
+  # t2 is vecImpulseParam[6]
+  
+  vecImpulseValue <- sapply(vecTimepoints, function(t) {
+    (1/vecImpulseParam[3]) * 
+      (vecImpulseParam[2] + (vecImpulseParam[3] - vecImpulseParam[2]) *
+         (1/(1 + exp(-vecImpulseParam[1] * (t - vecImpulseParam[5]))))) *
+      (vecImpulseParam[4] + (vecImpulseParam[3] - vecImpulseParam[4]) *
+         (1/(1 + exp(vecImpulseParam[1] * (t - vecImpulseParam[6])))))
+  })
+  vecImpulseValue[vecImpulseValue < 10^(-10)] <- 10^(-10)
+  
+  return(vecImpulseValue)
+}
+
+#' Compiled function: evalImpulse
+#' 
+#' Pre-compile heavily used functions.
+#' Refer to \link{evalImpulse}.
+#' 
+#' @param vecImpulseParam (numeric vector number of impulse model parameters)
+#' \{beta, h0, h1, h2, t1, t2\}
+#' Vector of impulse model parameters.
+#' @param vecTimepoints (numeric vector length number of time points) 
+#' Time points to be evaluated.
+#' 
+#' @return vecImpulseValue (vec number of vecTimepoints) 
+#' Model values for given time points.
+#' 
+#' @author David Sebastian Fischer
+evalImpulse_comp <- cmpfun(evalImpulse)
+```
+
+
+## Run ImpulseDE2
+Case-only diffferential expression, without batch effects, with detection of transiently regulated genes. Note that here, the gene counts are rounded to the nearest integer, and the data are neither normalized or filtered for low expression when they are passed into ImpulseDE2 (which will do a normalization step internally, and will remove genes that have no expression at any stage). This code generates a heatmap, which plots genes with differential expression across life stages with a BH-adjusted p-value of less than 0.01. Running ImpulseDE2 on *S. stercoralis* dataset with 4 life stages takes 15-20 minutes on a Macbook Pro.   
+
+```{r impulseDE2, cache = TRUE, echo=FALSE, message=FALSE, dependson = 'txImport'}
+# ImpulseDE2 Implementation
+## Case-only diffferential expression, without batch effects, with transiently regulated genes
+
+## Required inputs: integer count matrix, sample meta data table
+
+# Set up the design matrix ----
+sampleTable <- data.frame(group = factor(dfAnnotation$TimeCateg))
+rownames(sampleTable) <- dfAnnotation$Sample
+
+# generate DESeqDataSet for use with DESeq2----
+dds <- DESeqDataSetFromTximport(Txi_gene_DE, sampleTable, ~0 + group)
+
+# generate count data, note that this is neither normalized or filtered
+matCountData <- counts(dds)
+
+objectImpulseDE2 <- runImpulseDE2(
+  matCountData = matCountData,
+  dfAnnotation = dfAnnotation,
+  boolCaseCtrl = FALSE,
+  boolIdentifyTransients = TRUE
+)
+
+lsHeatmaps <- plotHeatmap_local(
+  objectImpulseDE2 = objectImpulseDE2,
+  strCondition = "case",
+  boolIdentifyTransients = TRUE,
+  scaQThres = 0.01,
+  col_names = unique(dfAnnotation$TimeCateg))
+draw(lsHeatmaps$complexHeatmapRaw,
+     column_title = "ImpulseDE2 Transiently-Regulated Genes")
+```
+
+## Pull, Annotate, and Collate Trajectory Profiles
+Generate annotated lists of genes displaying different trajectory profiles. ImpulseDE2 can identify 4 life-varying expression profiles:
+
+  * transient upregulation
+  * transient downregulation
+  * permanent upregulation
+  * and permanent downregulation.  
+  
+```{r gatherTrajectories, cache = FALSE, include = FALSE}
+suppressPackageStartupMessages({
+  library(limma)
+  library(gt)
+  library(htmlwidgets)
+})
+
+colnames(matCountData) <- dfAnnotation$TimeCateg
+matCountData.avg <- avearrays(matCountData) %>%
+  as_tibble(rownames = "geneID")
+ImpulseDE2.results = objectImpulseDE2$dfImpulseDE2Results %>%
+  as_tibble(rownames = 'geneID')
+
+# Subset gene counts and annotations depending on trajectory assignment
+trajectory.results.list <- lapply(lsHeatmaps$lsvecGeneGroups, function(x) {
+  annotations[x,] %>%
+    as_tibble(rownames = 'geneID')%>%
+    right_join(dplyr::select(ImpulseDE2.results,
+                             geneID, sigmoidTOconst_padj,
+                             impulseTOsigmoid_padj, isTransient, 
+                             isMonotonous),
+               ., by = "geneID") %>%
+    right_join(matCountData.avg, ., by = "geneID")
+})
+
+trajectory.results.df <- trajectory.results.list %>% bind_rows(.id = "class") %>% group_by(class)
+
+```
+  
+  
+## Search for Genes of Interest   
+Here, a proof of concept code chunk that searches the list of trajectory results for a specific subset of genes, the Ss-AFD-rGCs and Ss-tax-4.  
+  
+<!-- ### Plot Impulse Fits    -->
+<!-- Plot the impulse fit for each gene of interest. The values on the x-axis default to the pseudo time values assigned to each life stage; replacing those values is at the moment not worth the coding effort as it's a bit of a tricky problem. Assignments are as follows: -->
+
+<!--   * 0 = Free-living females (FLF) -->
+<!--   * 1 = iL3s -->
+<!--   * 2 = activated iL3s (iL3a) -->
+<!--   * 3 = Parasitic females (PF) -->
+
+<!-- ```{r genes.of.interest.1, cache = FALSE, echo = FALSE, message = FALSE} -->
+
+<!-- # Genes of Interest ---- -->
+<!-- genes_of_interest <- c('SSTP_0000354300','SSTP_0000775800','SSTP_0000846800','SSTP_0000981000') -->
+
+<!-- # # Plot the impulse fit for each gene of interest ---- -->
+<!-- # suppressWarnings({ -->
+<!-- # plotGenes( -->
+<!-- #   vecGeneIDs       = genes_of_interest, -->
+<!-- #   scaNTopIDs       = NULL, -->
+<!-- #   objectImpulseDE2 = objectImpulseDE2, -->
+<!-- #   boolCaseCtrl     = FALSE, -->
+<!-- #   dirOut           = NULL, -->
+<!-- #   strFileName      = NULL, -->
+<!-- #   boolMultiplePlotsPerPage = TRUE, -->
+<!-- #   boolSimplePlot=TRUE) -->
+<!-- # }) -->
+<!-- ``` -->
+
+   
+### Generate Annotated Results Table   
+Print the ImpulseDE2 results table, annotated with gene information from BioMaRT. Table displays average count data for each life stage. Benjamini-Hochberg false-discovery rate corrected p-values are provided for two hypothesis testing schemes used to identify transient gene expression trajectories:  
+1. `impulseT0sigmoid_padj` = loglikelihood ratio test of impulse model fit versus sigmoid model on samples  
+2. `sigmoidToconst_padj` = loglikelihood test of sigmoidal model fit versus contstant model on samples  
+From [Fischer, Theis and Yosef (2018)](https://academic.oup.com/nar/article/46/20/e119/5068248), the way this works is that ImpulseDE2 "compares the fit of a monotonous sigmoid model (i.e. maintained modulation of expression) to an impulse model and a constant model". Transiently regulated genes are defined as "genes that are significantly better fit by an impulse model than by a sigmoid model and which do not have a monotonous impulse model fit". Permanently regulated genes are definted as "genes that are not transient but that are significantly better fit by a sigmoid than by a constant model".  
+The effect of these test results on the catergorization of a specific gene is reported by the boolean columns `isTransient` and `isMonotonous`. The table is grouped by the transient identity assginment for each gene (i.e. transiently downregulated genes are printed together, monotonously upregulated genes are printed together).  
+
+```{r genes.of.interest.2, cache=FALSE}
+# Genes of Interest ----
+genes_of_interest <- c('SSTP_0000354300','SSTP_0000775800','SSTP_0000846800','SSTP_0000981000')
+
+goi.trajectory.results.df <- trajectory.results.df %>%
+  dplyr::filter(geneID %in% genes_of_interest)
+
+# Make a table for the genes of interest ----
+goi.trajectory.results.df[,1:17] %>%
+  gt(rowname_col = "geneID") %>%
+  tab_stubhead(label = "geneID") %>%
+  tab_header (title = md("**Results of ImpulseDE2 analysis for transient gene expression**"),
+              subtitle = md("for a user-selected gene list")) %>%
+  opt_align_table_header(align = "left") %>%
+  opt_table_outline() %>%
+  opt_row_striping() %>%
+  tab_source_note(
+    source_note = md("Reference: Soltzfus *et al*, 2012. DOI: 10.1371/journal.pone.0038587")
+  ) %>%
+  fmt_number(
+    columns = c(3:6),
+    decimals = 2
+  ) %>%
+  fmt_scientific(
+    columns = c(7:8),
+    decimals = 2
+  ) 
+```
+  
+  
+### Generate Annotated Heatmap   
+Create an annotated heatmap (using `ComplexHeatmap` library) that shows the expression of the gene set. Values in each heatmap box are average count values. The trajectory annotation represents the  transient identity assginment for each gene (possible values are: transiently downregulated/upregulated, monotonously downregulated/upregulated).        
+```{r genes.of.interest.3, cache = FALSE, echo = FALSE}
+# Genes of Interest ----
+genes_of_interest <- c('SSTP_0000354300','SSTP_0000775800','SSTP_0000846800','SSTP_0000981000')
+
+goi.trajectory.results.df <- trajectory.results.df %>%
+  dplyr::filter(geneID %in% genes_of_interest)
+
+goi.geneIDs <- c('Ss-AFD-rGC(35)','Ss-AFD-rGC(77)','Ss-AFD-rGC(84)','Ss-tax-4')
+# Make a heatmap for the genes of interest using the average count values
+goi.matrix <- goi.trajectory.results.df[,3:6] %>%
+  as.matrix()
+rownames(goi.matrix) <- goi.trajectory.results.df$geneID
+#rownames(goi.matrix) <- goi.geneIDs
+#colnames(goi.matrix) <- unique(dfAnnotation$TimeCateg)
+
+goi.annotations <- goi.trajectory.results.df %>% ungroup()%>% 
+  dplyr::mutate(Trajectory = as.factor(class)) %>%
+  dplyr::select(Trajectory) %>%
+  as.data.frame()
+rownames(goi.annotations) <- goi.trajectory.results.df$geneID
+#rownames(goi.annotations) <- goi.geneIDs
+
+palette(brewer.pal(7,name = "Dark2"))
+col_ha <-HeatmapAnnotation(Log2Counts = anno_lines(log2(t(goi.matrix)),
+                                                   gp = gpar(col = 1:nrow(goi.matrix),
+                                                             lwd = 2)),
+                           annotation_name_side = "left",
+                           annotation_name_rot = 0,
+                           annotation_name_gp = gpar(fontsize = 9, fontface = "bold"),
+                           annotation_height = unit(20, "mm"))
+
+class.col <- (brewer.pal(4,"Pastel1"))
+row_ha <- rowAnnotation(Trajectory = goi.annotations$Trajectory,
+                        col = list(Trajectory = c('transient_down' = class.col[2],
+                                                  'transient_up' = class.col[1],
+                                                  'transition_down' = class.col[3],
+                                                  'transition_up' = class.col[4])),
+                        annotation_name_gp = gpar(fontsize = 8),
+                        annotation_legend_param = list(
+                          Trajectory = list(
+                            labels_gp = gpar(fontsize = 8),
+                            title_gp = gpar(fontsize = 9, fontface = "bold")
+                          )
+                        ))
+
+lgd_list <- list(
+  Legend(labels = rownames(goi.matrix), title = "geneID", type = "lines",
+         labels_gp = gpar(fontsize = 8),
+         title_gp = gpar(fontsize = 9, fontface = "bold"),
+         legend_gp = gpar(col = 1:ncol(goi.matrix),
+                          lwd = 2)))
+
+goi.matrix.scaled <- t(scale(t(goi.matrix)))
+#col_fun <- colorRamp2(c(-2, -1, -0.5, 0, 0.5, 1, 2), rev(brewer.pal(7,"RdBu")))
+ht_list <- Heatmap(goi.matrix.scaled,
+                   name = 'Row-scaled Z score',
+                   col = rev(brewer.pal(7,"RdBu")),
+                   column_title = "Results of ImpulseDE2 analysis for transient gene expression (user selected genes)",
+                   column_title_gp = gpar(fontsize = 10, fontface = "bold"),
+                   row_names_gp = gpar(fontsize = 9),
+                   cluster_rows = F,
+                   cluster_columns = F,
+                   row_names_side = "left",
+                   column_names_rot = 0,
+                   column_names_centered = T,
+                   column_names_gp = gpar(fontsize = 8),
+                   right_annotation = row_ha,
+                   top_annotation = col_ha,
+                   layer_fun = function(j, i, x, y, width, height, fill) {
+                     # since grid.text can also be vectorized
+                     grid.text(sprintf("%.1f", pindex(goi.matrix, i, j)), x, y, gp = gpar(fontsize = 8))
+                   },
+                   heatmap_legend_param = list(
+                     direction = "horizontal",
+                     labels_gp = gpar(fontsize = 8), 
+                     title_gp = gpar(fontsize = 9, 
+                                     fontface = "bold")))
+
+draw(ht_list,merge_legend = T, heatmap_legend_side = "bottom", annotation_legend_side = "bottom",annotation_legend_list = lgd_list)
+```
+
+   
+# Appendix: All code for this report  
+
+```{r ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
+```

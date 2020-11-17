@@ -31,7 +31,7 @@ suppressPackageStartupMessages({
     source("Server/calc_DEG_tbl.R")
     source("Server/theme_Publication.R")
     source('Server/limma_ranking.R')
-    source("Server/excel_srv.R")
+    source("Server/generate_excel_report.R")
 })
 
 # ---- Background ----
@@ -123,10 +123,10 @@ server <- function(input, output, session) {
     ## LS: Save Excel Tables with DEG Tables
     source('Server/plot_save_DEGs_ls.R', local = T)
     
-    ## GW: Functional Enrichment Analysis ----
+    ## LS: Functional Enrichment Analysis ----
     ## LS: Run GSEA
     ## LS: GSEA Plot
-    ## LS: Save Volcano Plot
+    ## LS: Save GSEA Plot
     ## LS: GSEA Data Table
     ## LS: Save GSEA Datatable
     source('Server/functional_enrichment_ls.R', local = T)
