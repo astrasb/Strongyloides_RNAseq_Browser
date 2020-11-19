@@ -73,8 +73,14 @@ output$downloadGSEAPlot_LS <- downloadHandler(
         paste('GSEAplot_',vals$comparison_LS[vals$displayedComparison_LS], '_',Sys.Date(),'.pdf', sep='')
     },
     content = function(file){
-        perform_GSEA_LS()
-        ggsave(file,width = 11, height = 8, units = "in", device = "pdf", useDingbats=FALSE)
+        gseaplot<- perform_GSEA_LS()
+        ggsave(file,
+               plot = gseaplot, 
+               width = 11, 
+               height = 8, 
+               units = "in", 
+               device = "pdf", 
+               useDingbats=FALSE)
     }
 )
 

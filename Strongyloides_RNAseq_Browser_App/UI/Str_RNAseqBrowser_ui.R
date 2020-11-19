@@ -131,6 +131,9 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                                         h6("Filter across all comparisons?"),
                                                         checkboxInput("download_DGEdt_across_GW",
                                                                       p("Yes, only download genes with selected expression types in all searched pairwise comparisons.")),
+                                                        h6("Include names of submitted genes not found in RNAseq dataset?"),
+                                                        checkboxInput("download_missing_genes_GW",
+                                                                      p("Yes, include geneIDs for submitted genes not included in RNAseq dataset.")),
                                                         uiOutput('downloadbuttonGW')
                                                     )
                                                     
