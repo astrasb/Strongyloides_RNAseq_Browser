@@ -165,11 +165,11 @@ p3<-ggplot(pca.res.df) +
         title = element_text(size = 10))
 
 suppressMessages(ggsave("Ss_Multivariate_Plots_PCA.pdf",
-       plot = p3,
-       device = "pdf",
-       height = 4,
-       #width = 7,
-       path = output.path))
+                        plot = p3,
+                        device = "pdf",
+                        height = 4,
+                        #width = 7,
+                        path = output.path))
 
 ```
 
@@ -179,64 +179,6 @@ Plot of the samples in PCA space. Fill color indicates life stage.
 p3
 ``` 
 
-```{r multivariate.4}
-
-# A guess at the identity of PC1
-p4<-ggplot(pca.res.df) +
-  aes(x=PC1, y=PC2, label=targets$group,
-      color = factor(targets$Maturity),
-      fill = factor(targets$Maturity)
-  ) +
-  #geom_point(size=4) +
-  #stat_ellipse() +
-  geom_label(color = "black", size = 2, alpha = 0.7) +
-  scale_fill_manual(values = brewer.pal(8,"Set2")) +
-  scale_color_manual(values = brewer.pal(8,"Set2"), guide = FALSE) +
-  xlab(paste0("PC1 (",pc.per[1],"%",")")) + 
-  ylab(paste0("PC2 (",pc.per[2],"%",")")) +
-  labs(subtitle="Potential PC1 identity: Adults vs Larvae",
-       fill = "Maturity") +
-  scale_x_continuous(expand = c(.3, .3)) +
-  scale_y_continuous(expand = c(.3, .3)) +
-  coord_fixed() +
-  
-  theme_bw()
-```
-
-#### PCA Plot: a guess at the identity of PC1
-Plot of the samples in PCA space. Fill color corresponds to potential identity.  
-```{r echo = FALSE}
-p4
-``` 
-
-```{r multivariate.5}
-
-# A guess at the identity of PC2
-p5<-ggplot(pca.res.df) +
-  aes(x=PC1, y=PC2, label=targets$group, 
-      color = factor(targets$Infectious),
-      fill = factor(targets$Infectious)
-  ) +
-  #geom_point(size=4) +
-  #stat_ellipse() +
-  geom_label(color = "black", size = 2, alpha = 0.7) +
-  scale_fill_manual(values = brewer.pal(8,"Set2")[3:4]) +
-  scale_color_manual(values = brewer.pal(8,"Set2")[3:4], guide = FALSE) +
-  xlab(paste0("PC1 (",pc.per[1],"%",")")) + 
-  ylab(paste0("PC2 (",pc.per[2],"%",")")) +
-  labs(subtitle="Potential PC2 identity: Host-seeking/dwelling",
-       fill = 'Infectivity Stage') +
-  scale_x_continuous(expand = c(.3, .3)) +
-  scale_y_continuous(expand = c(.3, .3)) +
-  coord_fixed() +
-  theme_bw()
-```
-
-#### PCA Plot: a guess at the identity of PC2
-Plot of the samples in PCA space. Fill color corresponds to potential identity.  
-```{r echo = FALSE}
-p5
-``` 
 
 ```{r multivariate.6}
 
@@ -244,9 +186,7 @@ p5
 pca.res.df <- pca.res$x[,1:6] %>% 
   as_tibble() %>%
   add_column(sample = targets$sample,
-             group = group,
-             maturity = factor(targets$Maturity),
-             infectious = factor(targets$Infectious))
+             group = group)
 
 pca.pivot <- pivot_longer(pca.res.df, # dataframe to be pivoted
                           cols = PC1:PC3, # column names to be stored as a SINGLE variable
@@ -261,7 +201,7 @@ PC3 <- subset(pca.pivot, PC == "PC3")
 PC.labs <- c(paste0("PC1 (",pc.per[1],"%",")"),
              paste0("PC2 (",pc.per[2],"%",")"),
              paste0("PC3 (",pc.per[3],"%",")")
-             )
+)
 names(PC.labs) <- c("PC1", "PC2", "PC3")
 
 p6<-ggplot(pca.pivot) +
@@ -282,11 +222,11 @@ p6<-ggplot(pca.pivot) +
   coord_flip()
 
 suppressMessages(ggsave("Ss_Multivariate_Plots_Small_Multiples.pdf",
-       plot = p6,
-       device = "pdf",
-       height = 4,
-       width = 8,
-       path = output.path))
+                        plot = p6,
+                        device = "pdf",
+                        height = 4,
+                        width = 8,
+                        path = output.path))
 
 ```
 
@@ -312,36 +252,30 @@ myscores.df <- pca.res$rotation[,1:6] %>%
 # Pull out genes that are the top 10% of contributors (in any direction) to PC1 and PC2. Annotate.
 myscores.Top10 <- myscores.df %>%
   dplyr::filter(PC == "PC1" | PC == "PC2") %>%
-  pivot_wider(id_cols = geneID,
-              names_from = PC,
-              values_from = scores) %>%
-  dplyr::mutate(PC1_id = case_when(PC1 > 0 ~ "larval",
-                                   PC1 < 0 ~ "adult",
-                                   is.na(PC1) ~ "--")) %>%  
-  dplyr::mutate(PC2_id = case_when(PC2 > 0 ~ "parasite",
-                                   PC2 < 0 ~ "non_parasite",
-                                   is.na(PC2) ~ "--")) %>%  
+  dplyr::select(!abs_scores) %>%
+  dplyr::arrange(desc(scores), .by_group = T) %>%
   dplyr::left_join(.,(rownames_to_column(annotations, var = "geneID")), by = "geneID") %>%
-  dplyr::relocate(UniProtKB, Description, InterPro, GO_term, Ce_geneID, Ce_percent_homology, .after = PC2_id)
+  dplyr::relocate(UniProtKB, Description, InterPro, GO_term, Ce_geneID, Ce_percent_homology, .after = scores)
+
 
 # Make Interactive Plot
 myscores.Top10.interactive <- myscores.Top10 %>%
-  DT::datatable(extensions = c('KeyTable', "FixedHeader"),
+  DT::datatable(extensions = c('KeyTable', "FixedHeader", "Buttons", "RowGroup"),
                 rownames = FALSE,
                 caption = htmltools::tags$caption(
                   style = 'caption-side: top; text-align: left;',
-                  htmltools::tags$b('Top 10% of Genes Contributing to PC1 and PC2'),
-                  htmltools::tags$br(),
-                  'Search for PC1_id/PC2_id values to filter results'),
+                  htmltools::tags$b('Top 10% of Genes Contributing to S. stercoralis PC1 and PC2')),
                 options = list(keys = TRUE,
+                               dom = 'Bfrtip',
+                               rowGroup = list(dataSrc = 1),
+                               buttons = c('csv', 'excel'),
                                autoWidth = TRUE,
                                scrollX = TRUE,
                                scrollY = '300px',
-                               order = list(1, 'desc'),
                                searchHighlight = TRUE, 
                                pageLength = 10, 
                                lengthMenu = c("10", "25", "50", "100"))) %>%
-  DT::formatRound(columns=c(2:3), digits=3)
+  DT::formatRound(columns=c(3), digits=3)
 
 myscores.Top10.interactive
 ```
@@ -350,9 +284,9 @@ myscores.Top10.interactive
 Make a heatmap for all the genes using the Log2CPM values.  
 ```{r gene.expression.heatmap}
 suppressPackageStartupMessages({
-library(pheatmap)
-library(RColorBrewer)
-library(heatmaply)
+  library(pheatmap)
+  library(RColorBrewer)
+  library(heatmaply)
 })
 
 diffGenes <- v.DEGList.filtered.norm$E %>%
@@ -376,18 +310,9 @@ p<-pheatmap(diffGenes,
             scale = "row",
             angle_col = 45,
             main = "Ss: Log2 Counts Per Million (CPM) Expression Across Life Stages"
-
+            
 )
 
-# suppressMessages(ggsave('Ss_Log2CPM_Heatmap.png',
-#        plot = p,
-#        width = 6,
-#        height = 4,
-#        device = "png",
-#        #useDingbats=FALSE,
-#        path = output.path))
-# 
-# p
 ```
 
 ## Differentially Expressed Genes
@@ -722,11 +647,11 @@ p.benchmark <- ggplot(plotting.all, aes(x = logFC.x, y = logFC.y)) +
         title = element_text(size = 10))
 
 suppressMessages(ggsave("Ss_Benchmarking.pdf",
-       plot = p.benchmark,
-       device = "pdf",
-       height = 4,
-       #width = 8,
-       path = output.path))
+                        plot = p.benchmark,
+                        device = "pdf",
+                        height = 4,
+                        #width = 8,
+                        path = output.path))
 
 p.benchmark 
 
@@ -1004,8 +929,8 @@ myGSEA.tbl<-as_tibble(myGSEA.res@result) %>%
 enrichment.DT <- datatable(myGSEA.tbl, 
                            rownames = TRUE,
                            caption =  htmltools::tags$caption(
-                            style = 
-                            'caption-side: top; text-align: left; color: black',
+                             style = 
+                               'caption-side: top; text-align: left; color: black',
                              htmltools::tags$b(
                                'Gene Families Enriched in ', 
                                gsub('-', ' vs ',
@@ -1058,9 +983,72 @@ ggplot(myGSEA.df, aes(x=life_stage, y=ID)) +
         plot.title = element_text(face = "bold",
                                   size = 13, hjust = 0),
         axis.title = element_text(face = "bold",size = 10.4),
-         legend.title = element_text(face="bold",size = 10.4),
+        legend.title = element_text(face="bold",size = 10.4),
         aspect.ratio = 3/1)
 
+```
+
+## Chemoreceptor Genes  
+This section examines gene expression patterns in chemoreceptor genes identified by the Zamanian lab (Weeler *et al* 2020).
+```{r CR.load, eval=FALSE, include=FALSE}
+
+temp <- c('../Data/S_stercoralis/Ss_chemoreceptors.csv')
+
+GoI <- suppressWarnings(read.csv(temp, 
+                                 header = TRUE, 
+                                 colClasses = "character", 
+                                 strip.white = T)) %>%
+  as_tibble() %>%
+  dplyr::mutate(geneID = str_remove_all(Transcript_ID, "\\.[0-9]$")) %>%
+  dplyr::mutate(geneID = str_remove_all(geneID, "[a-c]$")) %>%
+  dplyr::group_by(geneID) %>%
+  dplyr::slice_max(n = 1, order_by = str_length(`Sequence`), 
+                   with_ties = FALSE) %>%
+  dplyr::select(geneID)
+
+
+```
+
+
+### Heatmap of chemoreceptor gene expression  
+```{r CR.heatmap, eval=FALSE, include=FALSE}
+# Filter all gene expression levels, taking just those in the list of chemoreceptors
+subset.diffGenes <- v.DEGList.filtered.norm$E %>%
+  as_tibble(rownames = "geneID", .name_repair = "unique") %>%
+  dplyr::filter(geneID %in% GoI$geneID)
+
+rownames <- subset.diffGenes$geneID
+subset.diffGenes <- subset.diffGenes %>%
+  dplyr::select(!geneID) %>%
+  as.matrix() 
+rownames(subset.diffGenes) <- rownames
+colnames(subset.diffGenes) <- paste0(v.DEGList.filtered.norm$targets$group,
+                                     "...",
+                                     substr(v.DEGList.filtered.norm$targets$samples, 
+                                            nchar(
+                                              as.character(v.DEGList.filtered.norm$targets$samples[1]))-2, nchar(
+                                                as.character(v.DEGList.filtered.norm$targets$samples[1])))
+)
+
+clustColumns <- hclust(as.dist(1-cor(subset.diffGenes, method="spearman")), method="complete")
+clustRows <- hclust(as.dist(1-cor(t(subset.diffGenes),
+                                  method="pearson")),
+                    method="complete")
+par(cex.main=0.5)
+myheatcolors <- RdBu(75)
+showticklabels <- c(TRUE,FALSE)
+
+p<-ggheatmap_local(subset.diffGenes,
+                   colors = rev(myheatcolors),
+                   Rowv= ladderize(as.dendrogram(clustRows)),
+                   Colv=ladderize(as.dendrogram(clustColumns)),
+                   show_dendrogram = c(TRUE, TRUE),
+                   key.title = "Row Z Score",
+                   branches_lwd = 0.5,
+                   showticklabels = showticklabels,
+                   scale='row',
+                   cexRow=1.2, cexCol=1.2,
+                   main = "Log2 Counts Per Million (CPM) Expression Across Life Stages")
 ```
 
 # Appendix I: All code for this report  

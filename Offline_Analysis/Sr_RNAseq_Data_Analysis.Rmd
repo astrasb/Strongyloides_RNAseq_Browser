@@ -241,6 +241,51 @@ suppressMessages(ggsave("Sr_Multivariate_Plots_Small_Multiples.pdf",
 p6
 ```
 
+## Genes Contributing to PC Identity  
+This chunk provides additional analysis of the principal components, in order to determine which genes are influencing the identified PCs. It prints an annotated list of genes that are the 10% of contributors (in any direction) to PC1 and PC2.    
+```{r idPCgenes}
+# Introduction to this chunk ----
+# This chunk provides additional analysis of the principal components, in order to determine which genes are influencing the identified PCs.
+
+# Use pca.res$rotation to select genes influencing PC1-6 ----
+myscores.df <- pca.res$rotation[,1:6] %>% 
+  as_tibble(rownames = "geneID") %>%
+  pivot_longer(cols = -geneID, names_to = "PC", values_to = "scores") %>%
+  dplyr::mutate(abs_scores = abs(scores)) %>%
+  group_by(PC) %>%
+  slice_max(abs_scores, prop = .1) # get top 10% of genes in all PCs
+
+# Pull out genes that are the top 10% of contributors (in any direction) to PC1 and PC2. Annotate.
+myscores.Top10 <- myscores.df %>%
+  dplyr::filter(PC == "PC1" | PC == "PC2") %>%
+  dplyr::select(!abs_scores) %>%
+  dplyr::arrange(desc(scores), .by_group = T) %>%
+  dplyr::left_join(.,(rownames_to_column(annotations, var = "geneID")), by = "geneID") %>%
+  dplyr::relocate(UniProtKB, Description, InterPro, GO_term, Ce_geneID, Ce_percent_homology, .after = scores)
+
+
+# Make Interactive Plot
+myscores.Top10.interactive <- myscores.Top10 %>%
+  DT::datatable(extensions = c('KeyTable', "FixedHeader", "Buttons", "RowGroup"),
+                rownames = FALSE,
+                caption = htmltools::tags$caption(
+                  style = 'caption-side: top; text-align: left;',
+                  htmltools::tags$b('Top 10% of Genes Contributing to S. ratti PC1 and PC2')),
+                options = list(keys = TRUE,
+                               dom = 'Bfrtip',
+                               rowGroup = list(dataSrc = 1),
+                               buttons = c('csv', 'excel'),
+                               autoWidth = TRUE,
+                               scrollX = TRUE,
+                               scrollY = '300px',
+                               searchHighlight = TRUE, 
+                               pageLength = 10, 
+                               lengthMenu = c("10", "25", "50", "100"))) %>%
+  DT::formatRound(columns=c(3), digits=3)
+
+myscores.Top10.interactive
+```
+
 ## Heatmap of Gene Expression Across Life Stages  
 Make a heatmap for all the genes using the Log2CPM values.  
 ```{r gene.expression.heatmap}
