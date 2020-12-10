@@ -88,8 +88,14 @@ output$downloadVolcanoGW <- renderUI({
         },
         content = function(file){
             withProgress({
-                pull_DEGs_GW()
-                ggsave(file,width = 11, height = 8, units = "in", device = "pdf", useDingbats=FALSE)
+                vplot<-pull_DEGs_GW()
+                ggsave(file, 
+                       plot = vplot, 
+                       width = 11, 
+                       height = 8, 
+                       units = "in", 
+                       device = "pdf", 
+                       useDingbats=FALSE)
             },
             message = "Saving Plot")
         }
@@ -328,7 +334,6 @@ filter_DEG_tbl_GW <- reactive({
             dplyr::arrange(desc(logFC))
     })
     names(filtered.list.highlight.tbl_GW)<- names(download_DT)
-    
     filtered.list.highlight.tbl_GW
 })
 
@@ -336,18 +341,20 @@ filter_DEG_tbl_GW <- reactive({
 output$downloadbuttonGW <- renderUI({
     req(input$goLifeStage_GW,vals$comparison_GW,vals$genelist)
     
+    filtered.tbl_GW <- filter_DEG_tbl_GW()
+    
+    if (input$download_missing_genes_GW == T) {
     # Add back on genes that were submitted by the user but don't appear in the list of genes for which there is available data.
     excluded.genes <- dplyr::anti_join(vals$submitted.genelist, 
                                        vals$genelist,
                                        by = "geneID") %>%
         left_join(vals$annotations, by = "geneID") # Add gene annotations
     
-    filtered.tbl_GW <- filter_DEG_tbl_GW()
-    
     downloadablel.tbl_GW <-lapply(filtered.tbl_GW, function (x) {
         suppressMessages(dplyr::full_join(x,excluded.genes))
     })
-    
+    } else {downloadablel.tbl_GW <- filtered.tbl_GW}
+   
     ### Generate some text that describes the analysis conditions
     ### 1. If p-values are adjusted for multiple pairwise comparisons, which comparisons are included in the adjustment parameters? This should be the list of selected contrasts
     if (vals$multipleCorrection_GW == TRUE){

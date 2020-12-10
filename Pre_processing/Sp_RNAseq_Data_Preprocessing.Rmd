@@ -15,7 +15,7 @@ The goal of this file is to pre-process the *Strongyloides papillosus* RNAseq da
 # Pre-processing Methods Overview  
 Raw reads are aligned to the *S. papillosus* reference transcriptome (PRJEB525.WBPS14.mRNA_transcripts, downloaded from [WormBase Parasite](https://parasite.wormbase.org/Strongyloides_papillosus_prjeb525/Info/Index) on 17 August 2020), using Kallisto. Kallisto alignments are imported into the R environment and annotated with information imported via the Wormbase ParaSite BioMaRT. Annotation information includes: *C. elegans* homologs/percent homology, UniProtKB number, Interpro terms, GO terms, and general Description information. [Hunt *et al* 2016](https://www.nature.com/articles/ng.3495) establishes two distinct subclades from the four sequenced *Strongyloides* species: *S. venezuelensis-S. papillosus* and *S. ratti-S. stercoralis*. Thus, we also include annotation information for the appropriate in-group (here, *S. venezuelensis*), and a reference member of the out-group (*S. stercoralis*. Annotation information is saved as an R object that is passed to a Shiny Web App for downstream browsing and on-demand analysis. Note: Raw count data is be saved as a digitial gene expression list.     
 
-Raw reads were quantified as counts per million using the EdgeR package, then filtered to remove transcripts with low counts (less than 1 count-per-million in at least 2 samples). A list of discarded genes and their expression values across life stages is saved. Non-discarded gene values are normalized using the trimmed mean of M-values method (TMM, [Robinson and Oshlack](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-3-r25) ) to permit between-samples comparisons. The mean-variance relationship was modeled using a precision weights approach [Law *et al* 2014](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29).   
+Raw reads were quantified as counts per million using the EdgeR package, then filtered to remove transcripts with low counts (less than 1 count-per-million in at least 1 sample). A list of discarded genes and their expression values across life stages is saved. Non-discarded gene values are normalized using the trimmed mean of M-values method (TMM, [Robinson and Oshlack](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-3-r25) ) to permit between-samples comparisons. The mean-variance relationship was modeled using a precision weights approach [Law *et al* 2014](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29).   
 
 A variance-stabilized, condensed DGEList object is saved; this file is passed to a Shiny Web App for downstream browsing and on-demand analysis.  
 
@@ -75,9 +75,11 @@ ERR1466833 -t 14 ERR1466833_1.fastq.gz ERR1466833_2.fastq.gz&> ERR1466833.log
 kallisto quant -i strongyloides_papillosus.PRJEB525.WBPS14.mRNA_transcripts.index -o 
 ERR1466834 -t 14 ERR1466834_1.fastq.gz ERR1466834_2.fastq.gz&> ERR1466834.log
 
-# Parasitic Females: biological Replicates 1-2
+# Parasitic Females: biological Replicate 1
 kallisto quant -i strongyloides_papillosus.PRJEB525.WBPS14.mRNA_transcripts.index -o 
 ERR1466835 -t 14 ERR1466835_1.fastq.gz ERR1466835_2.fastq.gz&> ERR1466835.log
+
+# Parasitic L1/L2s: Biological Replicate 1
 kallisto quant -i strongyloides_papillosus.PRJEB525.WBPS14.mRNA_transcripts.index -o 
 ERR1466836 -t 14 ERR1466836_1.fastq.gz ERR1466836_2.fastq.gz&> ERR1466836.log
 
@@ -454,7 +456,7 @@ p2
 # Note: The cutoff "n" is adjusted for the number of 
 # samples in the smallest group of comparison.
 keepers <- cpm(myDGEList) %>%
-  rowSums(.>1)>=2
+  rowSums(.>1)>=1
 
 myDGEList.filtered <- myDGEList[keepers,]
 

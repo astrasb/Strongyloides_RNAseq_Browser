@@ -76,9 +76,15 @@ output$downloadVolcanoLS <- renderUI({
         content = function(file){
             withProgress({
                 setProgress(.25)
-                pull_DEGs_LS()
+                vplot<-pull_DEGs_LS()
                 setProgress(.75)
-                ggsave(file,width = 11, height = 8, units = "in", device = "pdf", useDingbats=FALSE)
+                ggsave(file, 
+                       plot = vplot,
+                       width = 11, 
+                       height = 8, 
+                       units = "in", 
+                       device = "pdf", 
+                       useDingbats=FALSE)
             },
             message = "Saving Plot")
         }

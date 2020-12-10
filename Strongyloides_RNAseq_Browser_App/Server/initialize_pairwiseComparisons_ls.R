@@ -114,7 +114,7 @@ parse_contrasts_LS<-eventReactive(input$goLS,{
         if (input$multipleContrastsYN_LS == T) {
             vals$multipleCorrection_LS <- T
         } else vals$multipleCorrection_LS <- F
-    } else if (str_detect(input$selectContrast_LS, 'everythingElse')){
+    } else if (str_detect(input$selectContrast_LS[[1]], 'everythingElse')){
         targetStage <- rbind(input$selectTarget_LS)
         contrastStage <- setdiff(levels(vals$v.DEGList.filtered.norm$targets$group),targetStage) %>%
             cbind()

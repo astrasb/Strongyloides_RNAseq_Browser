@@ -1,4 +1,5 @@
 ## LS: Set Contrast Matrix, Fit the Linear Model, Extract the Differentially Expressed Genes ----
+## This reactive function is called by app.R
 set_linear_model_LS <- eventReactive(input$goLS,{
     req(vals$limmacontrast_LS)
     limma_ranking(vals$limmacontrast_LS, 

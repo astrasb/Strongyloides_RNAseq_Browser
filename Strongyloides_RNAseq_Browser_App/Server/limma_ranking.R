@@ -1,6 +1,7 @@
 # Run Limma based Differential Expression Analysis
 # Use Empirical Bayes Statistics to rank genes in order of evidence for differential expression
 # Adjust for Multiple Comparisons if necessary
+# This function is called by set_linear_model_gw.R and set_linear_model_ls.R
 limma_ranking <- function(comparison, targetStage, contrastStage, multipleCorrection, genelist, vals, fit, v.DEGList.filtered.norm, adj.P.thresh, diffGenes.df){
 
     contrast.matrix <- makeContrasts(contrasts = comparison,

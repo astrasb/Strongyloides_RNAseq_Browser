@@ -1,6 +1,7 @@
 ## Calculate Differential Gene Expression for a specified pairwise comparison.
 ## Requires a Bayes-smoothed linear model
 ## Produces a Top Table of differentially expressed genes. 
+## This function is called by limma_ranking.R file
 calc_DEG_tbl <- function (ebFit, coef) {
     myTopHits.df <- limma::topTable(ebFit, adjust ="BH", 
                                     coef=coef, number=40000, 
