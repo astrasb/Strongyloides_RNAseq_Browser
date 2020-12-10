@@ -11,6 +11,10 @@
 #'    to the ggheatmap call.
 #' 3. Margins are also hard coded around the plot to provide some addional spacing.
 #' 
+#' Note: the vast majority of the code is not difference from the main package
+#' version - references to //TODO items reflect goals of the main package
+#' authors.
+#' 
 #' This function produces a ggplot analogue of heatmaply figures 
 #' using \link[egg]{ggarrange}. This function may not always support the same
 #' set of features as , and exporting the heatmaply object with, for example,

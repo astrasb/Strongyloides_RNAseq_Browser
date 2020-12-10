@@ -121,7 +121,7 @@ parse_contrasts_GW <- eventReactive(input$goLifeStage_GW,{
         if (input$multipleContrastsYN_GW == T) {
             vals$multipleCorrection_GW <- T
         } else vals$multipleCorrection_GW <- F
-    } else if (str_detect(input$selectContrast_GW, 'everythingElse')){
+    } else if (str_detect(input$selectContrast_GW[[1]], 'everythingElse')){
         targetStage <- rbind(input$selectTarget_GW)
         contrastStage <- setdiff(levels(vals$v.DEGList.filtered.norm$targets$group),targetStage) %>%
             cbind()
