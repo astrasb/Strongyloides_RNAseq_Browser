@@ -100,15 +100,14 @@ These files are saved in the Outputs folder; in order to make them accessible to
 The *S. papillosus* data included in this repository was originally analyzed by [Hunt *et al* 2016](https://www.nature.com/articles/ng.3495).  
 
 ### Data Sources and Details  
-Raw reads were downloaded from the European Nucleotide Archive - study accession number [PRJEB14543](https://www.ebi.ac.uk/ena/browser/view/PRJEB14543). This dataset consists of 10 samples, representing 5 life stages with 2 biological replicates per life stage:
+Raw reads were downloaded from the European Nucleotide Archive - study accession number [PRJEB14543](https://www.ebi.ac.uk/ena/browser/view/PRJEB14543). This dataset consists of 10 samples, representing 6 life stages with 1-2 biological replicates per life stage:
 
   * Free-living adult females (FLF)
-  * Parasitic adult females (PF).
+  * Parasitic adult females (PF)
   * Infective third-stage larvae (iL3)
   * Free-living adult males (FLM)
-  * Mixed population of 1st and 2nd stage larvae (L1/L2)
-
-Note: samples included in this database were collected in two separate experiments, with FLM and iL3s in one, and FLF and PF in another. Due to the lack of sample overlap between the experiments, we do not correct for batch effects.  
+  * Mixed population of free-living 1st and 2nd stage larvae (flL1/L2)
+  * Mixed population of parasitic 1st and 2nd stage larvae (pL1/L2)
 
 ### Kallisto Alignment and Gene Annotation  
 Raw reads are aligned to the *S. papillosus* reference transcriptome (PRJEB525.WBPS14.mRNA_transcripts, downloaded from [WormBase Parasite](https://parasite.wormbase.org/Strongyloides_papillosus_prjeb525/Info/Index) on 17 August 2020), using Kallisto. Kallisto alignments are imported into the R environment using `Tximport`. Counts are generated from abundance files using the `lengthScaledTPM` option; an R object containing this data is saved into each species' subfolder in the primary Data folder. In subsequent chunks, that file is loaded, and analysis progresses. The point of this is so that folks attempting to rerun this analysis do not need to have abundance files loaded on their local machines (and we do not have to upload abundance files to github).  
@@ -126,7 +125,7 @@ Count data is then annotated with information imported via the Wormbase ParaSite
   * Out-group: *S. stercoralis* homologs/percent homology  
   
 ### Filtering and Normalization Steps  
-Raw reads were quantified as counts per million using the EdgeR package, then filtered to remove transcripts with low counts (less than 1 count-per-million in at least 2 samples). Non-discarded gene values are normalized using the trimmed mean of M-values method [(TMM, Robinson and Oshlack)](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-3-r25) to permit between-samples comparisons. The mean-variance relationship was modeled using a precision weights approach [(Law *et al* 2014)](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29).  
+Raw reads were quantified as counts per million using the EdgeR package, then filtered to remove transcripts with low counts (less than 1 count-per-million in at least 1 sample). Non-discarded gene values are normalized using the trimmed mean of M-values method [(TMM, Robinson and Oshlack)](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-3-r25) to permit between-samples comparisons. The mean-variance relationship was modeled using a precision weights approach [(Law *et al* 2014)](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29).  
 
 ### Pre-processing Outputs
 Finally, we save data and annotations for use by offline analysis files and the Shiny application. We can separate these saving actions into two groups:
