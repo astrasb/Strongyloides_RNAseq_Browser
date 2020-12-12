@@ -10,32 +10,27 @@ output:
 ---
 
 # Introduction
-The human parasitic nematode *Strongyloides stercoralis* is estimated to infect approximately 610 million people (Buonfrate *et al* 2020). Similar to other intestinal parasitic nematodes, *S. stercoralis* has a complex life cycle in which distinct developmental stages navigate starkly different environments via life-stage specific behavioral preferences ( [Castelletto *et al* 2014](https://journals.plos.org/plospathogens/article?id=10.1371/journal.ppat.1004305), [Bryant and Hallem 2018a](https://www.sciencedirect.com/science/article/pii/S2211320718301118?via%3Dihub) ). Across nematode species, ethological and behavioral differences are often reflected in the temporal regulation of gene expression. For *S. stercoralis*, several studies have utilized bulk RNA sequencing to probe the genomic basis of parasitism by identifying gene families that are uniquely upregulated in parasitic life stages ( [Stolzfus *et al* 2012](https://journals.plos.org/plosntds/article?id=10.1371/journal.pntd.0001854), [Hunt *et al* 2016](https://www.nature.com/articles/ng.3495), [Hunt *et al* 2018](https://www.nature.com/articles/s41598-018-23514-z)). These efforts highlight a feature of modern bioinformatics - the secondary analysis of publically avaliable datasets. Here, an original dataset featuring bulk RNA sequencing of seven *S. stercoralis* developmental stages was initially aligned to genomic contigs (6 December 2011 draft, [Stolzfus *et al* 2012](https://journals.plos.org/plosntds/article?id=10.1371/journal.pntd.0001854) ). Subsequently, a subset of this dataset was re-analyzed coincident with the release of a high-quality draft assembly ( [Hunt *et al* 2016](https://www.nature.com/articles/ng.3495) ); this re-analysis focused on the differences between three life stages: free-living adults that navigate the environment, parasitic adults located within the host intestine, and infective third-stage larvae that actively engage in host-seeking behaviors. As genome assembly and RNA sequencing of additional parasitic nematode species continues, the publically-avaliable *S. stercoralis* RNAseq dataset continues to be utilized for cross-species and cross-life stage comparisons ( [Hunt *et al* 2016](https://www.nature.com/articles/ng.3495), [Hunt *et al* 2018](https://www.nature.com/articles/s41598-018-23514-z) ). Furthermore, several helminth RNA-seq datasets, including *S. stercoralis* were realigned to their reference genomes and integrated into WormBase Parasite, where they are accessible to the field at large in the form of genome-aligned RNA-seq expression tracks ( [Howe *et al* 2017](https://www.sciencedirect.com/science/article/pii/S0166685116301608?via%3Dihub) ).
-
-As research into the genomic basis of parasitism in helminths continues, access to quantitative gene expression levels will greatly enhance studies into the functional role of specific genes and gene families. Differential gene expression results have been published as supplemental data ( [Hunt *et al* 2016](https://www.nature.com/articles/ng.3495) ), however these analyses only included pairwise comparisons between three life stages. Quantitative comparisons that utilize the full seven avaliable life stages have not yet been published. 
+The goal of this file is to pre-process the *Strongyloides stercoralis* RNAseq dataset originally published by [Stolzfus *et al* 2012](https://journals.plos.org/plosntds/article?id=10.1371/journal.pntd.0001854). 
 
 # Pre-processing Methods Overview  
-The introduction of alignment-free read mapping tools such as Kallisto has significantly lowered the computational barrier for re-analysis of publically avaliable RNAseq datasets. Here, I take advantage of these tools to re-analyze the *S. sterocoralis* bulk RNA-seq data, extending differential gene expression analyses across all avaliable developmental stages. Kallisto and custom R scripts were used to perform ultra-fast read mapping of raw reads to the *S. stercoalis* reference transcriptome (PRJEB528.WBPS14.mRNA_transcripts, downloaded from [WormBase Parasite](https://parasite.wormbase.org/Strongyloides_stercoralis_prjeb528/Info/Index/) on 16 June 2020).   
+Kallisto and custom R scripts were used to perform ultra-fast read mapping of raw reads to the *S. stercoalis* reference transcriptome (PRJEB528.WBPS14.mRNA_transcripts, downloaded from [WormBase Parasite](https://parasite.wormbase.org/Strongyloides_stercoralis_prjeb528/Info/Index/) on 16 June 2020). Kallisto alignments are imported into the R environment and annotated with information imported via the Wormbase ParaSite BioMaRT. Annotation information includes: *C. elegans* homologs/percent homology, UniProtKB number, Interpro terms, GO terms, and general Description information. [Hunt *et al* 2016](https://www.nature.com/articles/ng.3495) establishes two distinct subclades from the four sequenced *Strongyloides* species: *S. venezuelensis-S. papillosus* and *S. ratti-S. stercoralis*. Thus, we also include annotation information for the appropriate in-group (here, *S. ratti*), and a reference member of the out-group (*S. papillosus*). Annotation information is be saved as an R object that is passed to a Shiny Web App for downstream browsing and on-demand analysis. Note: raw count data could be saved as a digitial gene expression list if desired (not currently done).  
 
-Kallisto alignments are imported into the R environment and annotated with information imported via the Wormbase ParaSite BioMaRT. Annotation information includes: *C. elegans* homologs/percent homology, UniProtKB number, Interpro terms, GO terms, and general Description information. [Hunt *et al* 2016](https://www.nature.com/articles/ng.3495) establishes two distinct subclades from the four sequenced *Strongyloides* species: *S. venezuelensis-S. papillosus* and *S. ratti-S. stercoralis*. Thus, we also include annotation information for the appropriate in-group (here, *S. ratti*), and a reference member of the out-group (*S. papillosus*). Annotation information can be saved as an R object that is passed to a Shiny Web App for downstream browsing and on-demand analysis. Note: raw count data could be saved as a digitial gene expression list if desired (not currently done).  
+Raw reads were quantified as counts per million using the EdgeR package, then filtered to remove transcripts with low counts (less than 1 count-per-million in at least 3 samples). A list of discarded genes and their expression values across life stages is saved. Non-discarded gene values are normalized using the trimmed mean of M-values method (TMM, [Robinson and Oshlack](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-3-r25) ) to permit between-samples comparisons. The mean-variance relationship was modeled using a precision weights approach [Law *et al* 2014](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29).  
 
-Raw reads were quantified as counts per million using the EdgeR package, then filtered to remove transcripts with low counts (less than 1 count-per-million in at least 3 samples). A list of discarded genes and their expression values across life stages can be saved. Non-discarded gene values are then normalized using the trimmed mean of M-values method (TMM, [Robinson and Oshlack](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-3-r25) ) to permit between-samples comparisons. The mean-variance relationship was modeled using a precision weights approach [Law *et al* 2014](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29).  
-
-A variance-stabilized DGEList object can be saved; this file is passed to a Shiny Web App for downstream browsing and on-demand analysis.  
+A variance-stabilized DGEList object is saved; this file is passed to a Shiny Web App for downstream browsing and on-demand analysis.  
 
 # Results/Analysis  
-Note: Code chunks are collated and echoed at the end of the document in the Appendix.
+Note: Code chunks are collated and echoed at the end of the document in Appendix I.
 ```{r setup, echo = FALSE}
-knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
 
 ```
 
 ## Kallisto read mapping  
-This shell script checks the qualitiy of the fastq files and performs an alignment to the Strongyloides stercoralis cDNA transcriptome reference with Kallisto; to work, it needs to be saved as an .sh file in a folder containing required raw files.This script is reproduced here to demonstrate the QC and alignment process.  
+This shell script checks the qualitiy of the fastq files and performs an alignment to the *Strongyloides stercoralis* transcriptome reference with Kallisto. To run this 'shell script' you will need to open your terminal and navigate to the directory where this script resides on your computer. For addditional instructions, see comments at head of script. 
 ```{bash KallistoMapping, eval=FALSE}
 # This script checks the qualitiy of the fastq files and performs 
-# an alignment to the Strongyloides stercoralis cDNA transcriptome 
-# reference with Kallisto.
+# an alignment to the S. stercoralis transcriptome reference with Kallisto.
 # To run this 'shell script' you will need to open your terminal and 
 # navigate to the directory where this script resides on your computer.
 # This should be the same directory where you fastq files and reference 
@@ -49,18 +44,11 @@ This shell script checks the qualitiy of the fastq files and performs an alignme
 # first use fastqc to check the quality of our fastq files:
 fastqc *.gz -t 14
 
-# next, we want to build an index from our reference fasta file 
-# I got my reference Strongyloides sterocralis transcripts 
-# from WormBase Parasite
+# build an index from the reference fasta file 
 kallisto index -i strongyloides_stercoralis.PRJEB528.WBPS14.mRNA_transcripts.index
 strongyloides_stercoralis.PRJEB528.WBPS14.mRNA_transcripts.fa
 
-# now map reads to the indexed reference host transcriptome
-# use as many 'threads' as your machine will allow in order 
-# to speed up the read mapping process.
-# note that we're also including the '&>' at the end of each line
-# this takes the information that would've been printed to our 
-# terminal, and outputs this in a log file that is saved in /data/course_data
+# map reads to the indexed reference host transcriptome
 
 # Free-Living Females
 kallisto quant -i strongyloides_stercoralis.PRJEB528.WBPS14.mRNA_transcripts.index -o 
@@ -118,10 +106,7 @@ ERR146960 -t 14 ERR146960_1.fastq.gz ERR146960_2.fastq.gz&> ERR146960.log
 kallisto quant -i strongyloides_stercoralis.PRJEB528.WBPS14.mRNA_transcripts.index -o 
 ERR146961 -t 14 ERR146961_1.fastq.gz ERR146961_2.fastq.gz&> ERR146961.log
 
-
-
-# summarize fastqc and kallisto mapping results 
-# in a single summary html using MultiQC
+# summarize fastqc and kallisto mapping results using MultiQC
 multiqc -d . 
 
 echo "Finished"
@@ -355,8 +340,7 @@ annotations<-dplyr::left_join(Annt.logs, Annt.interpro) %>%
 ```
 
 ## Generate Digital Gene Expression List  
-Next we generate a digital gene expression list that 
-could be easily shared/loaded for downstream filtering/normalization. This code chunk generates a scatter plot of unfiltered and non-normalized transcripts per million data.  
+Next we generate a digital gene expression list that could be easily shared/loaded for downstream filtering/normalization. This code chunk generates a scatter plot of unfiltered and non-normalized transcripts per million data.  
 ```{r generateDGE, eval=TRUE}
 # Goals of this chunk:
 # Generate a digitial gene expression list 
@@ -429,6 +413,7 @@ suppressPackageStartupMessages({
 })
 
 # calculate and plot log2 counts per million ----
+
 # Generate life stage IDs
 ids <- rep(cbind(targets$group), 
            times = nrow(myDGEList$counts)) %>%
@@ -436,8 +421,6 @@ ids <- rep(cbind(targets$group),
 
 # use the 'cpm' function from EdgeR to get log2 counts per million
 # then coerce into a tibble
-# add sample names to the dataframe
-# tidy up the dataframe into a tibble
 log2.cpm.df.pivot <-cpm(myDGEList, log=TRUE) %>%
   as_tibble(rownames = "geneID") %>%
   setNames(nm = c("geneID", targets$sample)) %>%
@@ -445,7 +428,6 @@ log2.cpm.df.pivot <-cpm(myDGEList, log=TRUE) %>%
                names_to = "samples", 
                values_to = "expression") %>% 
   add_column(life_stage = ids)
-
 
 # plot the pivoted data
 p2 <- ggplot(log2.cpm.df.pivot) +
@@ -464,7 +446,6 @@ p2 <- ggplot(log2.cpm.df.pivot) +
   theme_bw() +
   scale_fill_brewer(palette = "Dark2") +
   coord_flip()
-
 ```
 
 ### Plot of unfiltered, non-normalized log2CPM data by life stage  
