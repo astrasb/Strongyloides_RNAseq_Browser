@@ -44,101 +44,120 @@ parse_ids <- eventReactive(input$goGW,{
     )
     isolate({
         if (isTruthy(input$idtext)){
-            if (any(grepl('SSTP|SRAE|SVE|SPAL', input$idtext, ignore.case = TRUE))){
-                # Text input matches SSTP|SRAE|SVE|SPAL values
-                genelist <- input$idtext %>%
-                    gsub("\\s+", "", .) %>% #remove any number of whitespace
-                    str_split(pattern = ",") %>%
-                    unlist() %>%
-                    as_tibble_col(column_name = "geneID")
-            } else if (any(grepl('everything|all genes', input$idtext, ignore.case = TRUE))) {
-                # Text input matches the strings 'everything' or 'all genes'
-                genelist <- rownames(vals$v.DEGList.filtered.norm$genes) %>%
-                    as_tibble_col(column_name = "geneID")
-            } else {
-                
-                # Assume the values here are keywords, search Description terms
-                terms <- input$idtext %>%
-                    str_split(pattern = ",") %>%
-                    unlist()
-                
-                geneindex<-sapply(terms, function(y) {
-                    grepl(gsub("^\\s+|\\s+$","",y), #remove any number of whitespace from start of end
-                          vals$v.DEGList.filtered.norm$genes$Description,
-                          ignore.case = TRUE)
-                }) %>%
-                    rowSums() %>%
-                    as.logical()
-                
-                genelist <- vals$v.DEGList.filtered.norm$genes %>%
-                    rownames_to_column(var = "geneID") %>%
-                    dplyr::select(geneID)
-                ensComp<- ensComp %>%
-                    left_join(genelist, ., by = "geneID") %>%
-                    dplyr::relocate(gs_name, geneID)
-                
-                geneindex.ensembl<-sapply(terms, function(y) {
-                    gsub("^\\s+|\\s+$","",y) %>%
-                        paste0("\\<",.,"\\>") %>%
-                        grepl(., 
-                              ensComp$gs_name,
-                              ignore.case = TRUE)
-                }) %>%
-                    rowSums() %>%
-                    as.logical()
-                
-                geneindex.Cehomologs<-sapply(terms, function(y) {
-                    gsub("^\\s+|\\s+$","",y) %>%
-                        paste0("\\<",.,"\\>") %>%
-                        grepl(., 
-                              vals$v.DEGList.filtered.norm$genes$Ce_geneID,
-                              ignore.case = TRUE)
-                }) %>%
-                    rowSums() %>%
-                    as.logical()
-                
-                geneindex.InterPro<-sapply(terms, function(y) {
-                    gsub("^\\s+|\\s+$","",y) %>%
-                        paste0("\\<",.,"\\>") %>%
-                        grepl(., 
-                              vals$v.DEGList.filtered.norm$genes$InterPro,
-                              ignore.case = TRUE)
-                }) %>%
-                    rowSums() %>%
-                    as.logical()
-                
-                geneindex <- geneindex | geneindex.ensembl | geneindex.Cehomologs | geneindex.InterPro
-                
-                genelist <- vals$v.DEGList.filtered.norm$genes %>%
-                    rownames_to_column(var = "geneID") %>%
-                    dplyr::select(geneID)
-                genelist <- genelist$geneID[geneindex] %>%
-                    as_tibble_col(column_name = "geneID")
-            }
-            
+            terms <- input$idtext %>%
+                gsub("\\n",",",.) %>% #replace any new lines with commas
+                gsub("\\s+","", .) %>% #remove any number of whitespace
+                str_split(pattern = ",|;") %>%
+                unlist()
         } else if (isTruthy(input$loadfile)){
             file <- input$loadfile
             ext <- tools::file_ext(file$datapath)
             validate(need(ext == "csv", "Please upload a csv file"))
             suppressWarnings(
-                genelist <- read.csv(file$datapath, 
-                                     header = FALSE, 
-                                     colClasses = "character", 
-                                     strip.white = T) %>%
+                terms <- read.csv(file$datapath, 
+                                  header = FALSE, 
+                                  colClasses = "character", 
+                                  strip.white = T) %>%
                     as_tibble() %>%
                     pivot_longer(cols = everything(), 
-                                 values_to = "geneID") %>%
-                    dplyr::select(geneID)
+                                 values_to = "geneID") 
             )
+            terms <- terms$geneID
         } 
+        genelist <- vals$annotations %>%
+            dplyr::select(geneID)
         
+        if (any(grepl('everything|all genes', terms, ignore.case = TRUE))) {
+            # Text input matches the strings 'everything' or 'all genes'
+            genelist <- genelist
+        } else {
+            # Search for gene IDs
+            geneindex.geneID<-sapply(terms, function(y) {
+                grepl(gsub("^\\s+|\\s+$", "", y), #remove any number of whitespace from start or end
+                      vals$annotations$geneID,
+                      ignore.case = TRUE)
+            }) %>%
+                rowSums() %>%
+                as.logical()
+            
+            # Search WormBase Parasite Gene Description Terms
+            geneindex.description<-sapply(terms, function(y) {
+                grepl(gsub("^\\s+|\\s+$", "", y), #remove any number of whitespace from start or end
+                      vals$annotations$Description,
+                      ignore.case = TRUE)
+            }) %>%
+                rowSums() %>%
+                as.logical()
+            
+            # Search Parasite Ensembl Compara Gene Sets
+            ensComp<- ensComp %>%
+                left_join(genelist, ., by = "geneID") %>%
+                dplyr::relocate(gs_name, geneID)
+            geneindex.ensembl<-sapply(terms, function(y) {
+                gsub("^\\s+|\\s+$", "", y) %>%
+                paste0("\\<",.,"\\>") %>%
+                    grepl(., 
+                          ensComp$gs_name,
+                          ignore.case = TRUE)
+            }) %>%
+                rowSums() %>%
+                as.logical()
+            
+            # Search C. elegans homolog IDs
+            geneindex.Cehomologs<-sapply(terms, function(y) {
+                gsub("^\\s+|\\s+$", "", y) %>%
+                paste0("\\<",.,"\\>") %>%
+                    grepl(., 
+                          vals$annotations$Ce_geneID,
+                          ignore.case = TRUE)
+            }) %>%
+                rowSums() %>%
+                as.logical()
+            
+            # Search In-group homolog IDs
+            geneindex.InGroup<-sapply(terms, function(y) {
+                gsub("^\\s+|\\s+$", "", y) %>%
+                    paste0("\\<",.,"\\>") %>%
+                    grepl(., 
+                          vals$annotations$In.subclade_geneID,
+                          ignore.case = TRUE)
+            }) %>%
+                rowSums() %>%
+                as.logical()
+            
+            # Search Out-group homolog IDs
+            geneindex.OutGroup<-sapply(terms, function(y) {
+                gsub("^\\s+|\\s+$", "", y) %>%
+                    paste0("\\<",.,"\\>") %>%
+                    grepl(., 
+                          vals$annotations$Out.subclade_geneID,
+                          ignore.case = TRUE)
+            }) %>%
+                rowSums() %>%
+                as.logical()
+            
+            # Search InterPro Terms
+            geneindex.InterPro<-sapply(terms, function(y) {
+                gsub("^\\s+|\\s+$", "", y) %>%
+                    paste0("\\<",.,"\\>") %>%
+                    grepl(., 
+                          vals$annotations$InterPro,
+                          ignore.case = TRUE)
+            }) %>%
+                rowSums() %>%
+                as.logical()
+            
+            geneindex <- geneindex.geneID | geneindex.description | geneindex.ensembl | geneindex.Cehomologs | geneindex.InGroup |geneindex.OutGroup | geneindex.InterPro 
+            genelist <- dplyr::filter(genelist,geneindex) 
+        }
+       
         if (nrow(genelist) == 0){
             disable("goLifeStage_GW")
         } else {enable("goLifeStage_GW")}
         
         # Produces error message if genelist is empty
         validate(
-            need(nrow(genelist) != 0, "No genes found, please try a new search")
+            need(nrow(genelist) != 0, "RNAseq data unavailable for submitted genes. Please try a new search.")
         )
        
         # Save record of original genelist before filtering, removing rows that contain the word 'gene'
@@ -146,9 +165,17 @@ parse_ids <- eventReactive(input$goGW,{
             dplyr::filter(!grepl("gene", geneID, ignore.case = T))
         
         # Remove genes from the list that aren't part of vals$Log2CPM
-        # Ideally, this would trigger a notification to the user.
         genelist <- genelist %>%
             dplyr::filter(geneID %in% vals$Log2CPM$geneID)
+        
+        if (nrow(genelist) == 0){
+            disable("goLifeStage_GW")
+        } else {enable("goLifeStage_GW")}
+        
+        # Produces error message if genelist is empty after removing genes not included in the RNAseq dataset
+        validate(
+            need(nrow(genelist) != 0, "RNAseq data unavailable for submitted genes. Please try a new search.")
+        )
         
         vals$genelist <- genelist
         vals$genelist.Log2CPM <- vals$Log2CPM %>%
