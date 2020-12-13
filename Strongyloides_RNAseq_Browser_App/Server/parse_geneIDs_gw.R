@@ -7,7 +7,7 @@ output$genePanelinputs <- renderUI({
             status = "primary",
             ### GeneID (text box)
             h5('Pick Genes', class = 'text-danger', style = "margin: 0px 0px 5px 0px"),
-            p(tags$em('Users may type gene stable IDs or keywords that will be matched against Wormbase Parasite Gene Descriptions, known C. elegans homologs, InterPro terms, and an Ensembl Compara database of gene families. Please separate search terms by a comma. Users may also upload a .csv file containing comma-separated gene stable IDs.', style = "color: #7b8a8b")),
+            p(tags$em('Users may type gene stable IDs or keywords that will be matched against Wormbase Parasite Gene Descriptions, known C. elegans homologs, homologs from closely-related Strongyloides species, InterPro terms, and an Ensembl Compara database of gene families. Search terms may be separated using commas,semicolons, or new lines. Users may also upload a .csv file containing search terms.', style = "color: #7b8a8b")),
             p(tags$em("Type 'everything' or 'all genes' to display all genes in the genome. Warning: this will take a long time to process.", style = "color: #7b8a8b")),
             p(tags$em(tags$b('Note: Please hit the Clear button if switching between typing and uploading inputs.', style = "color: #F39C12"))),
             textAreaInput('idtext',
