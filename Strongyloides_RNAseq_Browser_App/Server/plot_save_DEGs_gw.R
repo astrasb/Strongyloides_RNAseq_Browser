@@ -359,17 +359,19 @@ output$downloadbuttonGW <- renderUI({
     ### 1. If p-values are adjusted for multiple pairwise comparisons, which comparisons are included in the adjustment parameters? This should be the list of selected contrasts
     if (vals$multipleCorrection_GW == TRUE){
         multiplecorrection <- paste0(vals$comparison_GW, collapse = "; ")
+        multiplecorrection <- paste0("P-values corrected across the following multiple pairwise comparisons: ", multiplecorrection)
     } else {
-        multiplecorrection <- "n/a"
+        multiplecorrection <- "P-values *not* corrected across multiple pairwaise comparisons"
     }
     ### 2. If downloading results are being filtered to show only genes that display consistent differential expression across all comparisons targeted for download, list the pairwise comparisons being used.
     if (input$download_DGEdt_across_GW == TRUE){
         filteredacross <- paste0(names(filtered.tbl_GW), collapse = "; ")
-    } else {
-        filteredacross <- "n/a"
-    }
+        filteredacross <- paste0("Lists only includes genes with matching differential expression descriptions across the following pairwise comparisons: ", filteredacross)
+    } else filteredacross <- ""
+        
     ### 3. Specify which types of differential expression pattern
     DEGpattern <- paste0(input$download_DGEdt_direction_GW, collapse = "; ")
+    DEGpattern <- paste0("Lists include genes that are differentially regulated in the following directions (relative to the target life stage): ", DEGpattern)
     
     ### 4. Specify the proportion of genes for each DEG Type that are being saved (e.g. top 10% of upregulated, and top10% of downregulated genes)
     proportionexport <- paste0("Percentage of genes for each differential expression pattern: ", input$percentDGE_GW)
