@@ -37,10 +37,10 @@ generate_excel_report <- function(comparison, tbl,
             x = c(
               name,
               paste(subtitle_prefix, comparison[[y]]),
-              paste0("P-values corrected across the following multiple pairwise comparisons: ", multiplecorrection),
-              paste0("Lists only includes genes with matching differential expression descriptions across the following pairwise comparisons: ", filteredacross),
-              paste0("Lists include genes that are differentially regulated in the following directions (relative to the target life stage): ", DEGpattern),
+              multiplecorrection,
+              DEGpattern,
               proportionexport,
+              filteredacross,
               paste0("Report generated on ", format(Sys.Date(), "%B %d, %Y"))
             )
           )
