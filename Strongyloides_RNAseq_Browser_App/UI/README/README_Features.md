@@ -2,8 +2,8 @@
 The *Strongyloides* RNAseq Shiny App enables users to browse publically
 available *Strongyloides* bulk RNAseq datasets and perform on-demand
 analyses including differential expression and gene set enrichment. Data
-from the following species are currently included: *S. stercoralis*, *S.
-ratti*, *S. papillosus*, and *S. venezuelensis*. The app permits
+from the following species are currently included: *S. stercoralis*, *S.ratti*,
+*S. papillosus*, and *S. venezuelensis*. The app permits
 browsing RNAseq data in two modes:
 
 1.  Browse by Gene Mode
@@ -23,8 +23,8 @@ Features of the app include:
     -   Display results as interactive volcano plots and datatables
     -   Download results as .pdf (plots) or .xlsx (datatables)
 -   Gene set enrichment analysis using the clusterProfiler R package and
-    an Enss=embl Compara protein family set established by Hunt *et
-    al* 2016. (Browse By Life Stage Mode)
+    an Ensembl Compara protein family set established by Hunt *et al* 2016. 
+    (Browse By Life Stage Mode)
     -   Display results as bubble plot and interactive datatable
     -   Download results as .pdf (plots) or .xlsx (datatables)
 -   Download raw/pre-processed data using user-friendly dropdown menu
