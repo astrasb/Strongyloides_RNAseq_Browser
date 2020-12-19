@@ -9,7 +9,7 @@ limma_ranking <- function(comparison, targetStage, contrastStage, multipleCorrec
     
     fits <- contrasts.fit(fit, contrast.matrix)
     ebFit <- limma::eBayes(fits)
-    
+    setProgress(0.05)
     # Adjust for multiple comparisons using method = global.
     # Generate a corrected diffGenes value that accounts for multiple comparisons
     if (multipleCorrection == T) {
@@ -23,7 +23,7 @@ limma_ranking <- function(comparison, targetStage, contrastStage, multipleCorrec
                                adjust.method="BH", 
                                p.value = adj.P.thresh)    
     }
-    
+    setProgress(0.1)
     recode01<- function(x){
         case_when(x == 1 ~ "Up",
                   x == -1 ~ "Down",
@@ -40,7 +40,7 @@ limma_ranking <- function(comparison, targetStage, contrastStage, multipleCorrec
         calc_DEG_tbl(ebFit, y)}, 
         simplify = FALSE, 
         USE.NAMES = TRUE)
-   
+    setProgress(0.15)
     #### Filter dataset looking for the genes on the list
     if (isTruthy(genelist)){
         list.highlight.df <- sapply(comparison, function(y){
@@ -60,13 +60,13 @@ limma_ranking <- function(comparison, targetStage, contrastStage, multipleCorrec
             simplify = FALSE, 
             USE.NAMES = TRUE)
     }
-    
-    
+    setProgress(0.2)
     
     if (isTruthy(genelist)){
         diffGenes.df <- diffGenes.df %>%
             dplyr::filter(geneID %in% genelist[[1]])
     } 
+    setProgress(0.25)
     # Get log2CPM values and threshold information for genes of interest
     vals$list.highlight.tbl <- sapply(seq_along(comparison), function(y){
         tS<- targetStage[y,][targetStage[y,]!=""]
@@ -105,6 +105,8 @@ limma_ranking <- function(comparison, targetStage, contrastStage, multipleCorrec
     },
     simplify = FALSE)
     
+    setProgress(0.3)
+    
     comparison <- gsub("/[0-9]*","", comparison) %>%
         gsub("\\(|\\)","",.)
     names(vals$list.highlight.tbl) <- comparison
@@ -119,6 +121,8 @@ limma_ranking <- function(comparison, targetStage, contrastStage, multipleCorrec
     },
     simplify = FALSE, 
     USE.NAMES = TRUE)
+    
+    setProgress(0.4)
     
     
 }

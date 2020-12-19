@@ -43,6 +43,7 @@ parse_ids <- eventReactive(input$goGW,{
         need({isTruthy(input$loadfile) | isTruthy(input$idtext)}, "Please input gene ids")
     )
     isolate({
+        withProgress({
         if (isTruthy(input$idtext)){
             terms <- input$idtext %>%
                 gsub("\\n",",",.) %>% #replace any new lines with commas
@@ -68,16 +69,21 @@ parse_ids <- eventReactive(input$goGW,{
             terms <- terms$geneID
             
         } 
-        genelist <- vals$annotations %>%
+        setProgress(0.1)
+        
+            genelist <- vals$annotations %>%
             dplyr::select(geneID)
         
         if (any(grepl('everything|all genes', terms, ignore.case = TRUE))) {
             # Text input matches the strings 'everything' or 'all genes'
             genelist <- genelist
         } else {
+            inc <- 0.1/nrow(terms)
             # Search for gene IDs
             terms.cleaned <- gsub("\\.[0-9]$","",terms) #strip any transcript values from the inputed list
+            
             geneindex.geneID<-sapply(terms.cleaned, function(y) {
+                incProgress(amount = inc)
                 grepl(gsub("^\\s+|\\s+$", "", y), #remove any number of whitespace from start or end
                       vals$annotations$geneID,
                       ignore.case = TRUE)
@@ -85,8 +91,10 @@ parse_ids <- eventReactive(input$goGW,{
                 rowSums() %>%
                 as.logical()
             
+            
             # Search WormBase Parasite Gene Description Terms
             geneindex.description<-sapply(terms, function(y) {
+                incProgress(amount = inc)
                 grepl(gsub("^\\s+|\\s+$", "", y), #remove any number of whitespace from start or end
                       vals$annotations$Description,
                       ignore.case = TRUE)
@@ -99,6 +107,7 @@ parse_ids <- eventReactive(input$goGW,{
                 left_join(genelist, ., by = "geneID") %>%
                 dplyr::relocate(gs_name, geneID)
             geneindex.ensembl<-sapply(terms, function(y) {
+                incProgress(amount = inc)
                 gsub("^\\s+|\\s+$", "", y) %>%
                 paste0("\\<",.,"\\>") %>%
                     grepl(., 
@@ -110,6 +119,7 @@ parse_ids <- eventReactive(input$goGW,{
             
             # Search C. elegans homolog IDs
             geneindex.Cehomologs<-sapply(terms, function(y) {
+                incProgress(amount = inc)
                 gsub("^\\s+|\\s+$", "", y) %>%
                 paste0("\\<",.,"\\>") %>%
                     grepl(., 
@@ -121,6 +131,7 @@ parse_ids <- eventReactive(input$goGW,{
             
             # Search In-group homolog IDs
             geneindex.InGroup<-sapply(terms, function(y) {
+                incProgress(amount = inc)
                 gsub("^\\s+|\\s+$", "", y) %>%
                     paste0("\\<",.,"\\>") %>%
                     grepl(., 
@@ -132,6 +143,7 @@ parse_ids <- eventReactive(input$goGW,{
             
             # Search Out-group homolog IDs
             geneindex.OutGroup<-sapply(terms, function(y) {
+                incProgress(amount = inc)
                 gsub("^\\s+|\\s+$", "", y) %>%
                     paste0("\\<",.,"\\>") %>%
                     grepl(., 
@@ -143,6 +155,7 @@ parse_ids <- eventReactive(input$goGW,{
             
             # Search InterPro Terms
             geneindex.InterPro<-sapply(terms, function(y) {
+                incProgress(amount = inc)
                 gsub("^\\s+|\\s+$", "", y) %>%
                     paste0("\\<",.,"\\>") %>%
                     grepl(., 
@@ -173,6 +186,8 @@ parse_ids <- eventReactive(input$goGW,{
         genelist <- genelist %>%
             dplyr::filter(geneID %in% vals$Log2CPM$geneID)
         
+        setProgress(0.95)
+        
         if (nrow(genelist) == 0){
             disable("goLifeStage_GW")
         } else {enable("goLifeStage_GW")}
@@ -185,5 +200,7 @@ parse_ids <- eventReactive(input$goGW,{
         vals$genelist <- genelist
         vals$genelist.Log2CPM <- vals$Log2CPM %>%
             dplyr::filter(geneID %in% genelist$geneID)
+        
+        },message = "Parsing gene IDs...")
     })
 })

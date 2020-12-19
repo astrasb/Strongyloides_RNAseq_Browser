@@ -3,12 +3,12 @@ pull_DEGs_LS <- reactive({
     req(vals$comparison_LS)
     req(vals$list.highlight.tbl_LS)
     
-    setProgress(0.2)
+    setProgress(0.5)
     if (isTruthy(input$displayedComparison_LS)){
         vals$displayedComparison_LS <- match(input$displayedComparison_LS,
                                              vals$comparison_LS, nomatch = 1)
     } else {vals$displayedComparison_LS <- 1}
-    setProgress(0.4)
+    setProgress(0.6)
     #### Volcano Plots
     vplot <- ggplot(vals$list.highlight.tbl_LS[[vals$displayedComparison_LS]]) +
         aes(y=-log10(BH.adj.P.Val), x=logFC) +
@@ -34,7 +34,7 @@ pull_DEGs_LS <- reactive({
              color = "GeneIDs") +
         theme_Publication() +
         theme(aspect.ratio=1/3)
-    setProgress(0.8)
+    setProgress(0.9)
     vplot
 })
 
@@ -45,8 +45,10 @@ output$volcano_LS <- renderUI({
     req(vals$comparison_LS)
     
     output$volcano_UI_LS <- renderPlot({
+      withProgress({
         set_linear_model_LS()
-        withProgress(pull_DEGs_LS(), message = "Calculating...")
+        pull_DEGs_LS()}, 
+        message = "Calculating DGE...")
     })
     
     panel(
@@ -163,7 +165,6 @@ assemble_DEGs_LS <- reactive({
     sample.num.tS <- sapply(tS, function(x) {colSums(vals$v.DEGList.filtered.norm$design)[[x]]}) %>% sum()
     sample.num.cS <- sapply(cS, function(x) {colSums(vals$v.DEGList.filtered.norm$design)[[x]]}) %>% sum()
     
-    
     n_num_cols <- sample.num.tS + sample.num.cS + 5
     index_homologs <- length(colnames(vals$list.highlight.tbl_LS[[vals$displayedComparison_LS]])) - 5
     
@@ -239,10 +240,9 @@ assemble_DEGs_LS <- reactive({
     
 })
 
-
-
 output$tbl_LS <- renderDT ({
     req(input$goLS,vals$list.highlight.tbl_LS)
+  
     DEG.datatable_LS<-assemble_DEGs_LS()
     DEG.datatable_LS
 })

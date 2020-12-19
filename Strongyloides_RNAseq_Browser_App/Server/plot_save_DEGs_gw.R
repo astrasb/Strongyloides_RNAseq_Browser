@@ -3,7 +3,7 @@ pull_DEGs_GW <- reactive({
     req(vals$comparison_GW)
     req(vals$list.myTopHits.df_GW)
     req(vals$v.DEGList.filtered.norm)
-    setProgress(0.2)
+    setProgress(0.5)
     if (isTruthy(input$displayedComparison_GW)){
         vals$displayedComparison_GW <- match(input$displayedComparison_GW,
                                              vals$comparison_GW, nomatch = 1)
@@ -12,7 +12,7 @@ pull_DEGs_GW <- reactive({
     #### Volcano Plots
     point_labels <- if(nrow(vals$list.highlight.tbl_GW[[vals$displayedComparison_GW]])<
                        20){guide_legend(override.aes = list(size = 4))} else {FALSE}
-    setProgress(0.4)
+    setProgress(0.6)
     vplot <- ggplot(vals$list.myTopHits.df_GW[[vals$displayedComparison_GW]]) +
         aes(y=-log10(BH.adj.P.Val), x=logFC) +
         geom_point(size=3,
@@ -46,7 +46,7 @@ pull_DEGs_GW <- reactive({
              color = "GeneIDs") +
         theme_Publication() +
         theme(aspect.ratio=1/3)
-    setProgress(0.8)
+    setProgress(0.9)
     vplot
     
 })
@@ -58,8 +58,9 @@ output$volcano_GW <- renderUI({
     req(vals$genelist,vals$comparison_GW)
     
     output$volcano_UI_GW <- renderPlot({
+        withProgress({
         set_linear_model_GW()
-        withProgress(pull_DEGs_GW(), message = "Calculating...")
+        pull_DEGs_GW()}, message = "Calculating DGE...")
     })
     
     panel(
@@ -256,7 +257,6 @@ assemble_DEGs_GW <- reactive({
     highlight.datatable <- highlight.datatable %>%
         DT::formatSignif(columns=c(n_num_cols+1), 
                          digits=3)
-    withProgress(1)
     highlight.datatable
 })
 

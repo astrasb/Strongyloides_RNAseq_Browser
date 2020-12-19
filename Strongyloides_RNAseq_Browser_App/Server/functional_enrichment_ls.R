@@ -10,7 +10,7 @@ perform_GSEA_LS <-reactive ({
     # I preprocessed this list offline, removing genes that are not found in
     # the preprocessed list of genes for which we have RNASeq data.
     req(vals$displayedComparison_LS)
-    
+    setProgress(0.1)
     # Generate rank ordered list of genes
     mydata.df.sub <- dplyr::select(vals$list.highlight.tbl_LS[[vals$displayedComparison_LS]], geneID, logFC)
     mydata.gsea <- mydata.df.sub$logFC
@@ -26,9 +26,10 @@ perform_GSEA_LS <-reactive ({
     # The p-value of the ES is calculated using permutation test. Specifically, we permute the gene labels of the gene list L and recompute the ES of the gene set for the permutated data, which generate a null distribution for the ES. The p-value of the observed ES is then calculated relative to this null distribution.
     # **Adjustment for Multiple Hypothesis Testing.**
     # When the entire gene sets were evaluated, DOSE adjust the estimated significance level to account for multiple hypothesis testing and also q-values were calculated for FDR control.
-    
+    setProgress(0.2)
     myGSEA.res <- suppressWarnings(GSEA(mydata.gsea, TERM2GENE=ensComp, verbose=FALSE))
     myGSEA.df <- as_tibble(myGSEA.res@result)
+    setProgress(0.6)
     
     myGSEA.df <- myGSEA.df %>%
         dplyr::mutate(life_stage = case_when(
@@ -40,7 +41,7 @@ perform_GSEA_LS <-reactive ({
         word(sep = ' and')
     
     vals$myGSEA.df <- myGSEA.df
-    
+    setProgress(0.8)
     ggplot(myGSEA.df, aes(x=life_stage, y=ID)) + 
         geom_point(aes(size=setSize, color = NES, alpha=-log10(p.adjust))) +
         scale_color_gradient(low="blue", high="red") +
@@ -64,7 +65,7 @@ perform_GSEA_LS <-reactive ({
 
 ## LS: GSEA Plot ----
 output$GSEAPlot_LS <- renderPlot({
-    perform_GSEA_LS()
+    withProgress({perform_GSEA_LS()}, message = "Running GSEA...")
 })
 
 ## LS: Save GSEA Plot ----
