@@ -4,7 +4,7 @@ observeEvent({input$resetLS
         updateSelectInput(session, "selectContrast_LS", selected = "")
         updateSelectInput(session, "selectTarget_LS", selected = "")
         updateTextAreaInput(session,"multiContrasts_LS",value = "")
-        })
+    })
 
 ## LS: Generate Comparison Selection Boxes
 output$pairwiseSelector_LS<- renderUI({
@@ -27,7 +27,8 @@ output$pairwiseSelector_LS<- renderUI({
             selectInput("selectContrast_LS",
                         h6("Select Contrast"),
                         choices = c('Choose one or more' = ''
-                                    ,'All Others' = 'everythingElse'
+                                    ,'All Others (separately)' = 'everythingElse'
+                                    ,'All Others (one group)' = 'remainingGroup'
                                     ,as.list(levels(vals$v.DEGList.filtered.norm$targets$group))),
                         selectize = TRUE,
                         multiple = TRUE),
@@ -41,7 +42,7 @@ output$pairwiseSelector_LS<- renderUI({
                           resize = "vertical"),
             
             h6("Correct for Multiple Comparisons?"),
-           
+            
             checkboxInput("multipleContrastsYN_LS",
                           p("Yes, correct p-values for multiple pairwise comparisons")),
             tags$hr(style="border-color: #2C3E50;"),
@@ -64,7 +65,7 @@ parse_contrasts_LS<-eventReactive(input$goLS,{
     # Make sure there are sufficient inputs
     shiny::validate(
         shiny::need((isTruthy(input$multiContrasts_LS) || (isTruthy(input$selectTarget_LS) && isTruthy(input$selectContrast_LS))),
-             "Not enough inputs were provided to generate contrasts. Please re-select inputs.")
+                    "Not enough inputs were provided to generate contrasts. Please re-select inputs.")
     )
     
     if (isTruthy(input$multiContrasts_LS)) {
@@ -79,8 +80,8 @@ parse_contrasts_LS<-eventReactive(input$goLS,{
         shiny::validate(
             shiny::need({
                 (comparison %>%
-                    str_split(pattern="-", simplify = T) %>%
-                    ncol()) == 2
+                     str_split(pattern="-", simplify = T) %>%
+                     ncol()) == 2
                 
             },
             message = "Not enough inputs were provided to generate contrasts. Please re-type inputs.")) 
@@ -127,9 +128,24 @@ parse_contrasts_LS<-eventReactive(input$goLS,{
                   contrastStage[[x]] %>%
                       paste0("(",.,")/1"),
                   sep = "-"
-                  )
+            )
         })
         vals$multipleCorrection_LS <- T
+    } else if (str_detect(input$selectContrast_LS[[1]], 'remainingGroup')){
+        targetStage <- rbind(input$selectTarget_LS)
+        contrastStage <- setdiff(levels(vals$v.DEGList.filtered.norm$targets$group),targetStage) %>%
+            rbind()
+        comparison <- paste(paste0(targetStage, 
+                                   collapse = "+") %>%
+                                paste0("(",.,")/",length(targetStage)),
+                            paste0(contrastStage, 
+                                   collapse = "+") %>%
+                                paste0("(",.,")/",length(contrastStage)),
+                            sep = "-"
+        )
+        
+        vals$multipleCorrection_LS <- F
+        
     } else {
         targetStage <- rbind(input$selectTarget_LS)
         contrastStage <- rbind(input$selectContrast_LS)
@@ -145,7 +161,7 @@ parse_contrasts_LS<-eventReactive(input$goLS,{
     
     # Validation checks for contrast inputs:
     # 1. Are constrasts complete and formatted correctly (are there life stages on each side of the '-' side)
-        ## Check for missing "target" elements 
+    ## Check for missing "target" elements 
     missing.targets <- sapply(seq(1,nrow(targetStage)), function(x){
         row <- x
         targets.clean <- targetStage[row, targetStage[row,] != ""] %>%
@@ -155,7 +171,7 @@ parse_contrasts_LS<-eventReactive(input$goLS,{
     shiny::validate(shiny::need(any(!missing.targets), 
                                 message = "At least one pairwise comparison is missing a target element. Please check inputs.")) 
     
-        ## Check for missing "contrast" elements
+    ## Check for missing "contrast" elements
     missing.contrasts <-sapply(seq(1,nrow(targetStage)), function(x){
         row <- x
         contrasts.clean <- contrastStage[row, contrastStage[row,] != ""] %>%
@@ -165,7 +181,7 @@ parse_contrasts_LS<-eventReactive(input$goLS,{
                                 message = "At least one pairwise comparison is missing a contrast element. Please check inputs.")) 
     
     # 2. Do contrasts include recognized life stages (corrects for spelling mistakes); compare relative to abbreviated names in lifestage_legend
-        ## Do all target elements match a life stage in this dataset? 
+    ## Do all target elements match a life stage in this dataset? 
     error.targets.validNames <- targetStage[targetStage != ""] %in% 
         levels(vals$v.DEGList.filtered.norm$targets$group) 
     shiny::validate(shiny::need(all(error.targets.validNames), 
@@ -178,7 +194,7 @@ parse_contrasts_LS<-eventReactive(input$goLS,{
                                 message = "At least one contrast name doesn't match available life stages. Please check inputs for spelling mistakes or incorrect capitalization.")) 
     
     # 3. Are there repeated elements within a contrast.
-        ## Produce error message if there are repeated elements in any of the target and contrast pairings. Using *apply and vectorized string detection to search rows of target/contrast stage arrays for matching elements located in the columns.
+    ## Produce error message if there are repeated elements in any of the target and contrast pairings. Using *apply and vectorized string detection to search rows of target/contrast stage arrays for matching elements located in the columns.
     error.matches <- sapply(seq(1,nrow(targetStage)), function(x){
         tar.row <- x
         targets.clean <- targetStage[tar.row, targetStage[tar.row,] != ""] #remove any blank values

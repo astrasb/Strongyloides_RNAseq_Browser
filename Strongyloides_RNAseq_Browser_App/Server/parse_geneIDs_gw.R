@@ -57,12 +57,16 @@ parse_ids <- eventReactive(input$goGW,{
                 terms <- read.csv(file$datapath, 
                                   header = FALSE, 
                                   colClasses = "character", 
-                                  strip.white = T) %>%
+                                  strip.white = T,
+                                  na.strings = "") %>%
                     as_tibble() %>%
+                    
                     pivot_longer(cols = everything(), 
-                                 values_to = "geneID") 
+                                 values_to = "geneID",
+                                 values_drop_na = T) 
             )
             terms <- terms$geneID
+            
         } 
         genelist <- vals$annotations %>%
             dplyr::select(geneID)
@@ -72,7 +76,8 @@ parse_ids <- eventReactive(input$goGW,{
             genelist <- genelist
         } else {
             # Search for gene IDs
-            geneindex.geneID<-sapply(terms, function(y) {
+            terms.cleaned <- gsub("\\.[0-9]$","",terms) #strip any transcript values from the inputed list
+            geneindex.geneID<-sapply(terms.cleaned, function(y) {
                 grepl(gsub("^\\s+|\\s+$", "", y), #remove any number of whitespace from start or end
                       vals$annotations$geneID,
                       ignore.case = TRUE)

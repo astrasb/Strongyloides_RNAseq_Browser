@@ -31,7 +31,8 @@ output$pairwiseSelector_GW<- renderUI({
             selectInput("selectContrast_GW",
                         h6("Select Contrast"),
                         choices = c('Choose one or more' = ''
-                                    ,'All Others' = 'everythingElse'
+                                    ,'All Others (separately)' = 'everythingElse'
+                                    ,'All Others (one group)' = 'remainingGroup'
                                     ,as.list(levels(vals$target.contrast.options))),
                         selectize = TRUE,
                         multiple = TRUE),
@@ -137,6 +138,20 @@ parse_contrasts_GW <- eventReactive(input$goLifeStage_GW,{
             )
         })
         vals$multipleCorrection_GW <- T
+    } else if (str_detect(input$selectContrast_GW[[1]], 'remainingGroup')){
+        targetStage <- rbind(input$selectTarget_GW)
+        contrastStage <- setdiff(levels(vals$v.DEGList.filtered.norm$targets$group),targetStage) %>%
+            rbind()
+        comparison <- paste(paste0(targetStage, 
+                         collapse = "+") %>%
+                      paste0("(",.,")/",length(targetStage)),
+                      paste0(contrastStage, 
+                             collapse = "+") %>%
+                          paste0("(",.,")/",length(contrastStage)),
+                  sep = "-"
+            )
+        
+        vals$multipleCorrection_GW <- F
     } else {
         targetStage <- rbind(input$selectTarget_GW)
         contrastStage <- rbind(input$selectContrast_GW)
