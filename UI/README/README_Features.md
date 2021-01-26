@@ -18,7 +18,7 @@ Features of the app include:
         genes of interest) or a boxplot (individual genes)
     -   Download Log2 counts per million expression for genes of
         interest as .xslx
--   On demand limma::voom-based pairwise differential gene expression
+-   On demand limma-voom-based pairwise differential gene expression
     analysis
     -   Display results as interactive volcano plots and datatables
     -   Download results as .pdf (plots) or .xlsx (datatables)

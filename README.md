@@ -57,10 +57,10 @@ Features of the app include:
 * Extract gene expression values for genes of interest
   - Display gene expresion across life stages as a heatmap (all genes of interest) or a boxplot (individual genes)
   - Download Log2 counts per million expression for genes of interest as .xslx
-* On demand limma::voom-based pairwise differential gene expression analysis
+* On demand limma-voom-based pairwise differential gene expression analysis
   - Display results as interactive volcano plots and datatables
   - Download results as .pdf (plots) or .xlsx (datatables)
-* Gene set enrichment analysis using the clusterProfiler R package and an Enss=embl Compara protein family set established by Hunt *et al* 2016. (Browse By Life Stage Mode)
+* Gene set enrichment analysis using the clusterProfiler R package and an Ensembl Compara protein family set established by Hunt *et al* 2016. (Browse By Life Stage Mode)
   - Display results as bubble plot and interactive datatable
   - Download results as .pdf (plots) or .xlsx (datatables)
 * Download raw/pre-processed data using user-friendly dropdown menu
@@ -83,7 +83,7 @@ Features of the app include:
   - [Stolzfus *et al* 2012](https://journals.plos.org/plosntds/article?id=10.1371/journal.pntd.0001854)
   - [Hunt *et al* 2016](https://www.nature.com/articles/ng.3495)
   - [Hunt *et al* 2018](https://www.nature.com/articles/s41598-018-23514-z)
-* [WormbaseParasite](https://parasite.wormbase.org/index.html) - Gene annotations and reference transcriptomes
+* [WormBase ParaSite](https://parasite.wormbase.org/index.html) - Gene annotations and reference transcriptomes
 * [DIYTranscriptomics](http://diytranscriptomics.com/) - Virtual asynchronous course where the authors learned best practices for RNAseq data analysis; provided primary pipeline for data pre-processing and analysis
 
 ## License  
@@ -92,3 +92,4 @@ This project is licensed under the MIT License.
 ## Authors  
 * [Astra Bryant, PhD](https://github.com/astrasb)
 * [Stephanie DeMarco, PhD](https://github.com/sfdemarco)
+* [Elissa Hallem, PhD]
