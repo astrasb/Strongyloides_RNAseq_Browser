@@ -352,7 +352,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
         downloaded using the dropdown menu and download button below:',
                                        tags$ol(
                                            tags$li('Study design file (.csv)'),
-                                           tags$li('Filtered, normalized Log2CPM Gene Counts (.csv)'),
+                                           tags$li('Filtered, normalized log2CPM gene counts (.csv)'),
                                            tags$li('Variance-stabilized Digital Gene Expression List (vDGEList; R object)'),
                                            tags$li('Discarded gene counts (.csv)')
                                        )),
