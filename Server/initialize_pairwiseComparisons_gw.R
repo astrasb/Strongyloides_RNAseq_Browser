@@ -66,6 +66,17 @@ output$pairwiseSelector_GW<- renderUI({
     )
 })
 
+## GW: Update checkbox input for multiple contrasts depending on contrast selection
+### specifically, if users select the All Others (separately) option, the multiple contrasts
+### checkbox should be updated to TRUE. Users may still de-select this option.
+observe({
+    req(input$selectContrast_GW)
+    multiY <- any(str_detect(input$selectContrast_GW, 'everythingElse'))
+    updateCheckboxInput(session,
+                        "multipleContrastsYN_GW",
+                        value = multiY)
+})
+
 ## GW: Parse the inputs ----
 parse_contrasts_GW <- eventReactive(input$goLifeStage_GW,{
     # Make sure there are sufficient inputs
@@ -137,7 +148,9 @@ parse_contrasts_GW <- eventReactive(input$goLifeStage_GW,{
                   sep = "-"
             )
         })
-        vals$multipleCorrection_GW <- T
+        if (input$multipleContrastsYN_GW == T) {
+            vals$multipleCorrection_GW <- T
+        } else vals$multipleCorrection_GW <- F
     } else if (str_detect(input$selectContrast_GW[[1]], 'remainingGroup')){
         targetStage <- rbind(input$selectTarget_GW)
         contrastStage <- setdiff(levels(vals$v.DEGList.filtered.norm$targets$group),targetStage) %>%
@@ -151,7 +164,9 @@ parse_contrasts_GW <- eventReactive(input$goLifeStage_GW,{
                   sep = "-"
             )
         
-        vals$multipleCorrection_GW <- F
+        if (input$multipleContrastsYN_GW == T) {
+            vals$multipleCorrection_GW <- T
+        } else vals$multipleCorrection_GW <- F
     } else {
         targetStage <- rbind(input$selectTarget_GW)
         contrastStage <- rbind(input$selectContrast_GW)
@@ -162,7 +177,9 @@ parse_contrasts_GW <- eventReactive(input$goLifeStage_GW,{
                                    collapse = "+") %>%
                                 paste0("(",.,")/",length(input$selectContrast_GW)), 
                             sep = "-")
-        vals$multipleCorrection_GW <- F
+        if (input$multipleContrastsYN_GW == T) {
+            vals$multipleCorrection_GW <- T
+        } else vals$multipleCorrection_GW <- F
     }
     
     # Validation checks for contrast inputs:

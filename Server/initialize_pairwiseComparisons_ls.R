@@ -60,6 +60,17 @@ output$pairwiseSelector_LS<- renderUI({
     )
 })
 
+## LS: Update checkbox input for multiple contrasts depending on contrast selection
+### specifically, if users select the All Others (separately) option, the multiple contrasts
+### checkbox should be updated to TRUE. Users may still de-select this option.
+observe({
+    req(input$selectContrast_LS)
+    multiY <- any(str_detect(input$selectContrast_LS, 'everythingElse'))
+    updateCheckboxInput(session,
+                        "multipleContrastsYN_LS",
+                        value = multiY)
+})
+
 ## LS: Pairwise comparisons Across Life Stages ----
 parse_contrasts_LS<-eventReactive(input$goLS,{
     # Make sure there are sufficient inputs
@@ -130,7 +141,9 @@ parse_contrasts_LS<-eventReactive(input$goLS,{
                   sep = "-"
             )
         })
-        vals$multipleCorrection_LS <- T
+        if (input$multipleContrastsYN_LS == T) {
+            vals$multipleCorrection_LS <- T
+        } else vals$multipleCorrection_LS <- F
     } else if (str_detect(input$selectContrast_LS[[1]], 'remainingGroup')){
         targetStage <- rbind(input$selectTarget_LS)
         contrastStage <- setdiff(levels(vals$v.DEGList.filtered.norm$targets$group),targetStage) %>%
@@ -144,7 +157,9 @@ parse_contrasts_LS<-eventReactive(input$goLS,{
                             sep = "-"
         )
         
-        vals$multipleCorrection_LS <- F
+        if (input$multipleContrastsYN_LS == T) {
+            vals$multipleCorrection_LS <- T
+        } else vals$multipleCorrection_LS <- F
         
     } else {
         targetStage <- rbind(input$selectTarget_LS)
@@ -156,7 +171,9 @@ parse_contrasts_LS<-eventReactive(input$goLS,{
                                    collapse = "+") %>%
                                 paste0("(",.,")/",length(input$selectContrast_LS)), 
                             sep = "-")
-        vals$multipleCorrection_LS <- F
+        if (input$multipleContrastsYN_LS == T) {
+            vals$multipleCorrection_LS <- T
+        } else vals$multipleCorrection_LS <- F
     }
     
     # Validation checks for contrast inputs:

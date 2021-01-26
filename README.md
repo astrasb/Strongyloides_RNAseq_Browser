@@ -56,7 +56,7 @@ Features of the app include:
 * Search for gene(s) of interest using stable geneIDs or keywords
 * Extract gene expression values for genes of interest
   - Display gene expresion across life stages as a heatmap (all genes of interest) or a boxplot (individual genes)
-  - Download Log2 counts per million expression for genes of interest as .xslx
+  - Download log2 counts-per-million expression for genes of interest as .xslx
 * On demand limma-voom-based pairwise differential gene expression analysis
   - Display results as interactive volcano plots and datatables
   - Download results as .pdf (plots) or .xlsx (datatables)
@@ -65,7 +65,7 @@ Features of the app include:
   - Download results as .pdf (plots) or .xlsx (datatables)
 * Download raw/pre-processed data using user-friendly dropdown menu
   - Study desgin files (.csv)
-  - Log2 counts per million expression for all genes and all samples (.csv)
+  - Log2 counts-per-million expression for all genes and all samples (.csv)
   - Variance-stabilized DGEList object (R object; primary data input for the app)
   - Raw expression data for genes discarded during low-count filterering; see Pre-processing files for more information (.csv)
 

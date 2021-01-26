@@ -361,7 +361,7 @@ output$downloadbuttonGW <- renderUI({
         multiplecorrection <- paste0(vals$comparison_GW, collapse = "; ")
         multiplecorrection <- paste0("P-values corrected across the following multiple pairwise comparisons: ", multiplecorrection)
     } else {
-        multiplecorrection <- "P-values *not* corrected across multiple pairwaise comparisons"
+        multiplecorrection <- "P-values *not* corrected across multiple pairwise comparisons"
     }
     ### 2. If downloading results are being filtered to show only genes that display consistent differential expression across all comparisons targeted for download, list the pairwise comparisons being used.
     if (input$download_DGEdt_across_GW == TRUE){
