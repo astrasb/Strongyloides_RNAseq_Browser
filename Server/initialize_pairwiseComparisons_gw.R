@@ -67,7 +67,7 @@ output$pairwiseSelector_GW<- renderUI({
 })
 
 ## GW: Update checkbox input for multiple contrasts depending on contrast selection
-### specifically, if users select the All Others (group) option, the multiple contrasts
+### specifically, if users select the All Others (separately) option, the multiple contrasts
 ### checkbox should be updated to TRUE. Users may still de-select this option.
 observe({
     req(input$selectContrast_GW)
