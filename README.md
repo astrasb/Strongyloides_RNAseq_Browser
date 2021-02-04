@@ -32,16 +32,16 @@ To access a stable deployment of the *Strongyloides* RNAseq Browser Web App, ple
 
 To run the latest version locally from Github, use the following command in R/RStudio:  
 `library(shiny)`  
-`shiny::runGitHub(repo = 'Strongyloides_RNAseq_Browser', username = 'astrasb')`  
+`shiny::runGitHub(repo = 'Strongyloides_RNAseq_Browser', username = 'HallemLab')`  
 
 To run a specific release locally use the following commands in R/RStudio:  
   * For PCs --  
     `library(shiny)`  
-    `shiny::runUrl('https://github.com/astrasb/Strongyloides_RNAseq_Browser/archive/<RELEASE_VERSION>.zip') ` 
+    `shiny::runUrl('https://github.com/HallemLab/Strongyloides_RNAseq_Browser/archive/<RELEASE_VERSION>.zip') ` 
 
   * For Macs --  
     `library(shiny)`  
-    `shiny::runUrl('https://github.com/astrasb/Strongyloides_RNAseq_Browser/archive/<RELEASE_VERSION>.tar.gz')`  
+    `shiny::runUrl('https://github.com/HallemLab/Strongyloides_RNAseq_Browser/archive/<RELEASE_VERSION>.tar.gz')`  
 
 Please note: the download step for runURL/runGitHub takes a substantial amount of time. We recommend downloading this archive and running the application locally. 
 
@@ -92,4 +92,4 @@ This project is licensed under the MIT License.
 ## Authors  
 * [Astra Bryant, PhD](https://github.com/astrasb)
 * [Stephanie DeMarco, PhD](https://github.com/sfdemarco)
-* [Elissa Hallem, PhD]
+* [Elissa Hallem, PhD](https://github.com/ehallem)
