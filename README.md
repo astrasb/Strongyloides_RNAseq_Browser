@@ -64,7 +64,7 @@ Features of the app include:
   - Display results as bubble plot and interactive datatable
   - Download results as .pdf (plots) or .xlsx (datatables)
 * Download raw/pre-processed data using user-friendly dropdown menu
-  - Study desgin files (.csv)
+  - Study design files (.csv)
   - Log2 counts-per-million expression for all genes and all samples (.csv)
   - Variance-stabilized DGEList object (R object; primary data input for the app)
   - Raw expression data for genes discarded during low-count filterering; see Pre-processing files for more information (.csv)
