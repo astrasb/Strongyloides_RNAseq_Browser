@@ -433,9 +433,13 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                         tags$a(href="http://www.hallemlab.com/",'Hallem Lab',target="blank"), 'at UCLA.', 
                                         tags$br(),
                                         tags$br(),
-                                        'The underlying code is available on Github:', 
+                                        'The source code for the app is available on GitHub:', 
                                         tags$a(
-                                            href = 'https://github.com/astrasb/Strongyloides_RNAseq_Browser/tree/master/Strongyloides_RNAseq_Browser_App', "Strongyloides RNAseq Browser App Repository",target="blank"))
+                                            href = 'https://github.com/HallemLab/Strongyloides_RNAseq_Browser', "Strongyloides RNAseq Browser App Repository",target="blank"),
+                                        tags$br(),
+                                        'The source code for data preprocessing and example analyses is also available on GitHub:', 
+                                        tags$a(
+                                            href = 'https://github.com/HallemLab/Bryant-DeMarco-Hallem-2021', "Bryant, DeMarco, and Hallem 2021 Repository",target="blank"))
                                )
                         )
                     )

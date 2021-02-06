@@ -1,5 +1,5 @@
 ### Source
-The *S. papillosus* data included in this repository was originally analyzed by [Hunt *et al* 2016](https://www.nature.com/articles/ng.3495). Raw reads were downloaded from the European Nucleotide Archive - study accession number [PRJEB14543](https://www.ebi.ac.uk/ena/browser/view/PRJEB14543).  
+The *S. papillosus* data included in the *Strongyloides* RNA-seq Browser was was originally analyzed by [Hunt *et al* 2016](https://www.nature.com/articles/ng.3495). Raw reads were downloaded from the European Nucleotide Archive - study accession number [PRJEB14543](https://www.ebi.ac.uk/ena/browser/view/PRJEB14543).  
 
 ### Samples
 

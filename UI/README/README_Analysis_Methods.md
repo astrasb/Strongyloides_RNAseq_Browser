@@ -5,7 +5,7 @@ The limma package ( [Ritchie *et al*
 2016](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5373812/)) is used to
 conduct pairwise differential gene expression (DEG) analyses between
 life stages. For all species, DEG analyses are conducted on
-variance-stabilized, filtered, normalized Log2CPM values. We use
+variance-stabilized, filtered, normalized log2 counts per million (log2CPM) values. We use
 empirical Bayes smoothing of gene-wise standard deviations to [provide
 increased statistical
 power](https://www.degruyter.com/doi/10.2202/1544-6115.1027). All
@@ -29,11 +29,10 @@ set list defined in [(Hunt *et al*
 2016)](https://www.nature.com/articles/ng.3495). Note that the original
 set list uses specific transcript information, which we discard. The R
 script used to assemble the gene set list for use in this app is
-publically available as part of this repository (Pre\_processing
-subfolder &gt; `generateGeneSet.R`).
+publically available on GitHub (`generateGeneSet.R`).
 
 For the example pairwise comparisons, the ranked gene list is
-constructed by rank ordering by LogFC. The GSEA analysis returns a plot
+constructed by rank ordering by log2FC. The GSEA analysis returns a plot
 of enriched gene families as well as a table containing normalized gene
 enrichment scores. These scores represent the degree to which the
 elements of the gene set are over-represented at the edges of the ranked
@@ -42,6 +41,6 @@ gene set.
 
 ### Data Visualization
 
-For heatmaps of Log2 Counts per Million gene expression values, columns
+For heatmaps of log2CPM gene expression values, columns
 (life stages) are ordered using Spearman clustering of the user-defined subset. Rows are ordered using Pearson
 clustering of expression of the user-selected gene subset.

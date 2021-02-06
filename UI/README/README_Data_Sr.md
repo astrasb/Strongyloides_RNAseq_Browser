@@ -1,6 +1,6 @@
 ### Source
 
-The *S. ratti* data included in this repository was originally published
+The *S. ratti* data included in the *Strongyloides* RNA-seq Browser was originally published
 by [Hunt *et al* 2016](https://www.nature.com/articles/ng.3495). Raw
 reads were downloaded from the European Nucleotide Archive - study
 accession numbers

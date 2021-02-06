@@ -3,12 +3,12 @@
 Kallisto was used to perform ultra-fast read mapping of raw reads to the
 *S. ratti* reference transcriptome (PRJEB125.WBPS14.mRNA\_transcripts,
 downloaded from [WormBase
-Parasite](https://parasite.wormbase.org/Strongyloides_ratti_prjeb125/Info/Index)
+ParaSite](https://parasite.wormbase.org/Strongyloides_ratti_prjeb125/Info/Index)
 on 17 August 2020). Kallisto alignments are imported into the R
 environment using `Tximport`. Counts are generated from abundance files
 using the `lengthScaledTPM` option.  
 
-Count data is then annotated with information imported via the Wormbase
+Count data is then annotated with information imported via the WormBase
 ParaSite BioMaRT. Annotation information includes:
 
 -   *C. elegans* homologs/percent homology

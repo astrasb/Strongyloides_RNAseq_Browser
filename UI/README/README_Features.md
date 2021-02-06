@@ -1,10 +1,10 @@
 ### Overview  
-The *Strongyloides* RNAseq Shiny App enables users to browse publically
-available *Strongyloides* bulk RNAseq datasets and perform on-demand
+The *Strongyloides* RNA-seq Browser enables users to browse publically
+available *Strongyloides* bulk RNA-seq datasets and perform on-demand
 analyses including differential expression and gene set enrichment. Data
 from the following species are currently included: *S. stercoralis*, *S.ratti*,
 *S. papillosus*, and *S. venezuelensis*. The app permits
-browsing RNAseq data in two modes:
+browsing RNA-seq data in two modes:
 
 1.  Browse by Gene Mode
 2.  Browse by Life Stage Mode
