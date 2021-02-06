@@ -175,7 +175,7 @@ parse_ids <- eventReactive(input$goGW,{
         
         # Produces error message if genelist is empty
         validate(
-            need(nrow(genelist) != 0, "RNAseq data unavailable for submitted genes. Please try a new search.")
+            need(nrow(genelist) != 0, "RNAseq data unavailable for submitted genes (submitted names may be invalid). Please try a new search.")
         )
        
         # Save record of original genelist before filtering, removing rows that contain the word 'gene'
