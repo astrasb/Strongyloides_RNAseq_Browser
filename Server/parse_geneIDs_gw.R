@@ -7,7 +7,7 @@ output$genePanelinputs <- renderUI({
             status = "primary",
             ### GeneID (text box)
             h5('Pick Genes', class = 'text-danger', style = "margin: 0px 0px 5px 0px"),
-            p(tags$em('Users may type gene stable IDs or keywords that will be matched against Wormbase Parasite Gene Descriptions, known C. elegans homologs, homologs from closely-related Strongyloides species, InterPro terms, and an Ensembl Compara database of gene families. Search terms may be separated using commas,semicolons, or new lines. Users may also upload a .csv file containing search terms.', style = "color: #7b8a8b")),
+            p(tags$em('Users may type gene stable IDs or keywords that will be matched against WormBase ParaSite Gene Descriptions, known C. elegans homologs, homologs from closely-related Strongyloides species, InterPro terms, and an Ensembl Compara database of gene families. Search terms may be separated using commas, semicolons, or new lines. Users may also upload a .csv file containing search terms.', style = "color: #7b8a8b")),
             p(tags$em("Type 'everything' or 'all genes' to display all genes in the genome. Warning: this will take a long time to process.", style = "color: #7b8a8b")),
             p(tags$em(tags$b('Note: Please hit the Clear button if switching between typing and uploading inputs.', style = "color: #F39C12"))),
             textAreaInput('idtext',
@@ -175,7 +175,7 @@ parse_ids <- eventReactive(input$goGW,{
         
         # Produces error message if genelist is empty
         validate(
-            need(nrow(genelist) != 0, "RNAseq data unavailable for submitted genes (submitted names may be invalid). Please try a new search.")
+            need(nrow(genelist) != 0, "RNA-seq data unavailable for submitted genes (submitted names may be invalid). Please try a new search.")
         )
        
         # Save record of original genelist before filtering, removing rows that contain the word 'gene'
@@ -194,7 +194,7 @@ parse_ids <- eventReactive(input$goGW,{
         
         # Produces error message if genelist is empty after removing genes not included in the RNAseq dataset
         validate(
-            need(nrow(genelist) != 0, "RNAseq data unavailable for submitted genes. Please try a new search.")
+            need(nrow(genelist) != 0, "RNA-seq data unavailable for submitted genes. Please try a new search.")
         )
         
         vals$genelist <- genelist

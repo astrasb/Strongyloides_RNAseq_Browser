@@ -1,8 +1,8 @@
 
 
 # Header ----
-navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
-           windowTitle = "Str-RNAseq Browser",
+navbarPage(h3(em("Strongyloides"), "RNA-seq Browser"),
+           windowTitle = "Str-RNA-seq Browser",
            theme = shinytheme("flatly"), 
            collapsible = TRUE,
            id = "tab",
@@ -133,9 +133,9 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                                         h6("Filter across all comparisons?"),
                                                         checkboxInput("download_DGEdt_across_GW",
                                                                       p("Yes, only download genes with selected expression types in all searched pairwise comparisons.")),
-                                                        h6("Include names of submitted genes not found in RNAseq dataset?"),
+                                                        h6("Include names of submitted genes not found in RNA-seq dataset?"),
                                                         checkboxInput("download_missing_genes_GW",
-                                                                      p("Yes, include geneIDs for submitted genes not included in RNAseq dataset.")),
+                                                                      p("Yes, include geneIDs for submitted genes not included in RNA-seq dataset.")),
                                                         uiOutput('downloadbuttonGW')
                                                     )
                                                     
@@ -249,7 +249,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                                                                         "Down",
                                                                                         "NotSig")),
                                                         textInput("percentDGE_LS",
-                                                                  h6("Select Top % of genes, filtered by LogFC value"),
+                                                                  h6("Select top % of genes, filtered by logFC value"),
                                                                   "100"),
                                                         h6("Filter across all comparisons?"),
                                                         checkboxInput("download_DGEdt_across_LS",
@@ -318,7 +318,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                     fluidRow(
                         column(8,
                                panel(heading =  tagList(h5(shiny::icon("fas fa-archive"),
-                                                           "RNAseq Datasets")),
+                                                           "RNA-seq Datasets")),
                                      status = "primary",
                                      id = "About_Data",
                                      tabsetPanel(
@@ -435,7 +435,7 @@ navbarPage(h3(em("Strongyloides"), "RNAseq Browser"),
                                         tags$br(),
                                         'The source code for the app is available on GitHub:', 
                                         tags$a(
-                                            href = 'https://github.com/HallemLab/Strongyloides_RNAseq_Browser', "Strongyloides RNAseq Browser App Repository",target="blank"),
+                                            href = 'https://github.com/HallemLab/Strongyloides_RNAseq_Browser', "Strongyloides RNA-seq Browser App Repository",target="blank"),
                                         tags$br(),
                                         'The source code for data preprocessing and example analyses is also available on GitHub:', 
                                         tags$a(

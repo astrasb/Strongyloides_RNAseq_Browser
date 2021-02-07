@@ -47,7 +47,7 @@ output$pairwiseSelector_GW<- renderUI({
                           rows = 5, 
                           resize = "vertical"),
             
-            h6("Correct for Multiple Comparisons?"),
+            h6("Correct for multiple comparisons?"),
             checkboxInput("multipleContrastsYN_GW",
                           p("Yes, correct p-values for multiple pairwise comparisons")),
             

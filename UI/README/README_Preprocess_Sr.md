@@ -28,9 +28,9 @@ reference member of the out-group, here:
 
 ### Filtering and Normalization Steps
 
-Raw reads were quantified as counts per million using the `EdgeR` package,
+Raw reads were quantified as log2 counts per million (CPM) using the `EdgeR` package,
 then filtered to remove transcripts with low counts (less than 1
-count-per-million in at least 1 sample). Non-discarded gene values are
+log2CPM in at least 1 sample). Non-discarded gene values are
 normalized using the trimmed mean of M-values method [(TMM, Robinson and
 Oshlack)](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-3-r25)
 to permit between-samples comparisons. The mean-variance relationship

@@ -21,7 +21,7 @@ generateGenePlot <- reactive({
                                  aes(x = life_stage, y = log2CPM, fill = life_stage) +
                                  geom_boxplot(show.legend = F, alpha = 0.7) +
                                  labs(y="log2 CPM expression", x = "Life Stage",
-                                      title=paste("Log2 Counts per Million (CPM):",
+                                      title=paste("Log2 Counts per Million (CPM) Expression:",
                                                   vals$gene_of_interest),
                                       subtitle="filtered, normalized, variance-stabilized") +
                                  theme_Publication() + 
@@ -214,7 +214,7 @@ observe({
             selector = '#GenePlotDiv',
             where = "beforeBegin",
             ui = tagList(div(id = "CPMPlotlydiv",
-                             h5("Log2 Counts Per Million (CPM) Expression Across Life Stages"),
+                             h5("Log2 Counts per Million (CPM) Expression Across Life Stages"),
                              plotlyOutput('CPMPlotly')
             ))
         )
@@ -229,7 +229,7 @@ observe({
             selector = '#GenePlotDiv',
             where = "beforeBegin",
             ui = tagList(div(id = "CPMTablediv",
-                             h5("Log2 Counts Per Million (CPM) Expression Across Life Stages"),
+                             h5("Log2 Counts per Million (CPM) Expression Across Life Stages"),
                              DTOutput('CPM.datatable')
             ))
         )
@@ -316,7 +316,7 @@ output$downloadGenePlot <- downloadHandler(
                                    showticklabels = showticklabels,
                                    scale='row',
                                    cexRow=1.2, cexCol=1.2,
-                                   main = "Log2 Counts Per Million (CPM) Expression Across Life Stages")
+                                   main = "Log2 Counts per Million (CPM) Expression Across Life Stages")
                 setProgress(0.8)
                 ggsave(file,
                        plot = p,
@@ -401,7 +401,7 @@ output$downloadbuttonsGenes <- renderUI({
     
     output$heatmap_data_download <- generate_excel_report(c("User-selected Genes"),
                                                           genelist.expression,
-                                                          name = paste(input$selectSpecies_GW, "RNAseq Gene Expression"),
+                                                          name = paste(input$selectSpecies_GW, "RNA-seq Gene Expression"),
                                                           filename_prefix = "Gene_Expression_Data_",
                                                           subtitle_prefix = "Log2CPM Expression:")
     

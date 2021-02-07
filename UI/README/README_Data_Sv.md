@@ -26,6 +26,5 @@ Samples included in study PRJDB3457 were prepared using different libary constru
     vi) iL3s removed from the lungs (iL3_lung): 1 biological replicate and two technical replicates  
     vii) Young free-living adult females (Young_FLF): 1 biological replicate and two technical replicates  
     viii) Free-living adult females (FLF): 1 biological replicate and two technical replicates    
-Both batches contain data from free-living females, which thereotically permits batch correction and analysis of all samples. However, following limma-based batch correction there were still substantial differences between FLF samples from the two batches. We therefore take the conservative approach of treating these two batches separately. 
 
-Thus, we have only included the batch containing multiple biological replicates for all life stages (Batch FLF_PF) in the *Strongyloides* RNA-seq Browser.
+Both batches contain data from free-living females, which thereotically permits batch correction and analysis of all samples. However, following limma-based batch correction there were still substantial differences between FLF samples from the two batches. We therefore take the conservative approach of treating these two batches separately and have only included the batch containing multiple biological replicates for all life stages (Batch FLF_PF) in the *Strongyloides* RNA-seq Browser.

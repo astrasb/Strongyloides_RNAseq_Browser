@@ -345,7 +345,7 @@ output$downloadbuttonLS <- renderUI({
     output$generate_excel_report_LS <- generate_excel_report(names(filtered.tbl_LS), 
                                                              filtered.tbl_LS,
                                                              name = paste(input$selectSpecies_LS,
-                                                                          "RNAseq Differential Gene Expression"),
+                                                                          "RNA-seq Differential Gene Expression"),
                                                              multiplecorrection = multiplecorrection,
                                                              filteredacross = filteredacross,
                                                              DEGpattern = DEGpattern,

@@ -379,7 +379,7 @@ output$downloadbuttonGW <- renderUI({
     output$generate_excel_report_GW <- generate_excel_report(names(downloadablel.tbl_GW), 
                                                              downloadablel.tbl_GW,
                                                              name = paste(input$selectSpecies_GW,
-                                                                          "RNAseq Differential Gene Expression"),
+                                                                          "RNA-seq Differential Gene Expression"),
                                                              multiplecorrection = multiplecorrection,
                                                              filteredacross = filteredacross,
                                                              DEGpattern = DEGpattern,
