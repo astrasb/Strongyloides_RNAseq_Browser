@@ -27,7 +27,7 @@ User interface files for the Shiny app. Includes custom css and additional READM
 Static files that can be interactively downloaded within the *Strongyloides* RNA-seq Browser environment.
 
 ## App Setup & Deployment
-To access a stable deployment of the *Strongyloides* RNA-seq Browser Web App, please visit:   [asbryant.shinyapps.io/strongyloides_rnaseq_browser/](asbryant.shinyapps.io/strongyloides_rnaseq_browser/)  
+To access a stable deployment of the *Strongyloides* RNA-seq Browser Web App, please visit:   [hallemlab.shinyapps.io/strongyloides_rnaseq_browser/](hallemlab.shinyapps.io/strongyloides_rnaseq_browser/)  
 
 
 To run the latest version locally from GitHub, use the following command in R/RStudio:  
@@ -46,7 +46,7 @@ To run a specific release locally use the following commands in R/RStudio:
 Please note: the download step for runURL/runGitHub takes a substantial amount of time. We recommend downloading this archive and running the application locally. 
 
 ## App Features  
-The *Strongyloides* RNA-seq Shiny App enables users to browse publically available *Strongyloides* bulk RNA-seq datasets and perform on-demand analyses including differential expression and gene set enrichment. Data from the following species are currently included: *S. stercoralis*, *S. ratti*, *S. papillosus*, and *S. venezuelensis*. The app permits browsing RNA-seq data in two modes:
+The *Strongyloides* RNA-seq Shiny Browser enables users to browse publically available *Strongyloides* bulk RNA-seq datasets and perform on-demand analyses including differential expression and gene set enrichment. Data from the following species are currently included: *S. stercoralis*, *S. ratti*, *S. papillosus*, and *S. venezuelensis*. The app permits browsing RNA-seq data in two modes:
 
   1. Browse by Life Stage Mode
   2. Browse by Gene Mode  
@@ -56,7 +56,7 @@ Features of the app include:
 * Search for gene(s) of interest using stable geneIDs or keywords
 * Extract gene expression values for genes of interest
   - Display gene expresion across life stages as a heatmap (all genes of interest) or a boxplot (individual genes)
-  - Download log2 counts-per-million expression for genes of interest as .xslx
+  - Download log2 counts per million expression for genes of interest as .xslx
 * On demand limma-voom-based pairwise differential gene expression analysis
   - Display results as interactive volcano plots and datatables
   - Download results as .pdf (plots) or .xlsx (datatables)
@@ -65,9 +65,9 @@ Features of the app include:
   - Download results as .pdf (plots) or .xlsx (datatables)
 * Download raw/pre-processed data using user-friendly dropdown menu
   - Study design files (.csv)
-  - Log2 counts-per-million expression for all genes and all samples (.csv)
+  - Log2 counts per million expression for all genes and all samples (.csv)
   - Variance-stabilized DGEList object (R object; primary data input for the app)
-  - Raw expression data for genes discarded during low-count filterering; see Pre-processing files for more information (.csv)
+  - Raw expression data for genes discarded during low-count filterering (.csv)
 
 ## Examples of Shiny App UI
 ![An example of the User Interface for the RNA-seq Browser Shiny App in Browser by Gene Mode](./UI/Str_RNAseq_Browser_Gene_Mode_Example.png)
