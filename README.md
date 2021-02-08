@@ -12,7 +12,10 @@ Web-based Shiny App for browsing and on-demand analysis of *Strongyloides spp* R
 
 ## General Information
 This repository contains source code for the web-based *Strongyloides* RNA-seq Browser. This app is deployed via Shinyapps.io but can also be run locally. See App Setup and App Features sections below for additional details.  
-The sections below describe the contents of the primary subfolders within this repository.
+
+Data preprocessing pipelines and example analyses can be found at the [Bryant, DeMarco, and Hallem (2021) repository](https://github.com/HallemLab/Bryant-DeMarco-Hallem-2021).  
+
+The sections below describe the contents of the primary subfolders within this repository:
 
 ### Data  
 This folder contains pre-processed data files, including study design files, gene annotations, and digital gene expression lists (vDGEList) containing variance-stabilized, filtered, TMM-normalized RNA-seq data.
