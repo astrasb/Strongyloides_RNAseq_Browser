@@ -323,6 +323,7 @@ output$downloadbuttonLS <- renderUI({
     req(input$goLS,vals$comparison_LS)
     filtered.tbl_LS <- filter_DEG_tbl_LS()
     
+    expressionnotes <- "Columns labeled with <life stage - sample ID> report log2 counts per million (CPM) expression. Columns labeled avg_<life stage> are mean log2CPM. The column labeled logFC reports log2 fold change."
     ### Generate some text that describes the analysis conditions
     ### 1. If p-values are adjusted for multiple pairwise comparisons, which comparisons are included in the adjustment parameters? This should be the list of selected contrasts
     if (vals$multipleCorrection_LS == TRUE){
@@ -334,7 +335,7 @@ output$downloadbuttonLS <- renderUI({
     ### 2. If downloading results are being filtered to show only genes that display consistent differential expression across all comparisons targeted for download, list the pairwise comparisons being used.
     if (input$download_DGEdt_across_LS == TRUE){
       filteredacross <- paste0(names(filtered.tbl_LS), collapse = "; ")
-      filteredacross <- paste0("Lists only includes genes with matching differential expression descriptions across the following pairwise comparisons: ", filteredacross)
+      filteredacross <- paste0("Lists only include genes with matching differential expression descriptions across the following pairwise comparisons: ", filteredacross)
     } else filteredacross <- ""
     
     ### 3. Specify which types of differential expression pattern
@@ -346,6 +347,7 @@ output$downloadbuttonLS <- renderUI({
                                                              filtered.tbl_LS,
                                                              name = paste(input$selectSpecies_LS,
                                                                           "RNA-seq Differential Gene Expression"),
+                                                             expressionnotes = expressionnotes,
                                                              multiplecorrection = multiplecorrection,
                                                              filteredacross = filteredacross,
                                                              DEGpattern = DEGpattern,

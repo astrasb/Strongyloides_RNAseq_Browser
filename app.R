@@ -9,6 +9,7 @@ suppressPackageStartupMessages({
     library(shinythemes)
     library(DT)
     library(tidyverse)
+    library(ggforce)
     library(limma)
     library(edgeR)
     library(gt) 

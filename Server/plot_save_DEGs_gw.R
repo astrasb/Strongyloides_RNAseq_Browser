@@ -181,8 +181,7 @@ assemble_DEGs_GW <- reactive({
     
     sample.num.tS <- sapply(tS, function(x) {colSums(vals$v.DEGList.filtered.norm$design)[[x]]}) %>% sum()
     sample.num.cS <- sapply(cS, function(x) {colSums(vals$v.DEGList.filtered.norm$design)[[x]]}) %>% sum()
-    
-    
+   
     n_num_cols <- sample.num.tS + sample.num.cS + 5
     index_homologs <- length(colnames(vals$list.highlight.tbl_GW[[vals$displayedComparison_GW]])) - 5
     
@@ -355,6 +354,7 @@ output$downloadbuttonGW <- renderUI({
     })
     } else {downloadablel.tbl_GW <- filtered.tbl_GW}
    
+    expressionnotes <- "Columns labeled with <life stage - sample ID> report log2 counts per million (CPM) expression. Columns labeled avg_<life stage> are mean log2CPM. The column labeled logFC reports log2 fold change."
     ### Generate some text that describes the analysis conditions
     ### 1. If p-values are adjusted for multiple pairwise comparisons, which comparisons are included in the adjustment parameters? This should be the list of selected contrasts
     if (vals$multipleCorrection_GW == TRUE){
@@ -366,7 +366,7 @@ output$downloadbuttonGW <- renderUI({
     ### 2. If downloading results are being filtered to show only genes that display consistent differential expression across all comparisons targeted for download, list the pairwise comparisons being used.
     if (input$download_DGEdt_across_GW == TRUE){
         filteredacross <- paste0(names(filtered.tbl_GW), collapse = "; ")
-        filteredacross <- paste0("Lists only includes genes with matching differential expression descriptions across the following pairwise comparisons: ", filteredacross)
+        filteredacross <- paste0("Lists only include genes with matching differential expression descriptions across the following pairwise comparisons: ", filteredacross)
     } else filteredacross <- ""
         
     ### 3. Specify which types of differential expression pattern
@@ -380,6 +380,7 @@ output$downloadbuttonGW <- renderUI({
                                                              downloadablel.tbl_GW,
                                                              name = paste(input$selectSpecies_GW,
                                                                           "RNA-seq Differential Gene Expression"),
+                                                             expressionnotes = expressionnotes,
                                                              multiplecorrection = multiplecorrection,
                                                              filteredacross = filteredacross,
                                                              DEGpattern = DEGpattern,
