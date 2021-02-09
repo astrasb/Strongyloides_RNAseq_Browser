@@ -14,11 +14,12 @@ pull_DEGs_GW <- reactive({
                        20){guide_legend(override.aes = list(size = 4))} else {FALSE}
     setProgress(0.6)
     vplot <- ggplot(vals$list.myTopHits.df_GW[[vals$displayedComparison_GW]]) +
-        aes(y=-log10(BH.adj.P.Val), x=logFC) +
+        aes(y=BH.adj.P.Val, x=logFC) +
+        scale_y_continuous(trans = trans_reverser('log10')) +
         geom_point(size=3,
                    na.rm = T) +
         geom_point(data = vals$list.highlight.tbl_GW[[vals$displayedComparison_GW]], 
-                   mapping = aes(y=-log10(BH.adj.P.Val), 
+                   mapping = aes(y=(BH.adj.P.Val), 
                                  x=logFC, 
                                  color = geneID),
                    size = 3,
@@ -43,7 +44,9 @@ pull_DEGs_GW <- reactive({
                                  vals$comparison_GW[vals$displayedComparison_GW])),
              subtitle = paste0("grey line: p = ",
                                adj.P.thresh, "; colored lines: log-fold change = ",  lfc.thresh),
-             color = "GeneIDs") +
+             color = "GeneIDs",
+             y = "BH-adjusted p-value",
+             x = "logFC") +
         theme_Publication() +
         theme(aspect.ratio=1/3)
     setProgress(0.9)
