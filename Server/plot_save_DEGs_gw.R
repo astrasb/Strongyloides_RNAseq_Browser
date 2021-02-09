@@ -43,10 +43,10 @@ pull_DEGs_GW <- reactive({
                                  ' vs ',
                                  vals$comparison_GW[vals$displayedComparison_GW])),
              subtitle = paste0("grey line: p = ",
-                               adj.P.thresh, "; colored lines: log-fold change = ",  lfc.thresh),
+                               adj.P.thresh, "; colored lines: log-fold change = +/-",  lfc.thresh),
              color = "GeneIDs",
              y = "BH-adjusted p-value",
-             x = "logFC") +
+             x = "log2FC") +
         theme_Publication() +
         theme(aspect.ratio=1/3)
     setProgress(0.9)
