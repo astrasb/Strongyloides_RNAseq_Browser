@@ -1,14 +1,14 @@
 ### Kallisto Alignment and Gene Annotation
 
 Kallisto was used to perform ultra-fast read mapping of raw reads to the
-*S. stercoalis* reference transcriptome
+*S. stercoralis* reference transcriptome
 (PRJEB528.WBPS14.mRNA\_transcripts, downloaded from [WormBase
-Parasite](https://parasite.wormbase.org/Strongyloides_stercoralis_prjeb528/Info/Index/)
+ParaSite](https://parasite.wormbase.org/Strongyloides_stercoralis_prjeb528/Info/Index/)
 on 16 June 2020). Kallisto alignments are imported into the R
 environment using `Tximport`. Counts are generated from abundance files
 using the `lengthScaledTPM` option.   
 
-Count data is then annotated with information imported via the Wormbase
+Count data is then annotated with information imported via the WormBase
 ParaSite BioMaRT. Annotation information includes:
 
 -   *C. elegans* homologs/percent homology
@@ -28,9 +28,9 @@ reference member of the out-group, here:
 
 ### Filtering and Normalization Steps
 
-Raw reads are quantified as counts per million using the `EdgeR` package,
+Raw reads are quantified as log2 counts per million (CPM) using the `EdgeR` package,
 then filtered to remove transcripts with low counts (less than 1
-count-per-million in at least 3 samples). Non-discarded gene values are
+log2CPM in at least 3 samples). Non-discarded gene values are
 normalized using the trimmed mean of M-values method [(TMM, Robinson and
 Oshlack)](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-3-r25)
 to permit between-samples comparisons. The mean-variance relationship

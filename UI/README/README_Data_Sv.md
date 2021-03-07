@@ -1,6 +1,6 @@
 ### Source
 
-The *S. venezuelensis* data included in this repository was originally published by [Hunt *et al* 2018](https://www.nature.com/articles/s41598-018-23514-z). Raw reads were downloaded from the European Nucleotide Archive - study accession number [PRJDB3457](https://www.ebi.ac.uk/ena/browser/view/PRJDB3457). 
+The *S. venezuelensis* data included in the *Strongyloides* RNA-seq Browser was originally published by [Hunt *et al* 2018](https://www.nature.com/articles/s41598-018-23514-z). Raw reads were downloaded from the European Nucleotide Archive - study accession number [PRJDB3457](https://www.ebi.ac.uk/ena/browser/view/PRJDB3457). 
 
 ### Samples
 
@@ -10,15 +10,14 @@ biological replicates and 2 technical replicates for each life stage:
 -   Free-living adult females (FLF)
 -   Parasitic adult females (PF)
 
-### A note re: *S. venezuelensis* sample availability
+### A note regarding *S. venezuelensis* sample availability
 
-Samples included in study PRJDB3457 were prepared using different libary construction methods (amplified vs non-amplified), sequencing run batches, and machines [(Hunt *et al* 2018)](https://www.nature.com/articles/s41598-018-23514-z). Dividing the experiments based on sequencing instrument produces two batches, both of which contain data from Free-living females and thereotically permit batch correction. However, following limma-based batch correction there were still substantial differences between FLF groups from the two batches. We therefore take the conservative approach of treating these two batches separately.   
-Thus, we define three functional groups for processing and analysis:
+Samples included in study PRJDB3457 were prepared using different libary construction methods (amplified vs non-amplified), sequencing run batches, and machines [(Hunt *et al* 2018)](https://www.nature.com/articles/s41598-018-23514-z). Dividing the experiments based on sequencing instrument produces two batches: 
 
-  1. Group FLF_PF: This set includes 2 life stages with 3 biological replicates and two technical replicates per life stage:  
+  1. Batch FLF_PF: This set includes 2 life stages with 3 biological replicates and two technical replicates per life stage:  
     i) Free-living females (FLF)  
     ii) Parasitic adult females (PF)   
-  2. Group iL3_extended:   
+  2. Batch iL3_extended:   
     i) Egg: 1 biological replicate and two technical replicates  
     ii) 1st stage larvae (L1): 1 biological replicate and two technical replicates  
     iii) Infective third-stage larvae (iL3): 1 biological replicate and two technical replicates  
@@ -28,4 +27,4 @@ Thus, we define three functional groups for processing and analysis:
     vii) Young free-living adult females (Young_FLF): 1 biological replicate and two technical replicates  
     viii) Free-living adult females (FLF): 1 biological replicate and two technical replicates    
 
-Currently, only Group FLF_PF is included in the *Strongyloides* RNAseq Browser.
+Both batches contain data from free-living females, which thereotically permits batch correction and analysis of all samples. However, following limma-based batch correction there were still substantial differences between FLF samples from the two batches. We therefore take the conservative approach of treating these two batches separately and have only included the batch containing multiple biological replicates for all life stages (Batch FLF_PF) in the *Strongyloides* RNA-seq Browser.

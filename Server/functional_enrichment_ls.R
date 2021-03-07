@@ -43,8 +43,15 @@ perform_GSEA_LS <-reactive ({
     vals$myGSEA.df <- myGSEA.df
     setProgress(0.8)
     ggplot(myGSEA.df, aes(x=life_stage, y=ID)) + 
-        geom_point(aes(size=setSize, color = NES, alpha=-log10(p.adjust))) +
+        geom_point(aes(size=setSize, color = NES, alpha=p.adjust)) +
         scale_color_gradient(low="blue", high="red") +
+        scale_alpha(name = "Adjusted p-value",
+                    trans = trans_reverser('log10')) +
+        guides(alpha = guide_legend(override.aes = list(size=3,
+                                                        color = "red"))) +
+        scale_size(name = "Set Size",
+                   breaks = c(0,10,50,100,200),
+                   labels = c("0", "10", "50", "100", "200"))+
         labs(title = paste0('Gene Families Enriched in ', 
                             gsub('-',' vs ',
                                  vals$comparison_LS[vals$displayedComparison_LS])),

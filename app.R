@@ -9,6 +9,7 @@ suppressPackageStartupMessages({
     library(shinythemes)
     library(DT)
     library(tidyverse)
+    library(ggforce)
     library(limma)
     library(edgeR)
     library(gt) 
@@ -40,6 +41,10 @@ source('Server/preprocess_data.R', local = T)
 # ---- UI ----
 
 ui <- fluidPage(
+    
+    tags$head(
+        HTML('<base target="_blank">')
+    ),
     
     source('UI/Str_RNAseqBrowser_ui.R', local = T)$value,
     

@@ -1,10 +1,10 @@
 ### Overview  
-The *Strongyloides* RNAseq Shiny App enables users to browse publically
-available *Strongyloides* bulk RNAseq datasets and perform on-demand
+The *Strongyloides* RNA-seq Browser enables users to browse publically
+available *Strongyloides* bulk RNA-seq datasets and perform on-demand
 analyses including differential expression and gene set enrichment. Data
 from the following species are currently included: *S. stercoralis*, *S.ratti*,
 *S. papillosus*, and *S. venezuelensis*. The app permits
-browsing RNAseq data in two modes:
+browsing RNA-seq data in two modes:
 
 1.  Browse by Gene Mode
 2.  Browse by Life Stage Mode
@@ -16,7 +16,7 @@ Features of the app include:
 -   Extract gene expression values for genes of interest
     -   Display gene expresion across life stages as a heatmap (all
         genes of interest) or a boxplot (individual genes)
-    -   Download log2 counts-per-million expression for genes of
+    -   Download log2 counts per million expression for genes of
         interest as .xslx
 -   On demand limma-voom-based pairwise differential gene expression
     analysis
@@ -29,7 +29,7 @@ Features of the app include:
     -   Download results as .pdf (plots) or .xlsx (datatables)
 -   Download raw/pre-processed data using user-friendly dropdown menu
     -   Study desgin files (.csv)
-    -   Log2 counts-per-million expression for all genes and all samples
+    -   Log2 counts per million expression for all genes and all samples
         (.csv)
     -   Variance-stabilized DGEList object (R object; primary data input
         for the app)
