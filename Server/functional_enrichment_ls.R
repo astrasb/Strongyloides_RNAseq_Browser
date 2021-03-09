@@ -87,8 +87,7 @@ output$downloadGSEAPlot_LS <- downloadHandler(
                width = 11, 
                height = 8, 
                units = "in", 
-               device = "pdf", 
-               useDingbats=FALSE)
+               device = cairo_pdf)
     }
 )
 
