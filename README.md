@@ -1,5 +1,6 @@
 # Strongyloides_RNAseq_Browser 
-Web-based Shiny App for browsing and on-demand analysis of *Strongyloides spp* RNA-seq datasets 
+Web-based Shiny App for browsing and on-demand analysis of *Strongyloides spp* RNA-seq datasets.  
+For more information, [please see the *Strongyloides* RNA-seq Browser preprint](https://www.biorxiv.org/content/10.1101/2021.02.18.431867v1)
 
 ## Table of Contents  
 1. [General Information](#general-information)
