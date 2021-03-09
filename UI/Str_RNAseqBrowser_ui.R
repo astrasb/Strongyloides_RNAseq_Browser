@@ -1,11 +1,12 @@
 
 
 # Header ----
-navbarPage(h3(em("Strongyloides"), "RNA-seq Browser"),
+navbarPageWithText(title = h3(em("Strongyloides"), "RNA-seq Browser"),
            windowTitle = "Str-RNA-seq Browser",
            theme = shinytheme("flatly"), 
-           collapsible = TRUE,
+           collapsible = F,
            id = "tab",
+           text = "v1.0.0",
            
            # Gene Browser Tab ----
            tabPanel(h4("Browse By Gene"),
@@ -422,7 +423,7 @@ navbarPage(h3(em("Strongyloides"), "RNA-seq Browser"),
                                )
                         ),
                         column(6,
-                               # App Credits ----
+                               ### App Credits ----
                                panel( heading =  tagList(h5(shiny::icon("fas fa-drafting-compass"),
                                                             "Authors")),
                                       status = "primary",
@@ -443,6 +444,7 @@ navbarPage(h3(em("Strongyloides"), "RNA-seq Browser"),
                                )
                         )
                     )
+                    
            )
            
 )
