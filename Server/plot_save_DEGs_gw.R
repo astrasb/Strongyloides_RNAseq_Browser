@@ -98,8 +98,7 @@ output$downloadVolcanoGW <- renderUI({
                        width = 11, 
                        height = 8, 
                        units = "in", 
-                       device = "pdf", 
-                       useDingbats=FALSE)
+                       device = cairo_pdf)
             },
             message = "Saving Plot")
         }
@@ -222,7 +221,7 @@ assemble_DEGs_GW <- reactive({
                                      columnDefs = list(
                                          list(
                                              targets = ((n_num_cols + 
-                                                             4):(n_num_cols + 
+                                                             3):(n_num_cols + 
                                                                      5)),
                                              render = JS(
                                                  "function(data, type, row, meta) {",
@@ -245,15 +244,17 @@ assemble_DEGs_GW <- reactive({
                                      ))
                                      
                       )) 
-    
+
     highlight.datatable <- highlight.datatable %>%
-        DT::formatRound(columns=c(3:n_num_cols), 
+        DT::formatRound(columns=c(3:(n_num_cols-3),
+                                  n_num_cols), 
                         digits=3)
     
     highlight.datatable <- highlight.datatable %>%
         DT::formatRound(columns=c(n_num_cols+2, 
                                   index_homologs+1,
-                                  index_homologs+3), 
+                                  index_homologs+3,
+                                  index_homologs+5), 
                         digits=2)
     
     highlight.datatable <- highlight.datatable %>%
@@ -357,7 +358,7 @@ output$downloadbuttonGW <- renderUI({
     })
     } else {downloadablel.tbl_GW <- filtered.tbl_GW}
    
-    expressionnotes <- "Columns labeled with <life stage - sample ID> report log2 counts per million (CPM) expression. Columns labeled avg_<life stage> are mean log2CPM. The column labeled logFC reports log2 fold change."
+    expressionnotes <- "Columns labeled with <life stage - sample ID> report log2 counts per million (CPM) expression. Columns labeled avg_<life stage> are median log2CPM with IQR. The column labeled logFC reports log2 fold change."
     ### Generate some text that describes the analysis conditions
     ### 1. If p-values are adjusted for multiple pairwise comparisons, which comparisons are included in the adjustment parameters? This should be the list of selected contrasts
     if (vals$multipleCorrection_GW == TRUE){

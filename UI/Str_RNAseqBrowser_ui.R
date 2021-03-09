@@ -152,7 +152,7 @@ navbarPage(h3(em("Strongyloides"), "RNA-seq Browser"),
                                                     )
                                    )
                             )
-                        ) 
+                        )
                     )
            ),
            
