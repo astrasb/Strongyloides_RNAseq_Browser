@@ -414,7 +414,8 @@ observe({
                                    tabPanel("Selected Gene", 
                                             plotOutput('CPM')),
                                    tabPanel("Strongyloides Homologs", 
-                                            plotOutput('CPM.homologs'))
+                                            plotOutput('CPM.homologs'),
+                                            em('Note: homologous genes are identified based on WormBase ParaSite annotations and may not be accurate.'))
                        )
                        
       ))
@@ -611,7 +612,7 @@ output$downloadbuttonsGenes <- renderUI({
                    class = "btn-primary"),
     
     downloadButton("heatmap_data_download",
-                   "Download Data Table",
+                   "Download Data",
                    class = "btn-primary")
   )
   

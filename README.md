@@ -59,6 +59,7 @@ Features of the app include:
 * Search for gene(s) of interest using stable geneIDs or keywords
 * Extract gene expression values for genes of interest
   - Display gene expresion across life stages as a heatmap (all genes of interest) or a boxplot (individual genes)
+  - Display gene expression across life stages for individual genes and their known *Strongyloides* homologs
   - Download log2 counts per million expression for genes of interest as .xslx
 * On demand limma-voom-based pairwise differential gene expression analysis
   - Display results as interactive volcano plots and datatables
