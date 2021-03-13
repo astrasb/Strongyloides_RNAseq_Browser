@@ -49,7 +49,7 @@ To run a specific release locally use the following commands in R/RStudio:
 Please note: the download step for runURL/runGitHub takes a substantial amount of time. We recommend downloading this archive and running the application locally. 
 
 ## App Features  
-The *Strongyloides* RNA-seq Shiny Browser enables users to browse publically available *Strongyloides* bulk RNA-seq datasets and perform on-demand analyses including differential expression and gene set enrichment. Data from the following species are currently included: *S. stercoralis*, *S. ratti*, *S. papillosus*, and *S. venezuelensis*. The app permits browsing RNA-seq data in two modes:
+The *Strongyloides* RNA-seq Shiny Browser enables users to browse publicly available *Strongyloides* bulk RNA-seq datasets and perform on-demand analyses including differential expression and gene set enrichment. Data from the following species are currently included: *S. stercoralis*, *S. ratti*, *S. papillosus*, and *S. venezuelensis*. The app permits browsing RNA-seq data in two modes:
 
   1. Browse by Life Stage Mode
   2. Browse by Gene Mode  

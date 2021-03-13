@@ -1,5 +1,5 @@
 ### Overview  
-The *Strongyloides* RNA-seq Browser enables users to browse publically
+The *Strongyloides* RNA-seq Browser enables users to browse publicly
 available *Strongyloides* bulk RNA-seq datasets and perform on-demand
 analyses including differential expression and gene set enrichment. Data
 from the following species are currently included: *S. stercoralis*, *S.ratti*,
