@@ -221,7 +221,7 @@ assemble_DEGs_GW <- reactive({
                                      columnDefs = list(
                                          list(
                                              targets = ((n_num_cols + 
-                                                             3):(n_num_cols + 
+                                                             4):(n_num_cols + 
                                                                      5)),
                                              render = JS(
                                                  "function(data, type, row, meta) {",

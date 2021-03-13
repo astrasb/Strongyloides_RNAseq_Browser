@@ -48,7 +48,7 @@ generateHeatmapTable <- reactive({
                                      "}"),
                                    columnDefs = list(
                                      list(
-                                       targets = ((n_num_values+2):(n_num_values+4)),
+                                       targets = ((n_num_values+3):(n_num_values+4)),
                                        render = JS(
                                          "function(data, type, row, meta) {",
                                          "return type === 'display' && data.length > 20 ?",

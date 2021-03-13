@@ -7,7 +7,7 @@ generate_excel_report <- function(comparison, tbl,
                                   filteredacross = "",
                                   DEGpattern = "",
                                   proportionexport = "",
-                                  n_header_rows = 9){
+                                  n_header_rows = 10){
   
   temp <- downloadHandler(
     
